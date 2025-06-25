@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "821453059641",
+    "project_id": "mylittlefinancontrol",
+    "storage_bucket": "mylittlefinancontrol.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821453059641:android:226897ca08a6edf3067fe8",
+        "android_client_info": {
+          "package_name": "com.example.mylittlefinancontrol"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzHElTgcXd50Ce7u6BA_sPwpRLUfdfOgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".AgregarMovimientoActivity">
+
+    <TextView
+        android:id="@+id/txtAgregarNota"
+        android:text="@string/txtAgregarNota"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="15dp"
+        android:textColor="@color/btn_primary"
+        android:textSize="20sp"
+        android:padding="10dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/TILdescripcion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtAgregarNota"
+        android:padding="10dp">
+
+        <EditText
+            android:id="@+id/etDescripcion"
+            android:maxLines="1"
+            android:textSize="20sp"
+            android:hint="@string/etDescripcion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/TILValor"
+        android:layout_below="@+id/TILdescripcion"
+        android:padding="10dp">
+
+        <EditText
+            android:id="@+id/etValor"
+            android:hint="@string/etValor"
+            android:textSize="20sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/TILValor"
+        android:padding="10dp">
+
+        <EditText
+            android:id="@+id/etTipoReg"
+            android:hint="@string/etTipoReg"
+            android:textSize="20sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <ImageView
+        android:id="@+id/iv_guardar_movimiento"
+        android:src="@drawable/ic_check"
+        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:layout_marginEnd="15dp"
+        android:layout_marginBottom="20dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"/>
+
+</RelativeLayout>

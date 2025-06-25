@@ -1,0 +1,62 @@
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Archivos generados por Android Studio
+*.iml
+.gradle
+.idea/
+build/
+captures/
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Archivos generados localmente
+/local.properties
+/.settings/
+/.vscode/
+/nbproject/private/
+
+# Archivos de caché de Gradle
+/.gradle/
+/caches/
+
+# Archivos temporales de compilación
+/release/
+/tmp/
+
+# Dependencias externas (Gradle las descargará de nuevo)
+**/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Archivos generados por el wrapper de Gradle
+gradle-app.setting
+!gradle-wrapper.properties
+
+# Archivos de Firebase y Google Services
+**/*.google-services.json
+**/*.firebase_options.json
+
+# Archivos de configuración de Keystore (no subir claves)
+*.keystore
+*.jks
+
+# Archivos de datos y logs
+*.log
+*.hprof
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
