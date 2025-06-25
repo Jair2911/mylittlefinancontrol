@@ -7,15 +7,15 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:821453059641:android:226897ca08a6edf3067fe8",
+        "mobilesdk_app_id": "key",
         "android_client_info": {
-          "package_name": "com.example.mylittlefinancontrol"
+          "package_name": "package"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDzHElTgcXd50Ce7u6BA_sPwpRLUfdfOgs"
+          "current_key": "key"
         }
       ],
       "services": {
