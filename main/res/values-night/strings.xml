@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="btn_sign_up">Iniciar sesion</string>
+    <string name="btn_sign_in">Iniciar con google</string>
+    <string name="item_perfil">Perfil</string>
+    <string name="item_movimientos">Movimientos</string>
+    <string name="item_balance">Balance</string>
+    <string name="txt_registro">Registrar</string>
+    <string name="et_nombres">Nombres</string>
+    <string name="et_password">Password</string>
+    <string name="et_r_password">Confirmar contraseña</string>
+    <string name="txt_login">Iniciar Sesion</string>
+    <string name="btn_ingresar">Ingresar</string>
+    <string name="txt_no_tiene_cuenta">¿No estas registrado?</string>
+    <string name="tv_registrarme">Registrarme</string>
+    <string name="btn_logout">Cerrar Sesion</string>
+    <string name="default_web_client_id">821453059641-e4if52g322ug4r39nejltkfa15tdj5f2.apps.googleusercontent.com</string>
+    <string name="txt_nombre">Nombres</string>
+    <string name="tv_nombres">Nombres</string>
+    <string name="txt_email">Email</string>
+    <string name="tv_email">Email</string>
+    <string name="txt_proveedor">Proveedor</string>
+    <string name="tv_proveedor">Proveedor</string>
+    <string name="tv_mienbro_Desde">Mienbro Desde</string>
+    <string name="txt_titulo_update">Actualizar Informacion</string>
+    <string name="btnActualizar">Actualizar</string>
+    <string name="item_descripcion">Descripcion</string>
+    <string name="item_tipo">Tipo de registro</string>
+    <string name="item_titulo">Descripcion</string>
+    <string name="txtAgregarNota">Agregar Movimiento</string>
+    <string name="etDescripcion">Descripcion</string>
+    <string name="etValor">Valor</string>
+    <string name="etTipoReg">Tipo de registro</string>
+    <string name="item_valor">Valor</string>
+    <string name="txtbalanceDeuda">Balance y Deuda</string>
+    <string name="txtGuardarBalanceDeuda">Guardar Datos</string>
+    <string name="etSueldoMensual">Sueldo Mensual</string>
+    <string name="etDeudas">Total Deudas</string>
+</resources>
