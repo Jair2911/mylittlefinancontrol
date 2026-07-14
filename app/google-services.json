@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "821453059641",
+    "firebase_url": "https://mylittlefinancontrol-default-rtdb.firebaseio.com",
     "project_id": "mylittlefinancontrol",
     "storage_bucket": "mylittlefinancontrol.firebasestorage.app"
   },
@@ -12,15 +13,41 @@
           "package_name": "com.example.mylittlefinancontrol"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "821453059641-2le6toa3rgc6gqqlca0dqk2bet2h0pjc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mylittlefinancontrol",
+            "certificate_hash": "908fc9c94c96f82c892f5302daa60452e5e220ca"
+          }
+        },
+        {
+          "client_id": "821453059641-dkfs7d6fk7p9ihfht1ugq79bcou97csa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mylittlefinancontrol",
+            "certificate_hash": "bce50d9e004ffeb780556f66e680da08a21b030f"
+          }
+        },
+        {
+          "client_id": "821453059641-e4if52g322ug4r39nejltkfa15tdj5f2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDzHElTgcXd50Ce7u6BA_sPwpRLUfdfOgs"
+          "current_key": "AIzaSyBatsu9-Ynd8Goy6LkiCHRpaL0BCy-JT9I"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "821453059641-e4if52g322ug4r39nejltkfa15tdj5f2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

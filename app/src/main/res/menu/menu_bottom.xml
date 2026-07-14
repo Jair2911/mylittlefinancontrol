@@ -9,6 +9,10 @@
         android:title="@string/item_movimientos"
         android:icon="@drawable/ic_movimientos"/>
     <item
+        android:id="@+id/item_gastos_fijos"
+        android:title="@string/item_gastos_fijos"
+        android:icon="@drawable/ic_gastos_fijos"/>
+    <item
         android:id="@+id/item_balance"
         android:title="@string/item_balance"
         android:icon="@drawable/ic_balance"/>

@@ -1,132 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-tools:context=".Fragmentos.FragmentPerfil">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Fragmentos.FragmentPerfil">
 
     <RelativeLayout
+        android:id="@+id/rel_end"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/rel_end">
+        android:paddingTop="40dp"
+        android:paddingBottom="20dp">
 
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/iv_perfil"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_perfil"
-            android:layout_marginTop="100dp"
-            android:layout_marginBottom="100dp"
-            android:layout_centerHorizontal="true"
-            app:civ_border_color="#FF000000"
-            android:scaleType="centerCrop"/>
-
+        <!-- Nombres -->
         <TextView
-            android:text="@string/txt_nombre"
+            android:id="@+id/txt_nombre"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/iv_perfil"
             android:layout_marginStart="20dp"
-            android:id="@+id/txt_nombre"/>
+            android:text="@string/txt_nombre"
+            android:textColor="@color/secondary"
+            android:textStyle="bold" />
 
         <TextView
-            android:text="@string/tv_nombres"
+            android:id="@+id/tv_nombres"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/iv_perfil"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
-            android:id="@+id/tv_nombres"/>
+            android:text="@string/tv_nombres" />
 
         <!-- email -->
         <TextView
-            android:text="@string/txt_email"
+            android:id="@+id/txt_email"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:layout_below="@+id/tv_nombres"
             android:layout_marginStart="20dp"
-            android:id="@+id/txt_email"/>
+            android:layout_marginTop="20dp"
+            android:text="@string/txt_email"
+            android:textColor="@color/secondary"
+            android:textStyle="bold" />
 
         <TextView
-            android:text="@string/tv_email"
-            android:layout_marginTop="20dp"
+            android:id="@+id/tv_email"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/tv_nombres"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
-            android:id="@+id/tv_email"/>
+            android:layout_marginTop="20dp"
+            android:text="@string/tv_email" />
 
         <!-- proveedor -->
-
         <TextView
+            android:id="@+id/txt_proveedor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_email"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
             android:text="@string/txt_proveedor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_email"
-            android:layout_marginStart="20dp"
-            android:id="@+id/txt_proveedor"/>
+            android:textColor="@color/secondary"
+            android:textStyle="bold" />
 
         <TextView
-            android:layout_marginTop="20dp"
-            android:text="@string/tv_proveedor"
+            android:id="@+id/tv_proveedor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/tv_email"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
-            android:id="@+id/tv_proveedor"/>
-
-        <!-- proveedor -->
-
-        <TextView
             android:layout_marginTop="20dp"
-            android:text="@string/txt_mienbro_Desde"
+            android:text="@string/tv_proveedor" />
+
+        <!-- miembro desde -->
+        <TextView
+            android:id="@+id/txt_mienbro_Desde"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/txt_proveedor"
             android:layout_marginStart="20dp"
-            android:id="@+id/txt_mienbro_Desde"/>
+            android:layout_marginTop="20dp"
+            android:text="@string/txt_mienbro_Desde"
+            android:textColor="@color/secondary"
+            android:textStyle="bold" />
 
         <TextView
-            android:layout_marginTop="20dp"
-            android:text="@string/tv_mienbro_Desde"
+            android:id="@+id/tv_mienbro_Desde"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/tv_proveedor"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="20dp"
-            android:id="@+id/tv_mienbro_Desde"/>
+            android:layout_marginTop="20dp"
+            android:text="@string/tv_mienbro_Desde" />
+
+        <!-- Tema Oscuro Switch -->
+        <TextView
+            android:id="@+id/txt_tema_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_mienbro_Desde"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/txt_tema_oscuro"
+            android:textColor="@color/secondary"
+            android:textStyle="bold" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/sw_tema"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_mienbro_Desde"
+            android:layout_alignParentEnd="true"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="10dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            app:cornerRadius="8dp"
-            android:layout_gravity="center"
             android:id="@+id/btnActualizar"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/sw_tema"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
             android:text="@string/btnActualizar"
-            android:textSize="16sp"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="140dp"
-            android:layout_below="@id/tv_mienbro_Desde"
             android:textAllCaps="true"
-            app:backgroundTint="@color/btn_primary"/>
+            android:textSize="14sp"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="8dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            app:cornerRadius="8dp"
-            android:layout_gravity="center"
             android:id="@+id/btn_logout"
-            android:text="@string/btn_logout"
-            android:textSize="16sp"
-            android:layout_centerInParent="true"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
             android:layout_below="@id/btnActualizar"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="@string/btn_logout"
             android:textAllCaps="true"
-            app:backgroundTint="@color/btn_primary"/>
+            android:textSize="14sp"
+            app:backgroundTint="@color/secondary"
+            app:cornerRadius="8dp" />
 
     </RelativeLayout>
 </ScrollView>

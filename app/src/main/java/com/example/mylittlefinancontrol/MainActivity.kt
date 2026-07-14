@@ -1,13 +1,12 @@
 package com.example.mylittlefinancontrol
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.mylittlefinancontrol.Fragmentos.FragmentBalance
+import com.example.mylittlefinancontrol.Fragmentos.FragmentGastosFijos
 import com.example.mylittlefinancontrol.Fragmentos.FragmentInicio
 import com.example.mylittlefinancontrol.Fragmentos.FragmentMovimiento
 import com.example.mylittlefinancontrol.Fragmentos.FragmentPerfil
@@ -19,8 +18,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var firebaseAuth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        aplicarTemaGuardado()
+        
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -54,11 +54,25 @@ class MainActivity : AppCompatActivity() {
                     verFragmentoMovimientos()
                     true
                 }
+                R.id.item_gastos_fijos -> {
+                    verFragmentoGastosFijos()
+                    true
+                }
                 else->{
                     verFragmentoInicio()
                     true
                 }
             }
+        }
+    }
+
+    private fun aplicarTemaGuardado() {
+        val sp = getSharedPreferences("TemaPrefs", Context.MODE_PRIVATE)
+        val esOscuro = sp.getBoolean("EsTemaOscuro", false)
+        if (esOscuro) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
     }
 
@@ -69,35 +83,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun verFragmentoPerfil(){
         binding.appName.text = "Perfil"
-
         val fragment = FragmentPerfil()
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(binding.fragmentoFL.id, fragment, "Fragmento Perfil" )
-        fragmentTransaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentoFL.id, fragment, "Fragmento Perfil")
+            .commit()
     }
+    
     private fun verFragmentoMovimientos(){
         binding.appName.text = "Movimientos"
-
         val fragment = FragmentMovimiento()
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(binding.fragmentoFL.id, fragment, "Fragmento Movimiento" )
-        fragmentTransaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentoFL.id, fragment, "Fragmento Movimiento")
+            .commit()
     }
+
+    private fun verFragmentoGastosFijos(){
+        binding.appName.text = "Gastos Fijos"
+        val fragment = FragmentGastosFijos()
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentoFL.id, fragment, "Fragmento Gastos Fijos")
+            .commit()
+    }
+    
     private fun verFragmentoBalance(){
         binding.appName.text = "Balance"
-
         val fragment = FragmentBalance()
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(binding.fragmentoFL.id, fragment, "Fragmento Balance" )
-        fragmentTransaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentoFL.id, fragment, "Fragmento Balance")
+            .commit()
     }
 
     private fun verFragmentoInicio(){
         binding.appName.text = "My Little FinanControl"
-
         val fragment = FragmentInicio()
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(binding.fragmentoFL.id, fragment, "Fragmento Inicio" )
-        fragmentTransaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentoFL.id, fragment, "Fragmento Inicio")
+            .commit()
     }
 }
