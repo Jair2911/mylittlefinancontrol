@@ -1,81 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:context=".AgregarMovimientoActivity">
+    android:background="?android:attr/colorBackground">
 
-    <TextView
-        android:id="@+id/txtAgregarNota"
-        android:text="@string/txtAgregarNota"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="15dp"
-        android:textColor="@color/btn_primary"
-        android:textSize="20sp"
-        android:padding="10dp"/>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/TILdescripcion"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/txtAgregarNota"
-        android:padding="10dp">
+        android:orientation="vertical"
+        android:padding="24dp">
 
-        <EditText
-            android:id="@+id/etDescripcion"
-            android:maxLines="1"
-            android:textSize="20sp"
-            android:hint="@string/etDescripcion"
+        <TextView
+            android:id="@+id/txtAgregarNota"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="@string/txtAgregarNota"
+            android:textColor="@color/primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- Checkbox Pago de Deuda -->
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/cb_es_pago_deuda"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="16dp"
+            android:text="¿Es un pago de deuda / préstamo?"
+            android:textColor="?attr/colorOnSurface" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/TILValor"
-        android:layout_below="@+id/TILdescripcion"
-        android:padding="10dp">
-
-        <EditText
-            android:id="@+id/etValor"
-            android:hint="@string/etValor"
-            android:textSize="20sp"
+        <!-- Contenedor Selección de Deuda (Visible solo si se marca el checkbox) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_seleccion_deuda"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Selecciona la deuda"
+            android:visibility="gone">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <AutoCompleteTextView
+                android:id="@+id/auto_deudas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/TILValor"
-        android:padding="10dp">
-
-        <EditText
-            android:id="@+id/etTipoReg"
-            android:hint="@string/etTipoReg"
-            android:textSize="20sp"
+        <!-- Tipo de Registro (Gasto, Ingreso, Otro) - Visible si NO es pago de deuda -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_tipo_reg"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/etTipoReg">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <AutoCompleteTextView
+                android:id="@+id/auto_tipo_mov"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <ImageView
-        android:id="@+id/iv_guardar_movimiento"
-        android:src="@drawable/ic_check"
-        android:layout_alignParentBottom="true"
-        android:layout_centerInParent="true"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="20dp"
-        android:layout_width="70dp"
-        android:layout_height="70dp"/>
+        <!-- Descripción / Concepto -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/etDescripcion">
 
-</RelativeLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDescripcion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Monto / Valor -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:hint="@string/etValor">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etValor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/iv_guardar_movimiento"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_check"
+                app:tint="@color/primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="GUARDAR MOVIMIENTO"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

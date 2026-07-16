@@ -13,7 +13,7 @@
     <string name="login_failed">"Login failed"</string>
     <string name="item_perfil">Perfil</string>
     <string name="item_movimientos">Movimientos</string>
-    <string name="item_balance">Balance</string>
+    <string name="item_balance">Deudas</string>
     <string name="item_gastos_fijos">Gastos Fijos</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -47,7 +47,7 @@
     <string name="etValor">Valor</string>
     <string name="etTipoReg">Tipo de registro</string>
     <string name="item_valor">Valor</string>
-    <string name="txtbalanceDeuda">Balance y Deuda</string>
+    <string name="txtbalanceDeuda">Deudas</string>
     <string name="txtGuardarBalanceDeuda">Guardar Datos</string>
     <string name="etSueldoMensual">Sueldo Mensual</string>
     <string name="etDeudas">Total Deudas</string>
@@ -65,4 +65,13 @@
     <string name="txt_periodo">Periodo</string>
     <string name="btn_guardar">Guardar</string>
     <string name="btn_cancelar">Cancelar</string>
+
+    <!-- Deudas -->
+    <string name="txt_deudas">Deudas</string>
+    <string name="txt_agregar_deuda">Agregar Deuda</string>
+    <string name="txt_tipo_deuda">Tipo de Deuda</string>
+    <string name="et_total_deuda">Total de la Deuda</string>
+    <string name="et_total_pagado">Monto Pagado Inicial (opcional)</string>
+    <string name="txt_pagado">Pagado</string>
+    <string name="txt_restante">Restante</string>
 </resources>

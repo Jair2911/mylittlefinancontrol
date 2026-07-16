@@ -1,72 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/main"
-    android:fitsSystemWindows="true"
+    android:background="?android:attr/colorBackground"
     tools:context=".Fragmentos.FragmentBalance">
 
-    <TextView
-        android:id="@+id/txtbalanceDeuda"
-        android:text="@string/txtbalanceDeuda"
-        android:textStyle="bold"
+    <!-- Tarjeta de Total Deudas -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cv_total_deudas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#15E55555"
+        app:strokeWidth="1dp"
+        app:strokeColor="#30E55555">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TOTAL DEUDAS RESTANTE"
+                android:textSize="12sp"
+                android:letterSpacing="0.1"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_total_deudas_monto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$0.00"
+                android:textSize="32sp"
+                android:textColor="@color/accent_alerta"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Lista de Deudas -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_deudas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/cv_total_deudas"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
+        tools:listitem="@layout/item_deuda" />
+
+    <!-- Botón Agregar Deuda -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_agregar_deuda"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="15dp"
-        android:textColor="@color/btn_primary"
-        android:textSize="20sp"
-        android:padding="10dp"/>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/TILSueldoMensual"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/txtbalanceDeuda"
-        android:padding="10dp">
-
-        <EditText
-            android:id="@+id/etSueldoMensual"
-            android:maxLines="1"
-            android:textSize="20sp"
-            android:hint="@string/etSueldoMensual"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/TILValor"
-        android:layout_below="@+id/TILSueldoMensual"
-        android:padding="10dp">
-
-        <EditText
-            android:id="@+id/etDeudas"
-            android:hint="@string/etDeudas"
-            android:textSize="20sp"
-            android:layout_width="match_parent"
-            android:maxLines="1"
-            android:layout_height="wrap_content"/>
-
-        <ImageView
-            android:id="@+id/iv_guardar_informacion"
-            android:src="@drawable/ic_check"
-            android:layout_alignParentBottom="true"
-            android:layout_gravity="center"
-            android:layout_marginTop="60dp"
-            android:layout_centerInParent="true"
-            android:layout_width="70dp"
-            android:layout_height="70dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_below="@id/iv_guardar_informacion"
-            android:text="@string/txtGuardarBalanceDeuda"/>
-    </com.google.android.material.textfield.TextInputLayout>
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/primary"
+        app:tint="@color/white"
+        android:contentDescription="@string/txt_agregar_deuda" />
 
 </RelativeLayout>

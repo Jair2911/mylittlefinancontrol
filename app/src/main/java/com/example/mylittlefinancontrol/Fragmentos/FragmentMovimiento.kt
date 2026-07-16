@@ -1,68 +1,163 @@
 package com.example.mylittlefinancontrol.Fragmentos
 
+import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.mylittlefinancontrol.AgregarMovimientoActivity
+import com.example.mylittlefinancontrol.Constantes
+import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasAdaptador
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
+import com.example.mylittlefinancontrol.databinding.DialogAgregarMovimientoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentMovimientoBinding
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
+import java.text.NumberFormat
+import java.util.*
 
-/**
- * A simple [Fragment] subclass.
- * Use the [FragmentMovimiento.newInstance] factory method to
- * create an instance of this fragment.
- */
 class FragmentMovimiento : Fragment() {
 
     private lateinit var binding: FragmentMovimientoBinding
-    private lateinit var mContext : Context
-    private lateinit var firebaseAuth : FirebaseAuth
-
-    private lateinit var db : NotasDatabaseHelper
+    private lateinit var mContext: Context
+    private lateinit var firebaseAuth: FirebaseAuth
+    private lateinit var db: NotasDatabaseHelper
     private lateinit var notasAdaptador: NotasAdaptador
 
-    override fun onAttach(context: Context){
-        mContext = context
+    private var mesSeleccionado: Int = 0
+    private var anioSeleccionado: Int = 0
+    private val listaDeudas = mutableListOf<Deuda>()
+    private var deudaSeleccionada: Deuda? = null
+
+    override fun onAttach(context: Context) {
         super.onAttach(context)
+        mContext = context
     }
 
-    @Override
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        binding = FragmentMovimientoBinding.inflate(layoutInflater, container, false);
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        binding = FragmentMovimientoBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        binding.FABAgregarNota.setOnClickListener{
-            Toast.makeText(mContext, "funciona", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(mContext, AgregarMovimientoActivity::class.java))
-        }
-
+        firebaseAuth = FirebaseAuth.getInstance()
         db = NotasDatabaseHelper(mContext)
-        notasAdaptador = NotasAdaptador(db.getAllNotas(), mContext)
-        binding.notasRv.layoutManager = LinearLayoutManager(mContext)
-        binding.notasRv.adapter = notasAdaptador
+
+        setupFiltros()
+        setupRecyclerView()
+        cargarDeudasDesdeFirebase()
+
+        binding.FABAgregarNota.setOnClickListener {
+            mostrarDialogoMovimiento()
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        notasAdaptador.refrescarLista(db.getAllNotas())
+    private fun setupFiltros() {
+        val calendar = Calendar.getInstance()
+        mesSeleccionado = calendar.get(Calendar.MONTH)
+        anioSeleccionado = calendar.get(Calendar.YEAR)
+
+        val meses = arrayOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+        binding.autoMes.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, meses))
+        binding.autoMes.setText(meses[mesSeleccionado], false)
+
+        val anios = Array(5) { (anioSeleccionado - 2 + it).toString() }
+        binding.autoAnio.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, anios))
+        binding.autoAnio.setText(anioSeleccionado.toString(), false)
+
+        binding.autoMes.setOnItemClickListener { _, _, position, _ ->
+            mesSeleccionado = position
+            actualizarListaFiltrada()
+        }
+        binding.autoAnio.setOnItemClickListener { _, _, _, _ ->
+            anioSeleccionado = binding.autoAnio.text.toString().toInt()
+            actualizarListaFiltrada()
+        }
+    }
+
+    private fun setupRecyclerView() {
+        notasAdaptador = NotasAdaptador(mutableListOf(), mContext)
+        binding.notasRv.layoutManager = LinearLayoutManager(mContext)
+        binding.notasRv.adapter = notasAdaptador
+        actualizarListaFiltrada()
+    }
+
+    private fun actualizarListaFiltrada() {
+        val todos = db.getAllNotas()
+        val filtrados = todos.filter { mov ->
+            try {
+                val partes = mov.fecha.split("-") // yyyy-MM-dd
+                val anio = partes[0].toInt()
+                val mes = partes[1].toInt() - 1
+                anio == anioSeleccionado && mes == mesSeleccionado
+            } catch (e: Exception) { false }
+        }
+        notasAdaptador.refrescarLista(filtrados)
+        val total = filtrados.sumOf { it.valor.toDouble() }
+        binding.tvTotalMovMonto.text = NumberFormat.getCurrencyInstance(Locale("es", "CO")).format(total)
+    }
+
+    private fun cargarDeudasDesdeFirebase() {
+        val uid = firebaseAuth.uid ?: return
+        FirebaseDatabase.getInstance().getReference("Deudas").child(uid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    listaDeudas.clear()
+                    for (ds in snapshot.children) {
+                        ds.getValue(Deuda::class.java)?.let { listaDeudas.add(it) }
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    private fun mostrarDialogoMovimiento() {
+        val dialogBinding = DialogAgregarMovimientoBinding.inflate(layoutInflater)
+        val builder = AlertDialog.Builder(mContext).setView(dialogBinding.root)
+        val alertDialog = builder.create()
+
+        val opciones = arrayOf("Gasto", "Ingreso", "Otro")
+        dialogBinding.autoTipoMov.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opciones))
+
+        val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
+        dialogBinding.autoDeudas.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresDeudas))
+
+        dialogBinding.cbEsPagoDeuda.setOnCheckedChangeListener { _, isChecked ->
+            dialogBinding.tilSeleccionDeuda.visibility = if (isChecked) View.VISIBLE else View.GONE
+            dialogBinding.tilTipoReg.visibility = if (isChecked) View.GONE else View.VISIBLE
+        }
+
+        dialogBinding.autoDeudas.setOnItemClickListener { _, _, pos, _ -> deudaSeleccionada = listaDeudas[pos] }
+
+        dialogBinding.btnGuardar.setOnClickListener {
+            val desc = dialogBinding.etDescripcion.text.toString()
+            val valStr = dialogBinding.etValor.text.toString()
+            if (desc.isEmpty() || valStr.isEmpty()) return@setOnClickListener
+
+            val valor = valStr.toInt()
+            val fecha = Constantes.formatoFecha(System.currentTimeMillis())
+
+            if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
+                val nuevoPagado = deudaSeleccionada!!.totalPagado + valor
+                FirebaseDatabase.getInstance().getReference("Deudas").child(firebaseAuth.uid!!)
+                    .child(deudaSeleccionada!!.id).child("totalPagado").setValue(nuevoPagado)
+                db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
+            } else {
+                val tipo = dialogBinding.autoTipoMov.text.toString()
+                db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fecha))
+            }
+            alertDialog.dismiss()
+            actualizarListaFiltrada()
+        }
+        dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
+        alertDialog.show()
     }
 }
