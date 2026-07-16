@@ -7,55 +7,58 @@
     android:padding="16dp"
     tools:context=".Fragmentos.FragmentGastosFijos">
 
-    <TextView
-        android:id="@+id/tv_titulo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/txt_gastos_fijos"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/primary"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"/>
-
-    <LinearLayout
-        android:id="@+id/ll_total"
+    <!-- Tarjeta de Total Acumulado -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cv_total"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/tv_titulo"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/rounded_corners_background"
-        android:padding="16dp">
+        android:layout_marginTop="20dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#1500C292"
+        app:strokeWidth="1dp"
+        app:strokeColor="#3000C292">
 
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/txt_total_gastos_fijos"
-            android:textSize="18sp"
-            android:textColor="@color/white"
-            android:textStyle="bold"/>
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center">
 
-        <TextView
-            android:id="@+id/tv_total_monto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            android:textSize="20sp"
-            android:textColor="@color/primary"
-            android:textStyle="bold"/>
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TOTAL MENSUAL"
+                android:textSize="12sp"
+                android:letterSpacing="0.1"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tv_total_monto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="$0.00"
+                android:textSize="32sp"
+                android:textColor="@color/primary"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Lista de Gastos -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_gastos_fijos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/ll_total"
+        android:layout_below="@id/cv_total"
         android:layout_marginTop="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
         tools:listitem="@layout/item_gasto_fijo"/>
 
+    <!-- Botón Agregar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_agregar"
         android:layout_width="wrap_content"
@@ -66,6 +69,7 @@
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/primary"
         app:tint="@color/white"
+        app:elevation="4dp"
         android:contentDescription="@string/txt_agregar_gasto_fijo" />
 
 </RelativeLayout>

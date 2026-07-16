@@ -32,6 +32,7 @@
                 android:id="@+id/ivActualizar"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_edit"
+                app:tint="@color/secondary"
                 android:layout_marginEnd="40dp"
                 android:layout_width="25dp"
                 android:layout_height="25dp"/>
@@ -41,6 +42,7 @@
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_delete"
                 android:layout_marginEnd="10dp"
+                app:tint="@color/secondary"
                 android:layout_width="25dp"
                 android:layout_height="25dp" />
 
@@ -52,14 +54,16 @@
             android:textStyle="bold"
             android:layout_marginBottom="10dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textColor="@color/primary"/>
 
         <TextView
             android:id="@+id/item_tipo"
             android:text="@string/item_tipo"
             android:textStyle="bold"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:textColor="@color/primary"/>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
