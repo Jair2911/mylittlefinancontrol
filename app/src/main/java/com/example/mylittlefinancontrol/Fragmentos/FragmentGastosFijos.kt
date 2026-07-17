@@ -12,36 +12,32 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Adaptadores.GastosFijosAdapter
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
+import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarGastoFijoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentGastosFijosBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 
 class FragmentGastosFijos : Fragment() {
 
     private lateinit var binding: FragmentGastosFijosBinding
     private lateinit var mContext: Context
-    private lateinit var firebaseAuth: FirebaseAuth
+    private lateinit var db: NotasDatabaseHelper
     private lateinit var adapter: GastosFijosAdapter
-    private val listaGastos = mutableListOf<GastoFijo>()
+    private var listaGastos = mutableListOf<GastoFijo>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         mContext = context
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentGastosFijosBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        firebaseAuth = FirebaseAuth.getInstance()
+        db = NotasDatabaseHelper(mContext)
 
         setupRecyclerView()
         cargarGastosFijos()
@@ -68,12 +64,8 @@ class FragmentGastosFijos : Fragment() {
         val categorias = arrayOf("Vivienda", "Servicios", "Transporte", "Seguros", "Suscripciones", "Personal", "Otro")
         val periodos = arrayOf("Mensual", "Quincenal")
 
-        // CORRECCIÓN: Usar android.R.layout para recursos del sistema
-        val adapterCategorias = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, categorias)
-        dialogBinding.autoCategoria.setAdapter(adapterCategorias)
-
-        val adapterPeriodos = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, periodos)
-        dialogBinding.autoPeriodo.setAdapter(adapterPeriodos)
+        dialogBinding.autoCategoria.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, categorias))
+        dialogBinding.autoPeriodo.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, periodos))
 
         gastoExistente?.let {
             dialogBinding.etConcepto.setText(it.concepto)
@@ -94,59 +86,34 @@ class FragmentGastosFijos : Fragment() {
             val periodo = dialogBinding.autoPeriodo.text.toString()
 
             if (concepto.isNotEmpty() && monto > 0 && diaPago.isNotEmpty()) {
-                val id = gastoExistente?.id ?: FirebaseDatabase.getInstance().getReference("GastosFijos").push().key ?: ""
-                val gasto = GastoFijo(id, concepto, categoria, monto, diaPago, periodo)
-                
-                FirebaseDatabase.getInstance().getReference("GastosFijos")
-                    .child(firebaseAuth.uid!!)
-                    .child(id)
-                    .setValue(gasto)
-                    .addOnSuccessListener {
-                        Toast.makeText(mContext, "Gasto guardado", Toast.LENGTH_SHORT).show()
-                        alertDialog.dismiss()
-                    }
+                if (gastoExistente == null) {
+                    db.insertGastoFijo(GastoFijo("", concepto, categoria, monto, diaPago, periodo))
+                } else {
+                    gastoExistente.concepto = concepto
+                    gastoExistente.monto = monto
+                    gastoExistente.diaPago = diaPago
+                    gastoExistente.categoria = categoria
+                    gastoExistente.periodo = periodo
+                    db.updateGastoFijo(gastoExistente)
+                }
+                cargarGastosFijos()
+                alertDialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Complete todos los campos", Toast.LENGTH_SHORT).show()
             }
         }
-
         dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
     }
 
     private fun cargarGastosFijos() {
-        val uid = firebaseAuth.uid
-        if (uid != null) {
-            val ref = FirebaseDatabase.getInstance().getReference("GastosFijos").child(uid)
-            ref.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    listaGastos.clear()
-                    var total = 0.0
-                    for (ds in snapshot.children) {
-                        val gasto = ds.getValue(GastoFijo::class.java)
-                        if (gasto != null) {
-                            listaGastos.add(gasto)
-                            total += gasto.monto
-                        }
-                    }
-                    adapter.actualizarLista(listaGastos)
-                    binding.tvTotalMonto.text = "$${String.format("%.2f", total)}"
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-        }
+        listaGastos = db.getAllGastosFijos().toMutableList()
+        adapter.actualizarLista(listaGastos)
+        val total = listaGastos.sumOf { it.monto }
+        binding.tvTotalMonto.text = "$${String.format("%.2f", total)}"
     }
 
     private fun eliminarGastoFijo(gasto: GastoFijo) {
-        val uid = firebaseAuth.uid
-        if (uid != null) {
-            FirebaseDatabase.getInstance().getReference("GastosFijos")
-                .child(uid)
-                .child(gasto.id)
-                .removeValue()
-                .addOnSuccessListener {
-                    Toast.makeText(mContext, "Gasto eliminado", Toast.LENGTH_SHORT).show()
-                }
-        }
+        db.deleteGastoFijo(gasto.id)
+        cargarGastosFijos()
     }
 }

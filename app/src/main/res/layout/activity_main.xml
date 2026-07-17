@@ -15,24 +15,25 @@
         android:layout_height="55dp">
 
         <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/ic_home_icon"
-            android:src="@drawable/ic_home_icon"
+            android:id="@+id/btnPerfilToolbar"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:src="@drawable/ic_perfil"
             android:background="@android:color/transparent"
-            android:padding="10dp"
-            android:layout_marginStart="15dp"
+            android:padding="8dp"
+            android:layout_marginStart="10dp"
             android:layout_centerVertical="true"
-            app:tint="@color/btn_primary" />
+            app:tint="@color/primary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:id="@+id/app_name"
-            android:textSize="25sp"
+            android:textSize="20sp"
             android:text="@string/app_name"
-            android:textStyle="bold"/>
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"/>
 
         <ImageButton
             android:id="@+id/ic_sign_out"
@@ -43,12 +44,13 @@
             android:src="@drawable/ic_sign_out"
             android:background="@android:color/transparent"
             android:layout_centerVertical="true"
-            android:contentDescription="Icono de la tarjeta"/>
+            android:contentDescription="Cerrar Sesión"
+            app:tint="@color/primary"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#ccc"
+            android:background="#CCCCCC"
             android:layout_alignParentBottom="true"/>
 
     </RelativeLayout>
@@ -62,19 +64,20 @@
 
     <View
         android:id="@+id/view"
-        android:background="#ccc"
+        android:background="#CCCCCC"
         android:layout_above="@+id/botonNV"
         android:layout_width="match_parent"
         android:layout_height="1dp"/>
-
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/botonNV"
         android:layout_alignParentBottom="true"
-        app:menu="@menu/menu_bottom">
-
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
+        app:menu="@menu/menu_bottom"
+        app:itemIconTint="@color/secondary"
+        app:itemTextColor="@color/secondary"
+        app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
+        app:labelVisibilityMode="labeled"/>
 
 </RelativeLayout>

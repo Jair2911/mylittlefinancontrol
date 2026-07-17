@@ -1,81 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LoginEmailActivity"
+    android:background="?android:attr/colorBackground"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="20dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/txt_login"
-        android:textAllCaps="true"
-        android:textSize="20sp"
-        android:textStyle="bold"/>
+    android:padding="32dp"
+    tools:context=".LoginEmailActivity">
 
     <ImageView
         android:layout_width="100dp"
         android:layout_height="100dp"
+        android:layout_marginBottom="24dp"
         android:src="@drawable/ic_perfil"
-        android:layout_margin="20dp"/>
+        app:tint="@color/primary" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:text="@string/txt_login"
+        android:textAllCaps="true"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="@string/et_email">
 
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_email"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/et_email"
-            android:id="@+id/et_email"
-            android:inputType="textEmailAddress"/>
-
+            android:inputType="textEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
         app:passwordToggleEnabled="true">
 
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/et_password"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:hint="@string/et_password" />
-
+            android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:layout_width="250dp"
         android:id="@+id/btn_ingresar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="@string/btn_ingresar"
         android:textAllCaps="true"
-        android:layout_marginTop="20dp"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_ingresar"/>
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="12dp" />
 
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/txt_no_tiene_cuenta"
-        android:textSize="15sp"
-        android:layout_marginTop="20dp"
-        android:id="@+id/txt_no_tiene_cuenta"/>
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/tv_registrarme"
-        android:textSize="15sp"
-        android:layout_marginTop="8dp"
-        android:textStyle="bold"
-        android:textAllCaps="true"
-        android:id="@+id/tv_registrarme"/>
+        <TextView
+            android:id="@+id/txt_no_tiene_cuenta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/txt_no_tiene_cuenta"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tv_registrarme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/tv_registrarme"
+            android:textAllCaps="true"
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
 </androidx.appcompat.widget.LinearLayoutCompat>

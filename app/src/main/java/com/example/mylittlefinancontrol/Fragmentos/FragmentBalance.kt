@@ -12,11 +12,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Adaptadores.DeudasAdapter
 import com.example.mylittlefinancontrol.Modelos.Deuda
+import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarDeudaBinding
 import com.example.mylittlefinancontrol.databinding.FragmentBalanceBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 import java.text.NumberFormat
 import java.util.*
 
@@ -26,25 +25,23 @@ class FragmentBalance : Fragment() {
     private val binding get() = _binding!!
     
     private lateinit var mContext: Context
-    private lateinit var firebaseAuth: FirebaseAuth
+    private lateinit var db: NotasDatabaseHelper
     private lateinit var adapter: DeudasAdapter
-    private val listaDeudas = mutableListOf<Deuda>()
+    private var listaDeudas = mutableListOf<Deuda>()
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         mContext = context
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentBalanceBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        firebaseAuth = FirebaseAuth.getInstance()
+        db = NotasDatabaseHelper(mContext)
 
         setupRecyclerView()
         cargarDeudas()
@@ -69,8 +66,7 @@ class FragmentBalance : Fragment() {
         builder.setView(dialogBinding.root)
 
         val tipos = arrayOf("Tarjeta de crédito", "Préstamo", "Otro")
-        val adapterTipos = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, tipos)
-        dialogBinding.autoTipoDeuda.setAdapter(adapterTipos)
+        dialogBinding.autoTipoDeuda.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, tipos))
 
         deudaExistente?.let {
             dialogBinding.tvTituloDialogo.text = "Editar Deuda"
@@ -92,62 +88,41 @@ class FragmentBalance : Fragment() {
             val pagado = dialogBinding.etTotalPagado.text.toString().toDoubleOrNull() ?: 0.0
 
             if (tipo.isNotEmpty() && concepto.isNotEmpty() && total > 0) {
-                val id = deudaExistente?.id ?: FirebaseDatabase.getInstance().getReference("Deudas").push().key ?: ""
-                val deuda = Deuda(id, tipo, concepto, descripcion, total, pagado)
-
-                FirebaseDatabase.getInstance().getReference("Deudas")
-                    .child(firebaseAuth.uid!!)
-                    .child(id)
-                    .setValue(deuda)
-                    .addOnSuccessListener {
-                        Toast.makeText(mContext, "Deuda guardada", Toast.LENGTH_SHORT).show()
-                        alertDialog.dismiss()
-                    }
+                if (deudaExistente == null) {
+                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, total, pagado))
+                } else {
+                    deudaExistente.tipo = tipo
+                    deudaExistente.concepto = concepto
+                    deudaExistente.descripcion = descripcion
+                    deudaExistente.totalDeuda = total
+                    deudaExistente.totalPagado = pagado
+                    db.updateDeuda(deudaExistente)
+                }
+                cargarDeudas()
+                alertDialog.dismiss()
             } else {
-                Toast.makeText(mContext, "Por favor complete los campos obligatorios", Toast.LENGTH_SHORT).show()
+                Toast.makeText(mContext, "Complete los campos obligatorios", Toast.LENGTH_SHORT).show()
             }
         }
-
         dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
     }
 
     private fun cargarDeudas() {
-        val uid = firebaseAuth.uid ?: return
-        val ref = FirebaseDatabase.getInstance().getReference("Deudas").child(uid)
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                listaDeudas.clear()
-                var totalRestante = 0.0
-                for (ds in snapshot.children) {
-                    val deuda = ds.getValue(Deuda::class.java)
-                    if (deuda != null) {
-                        listaDeudas.add(deuda)
-                        totalRestante += (deuda.totalDeuda - deuda.totalPagado)
-                    }
-                }
-                adapter.actualizarLista(listaDeudas)
-                
-                val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-                binding.tvTotalDeudasMonto.text = format.format(totalRestante)
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        listaDeudas = db.getAllDeudas().toMutableList()
+        adapter.actualizarLista(listaDeudas)
+        
+        val totalRestante = listaDeudas.sumOf { it.totalDeuda - it.totalPagado }
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        binding.tvTotalDeudasMonto.text = format.format(totalRestante)
     }
 
     private fun eliminarDeuda(deuda: Deuda) {
-        val uid = firebaseAuth.uid ?: return
         AlertDialog.Builder(mContext)
             .setTitle("Eliminar Deuda")
-            .setMessage("¿Estás seguro de eliminar esta deuda?")
+            .setMessage("¿Estás seguro?")
             .setPositiveButton("Eliminar") { _, _ ->
-                FirebaseDatabase.getInstance().getReference("Deudas")
-                    .child(uid)
-                    .child(deuda.id)
-                    .removeValue()
-                    .addOnSuccessListener {
-                        Toast.makeText(mContext, "Deuda eliminada", Toast.LENGTH_SHORT).show()
-                    }
+                db.deleteDeuda(deuda.id)
+                cargarDeudas()
             }
             .setNegativeButton("Cancelar", null)
             .show()

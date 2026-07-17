@@ -2,12 +2,13 @@ package com.example.mylittlefinancontrol
 
 import android.app.Activity
 import android.app.ProgressDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.mylittlefinancontrol.databinding.ActivityOpcionesLoginBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -24,6 +25,9 @@ class OpcionesLoginActivity : AppCompatActivity() {
     private lateinit var mGoogleSignInClient: GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Aplicar tema antes de inflar la vista
+        aplicarTemaGuardado()
+        
         super.onCreate(savedInstanceState)
         binding = ActivityOpcionesLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -51,27 +55,31 @@ class OpcionesLoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun aplicarTemaGuardado() {
+        val sp = getSharedPreferences("TemaPrefs", Context.MODE_PRIVATE)
+        val esOscuro = sp.getBoolean("EsTemaOscuro", false)
+        if (esOscuro) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+    }
+
     private val googleSignInARL = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { resultado ->
         val data = resultado.data
         val task = GoogleSignIn.getSignedInAccountFromIntent(data)
         try {
-            // Intentamos obtener el resultado incluso si el resultCode no es OK
-            // Esto nos permitirá capturar el ApiException con el código de error real
             val cuenta = task.getResult(ApiException::class.java)
             autenticaCuentaGoogle(cuenta.idToken)
         } catch (e: ApiException) {
-            // Si te sale Error 10, es 100% seguro que el SHA-1 no coincide en Firebase
-            val errorMsg = when (e.statusCode) {
-                10 -> "Error 10 (DEVELOPER_ERROR): El SHA-1 no coincide o no está registrado en Firebase."
-                7 -> "Error 7: Sin conexión a internet."
-                12500 -> "Error 12500: Error de configuración en Firebase/Google Services."
-                12501 -> "Error 12501: Inicio de sesión cancelado por el usuario."
-                else -> "Error técnico Google: ${e.statusCode} - ${e.message}"
+            val mensaje = when (e.statusCode) {
+                10 -> "Error 10: Revisa el SHA-1 en Firebase."
+                12500 -> "Error 12500: Fallo de configuración."
+                else -> "Error Google: ${e.statusCode}"
             }
-            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
-            Log.e("GOOGLE_AUTH", "Status Code: ${e.statusCode}")
+            Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Fallo: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -93,7 +101,7 @@ class OpcionesLoginActivity : AppCompatActivity() {
         val credencial = GoogleAuthProvider.getCredential(idToken, null)
         firebaseAuth.signInWithCredential(credencial)
             .addOnSuccessListener { authResultado ->
-                if (authResultado.additionalUserInfo?.isNewUser == true) {
+                if (authResultado.additionalUserInfo!!.isNewUser) {
                     actualizarInfoUsuarios()
                 } else {
                     startActivity(Intent(this, MainActivity::class.java))
@@ -101,7 +109,7 @@ class OpcionesLoginActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error Firebase: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "fallo ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -110,8 +118,8 @@ class OpcionesLoginActivity : AppCompatActivity() {
         progressDialog.show()
 
         val uidu = firebaseAuth.uid
-        val nombresU = firebaseAuth.currentUser?.displayName
-        val emailsU = firebaseAuth.currentUser?.email
+        val nombresU = firebaseAuth.currentUser!!.displayName
+        val emailsU = firebaseAuth.currentUser!!.email
         val tiempoR = Constantes.obtenerTiempoD()
 
         val datos_usuario = HashMap<String, Any>()
@@ -133,7 +141,7 @@ class OpcionesLoginActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 progressDialog.dismiss()
-                Toast.makeText(this, "Error DB: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "error al crear cuenta ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 }

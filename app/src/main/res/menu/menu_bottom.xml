@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/item_perfil"
-        android:title="@string/item_perfil"
-        android:icon="@drawable/ic_perfil"/>
+        android:id="@+id/item_inicio"
+        android:title="Inicio"
+        android:icon="@drawable/ic_home_icon"/>
     <item
         android:id="@+id/item_movimientos"
-        android:title="@string/item_movimientos"
+        android:title="Movimientos"
         android:icon="@drawable/ic_movimientos"/>
     <item
         android:id="@+id/item_gastos_fijos"
-        android:title="@string/item_gastos_fijos"
+        android:title="Gastos Fijos"
         android:icon="@drawable/ic_gastos_fijos"/>
     <item
         android:id="@+id/item_balance"
-        android:title="@string/item_balance"
-        android:icon="@drawable/ic_balance"/>
+        android:title="Deudas"
+        android:icon="@drawable/ic_deuda"/>
 </menu>

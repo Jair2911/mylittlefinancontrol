@@ -10,7 +10,7 @@ import com.example.mylittlefinancontrol.databinding.ActivityRegistroEmailBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
-class RegistroEmailActivity: AppCompatActivity() {
+class RegistroEmailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRegistroEmailBinding
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var progressDialog: ProgressDialog
@@ -26,10 +26,9 @@ class RegistroEmailActivity: AppCompatActivity() {
         progressDialog.setTitle("Espere por favor")
         progressDialog.setCanceledOnTouchOutside(false)
 
-        binding.btnRegistrar.setOnClickListener{
+        binding.btnRegistrar.setOnClickListener {
             validarInformacion()
         }
-
     }
 
     private var nombre = ""
@@ -37,87 +36,74 @@ class RegistroEmailActivity: AppCompatActivity() {
     private var password = ""
     private var r_password = ""
 
-    private fun validarInformacion(){
+    private fun validarInformacion() {
         nombre = binding.etNombres.text.toString().trim()
         email = binding.etEmail.text.toString().trim()
         password = binding.etPassword.text.toString().trim()
-        r_password  = binding.etRPassword.text.toString().trim()
+        r_password = binding.etRPassword.text.toString().trim()
 
-        if (nombre.isEmpty()){
-            binding.etNombres.error = "Este campo es obligatorio"
+        if (nombre.isEmpty()) {
+            binding.etNombres.error = "Campo obligatorio"
             binding.etNombres.requestFocus()
-        }
-        else if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
-            binding.etEmail.error = "correo invalido"
+        } else if (email.isEmpty()) {
+            binding.etEmail.error = "Campo obligatorio"
             binding.etEmail.requestFocus()
-        }
-        else if (email.isEmpty()){
-            binding.etEmail.error = "Este campo es obligatorio"
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            binding.etEmail.error = "Email inválido"
             binding.etEmail.requestFocus()
-        }
-        else if (password.isEmpty()){
-            binding.etPassword.error = "Este campo es obligatorio"
+        } else if (password.isEmpty()) {
+            binding.etPassword.error = "Campo obligatorio"
             binding.etPassword.requestFocus()
-        }
-        else if (r_password.isEmpty()){
-            binding.etRPassword.error = "Este campo es obligatorio"
+        } else if (password.length < 6) {
+            binding.etPassword.error = "Mínimo 6 caracteres"
+            binding.etPassword.requestFocus()
+        } else if (r_password != password) {
+            binding.etRPassword.error = "Las contraseñas no coinciden"
             binding.etRPassword.requestFocus()
-        }
-        else if (password != r_password){
-            binding.etRPassword.error = "No coinciden las contraseñas"
-            binding.etRPassword.requestFocus()
-        }else{
+        } else {
             registrarUsuario()
         }
     }
 
-    private fun registrarUsuario(){
-        progressDialog.setMessage("Creando cuenta de usuario")
+    private fun registrarUsuario() {
+        progressDialog.setMessage("Creando cuenta...")
         progressDialog.show()
 
         firebaseAuth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener {
                 actualizarInformacion()
             }
-            .addOnFailureListener{ e ->
+            .addOnFailureListener { e ->
                 progressDialog.dismiss()
-                Toast.makeText(this, "error al crear usuairo ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
-    private fun actualizarInformacion(){
-        progressDialog.setMessage("guardando informacion")
-        progressDialog.show()
-
-        val uidu = firebaseAuth.uid
-        val nombresU = nombre
-        val emailsU = firebaseAuth.currentUser!!.email
-
+    private fun actualizarInformacion() {
+        progressDialog.setMessage("Guardando información...")
+        val uid = firebaseAuth.uid
         val tiempoR = Constantes.obtenerTiempoD()
 
-        val datos_usuario = HashMap<String, Any>()
-
-        datos_usuario["uid"] =  "$uidu"
-        datos_usuario["nombres"] =  "$nombresU"
-        datos_usuario["email"] =  "$emailsU"
-        datos_usuario["tiempoR"] =  "$tiempoR"
-        datos_usuario["proveedor"] =  "Email"
-        datos_usuario["estado"] =  "Online"
-        datos_usuario["image"] =  ""
+        val datosUsuario = HashMap<String, Any>()
+        datosUsuario["uid"] = "$uid"
+        datosUsuario["nombres"] = nombre
+        datosUsuario["email"] = email
+        datosUsuario["tiempoR"] = "$tiempoR"
+        datosUsuario["proveedor"] = "Email"
+        datosUsuario["estado"] = "Online"
+        datosUsuario["image"] = ""
 
         val reference = FirebaseDatabase.getInstance().getReference("usuarios")
-        reference.child(uidu!!)
-            .setValue(datos_usuario)
+        reference.child(uid!!)
+            .setValue(datosUsuario)
             .addOnSuccessListener {
                 progressDialog.dismiss()
                 startActivity(Intent(applicationContext, MainActivity::class.java))
                 finishAffinity()
             }
-            .addOnFailureListener{ e ->
+            .addOnFailureListener { e ->
                 progressDialog.dismiss()
-                Toast.makeText(this, "error al crear cuenta ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(this, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 }

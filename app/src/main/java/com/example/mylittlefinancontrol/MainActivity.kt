@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.fragment.app.Fragment
 import com.example.mylittlefinancontrol.Fragmentos.FragmentBalance
 import com.example.mylittlefinancontrol.Fragmentos.FragmentGastosFijos
 import com.example.mylittlefinancontrol.Fragmentos.FragmentInicio
@@ -30,38 +31,40 @@ class MainActivity : AppCompatActivity() {
             irOpcionesLogin()
         }
 
-        verFragmentoInicio()
+        // Carga inicial: Home (sin disparar el listener del menú aún)
+        reemplazarFragmento(FragmentInicio(), "Inicio")
 
-        binding.icHomeIcon.setOnClickListener {
-            verFragmentoInicio()
+        // Botón del Toolbar (izquierda) para el Perfil
+        // CORRECCIÓN: Se cambió icPerfilToolbar por btnPerfilToolbar (ID real en activity_main.xml)
+        binding.btnPerfilToolbar.setOnClickListener {
+            verFragmentoPerfil()
         }
 
         binding.icSignOut.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
+            firebaseAuth.signOut()
+            irOpcionesLogin()
         }
 
-        binding.botonNV.setOnItemSelectedListener{item->
-            when(item.itemId){
-                R.id.item_perfil -> {
-                    verFragmentoPerfil()
-                    true
-                }
-                R.id.item_balance -> {
-                    verFragmentoBalance()
+        // Único punto de control para la navegación del menú inferior
+        binding.botonNV.setOnItemSelectedListener { item ->
+            when(item.itemId) {
+                R.id.item_inicio -> {
+                    reemplazarFragmento(FragmentInicio(), "Inicio")
                     true
                 }
                 R.id.item_movimientos -> {
-                    verFragmentoMovimientos()
+                    reemplazarFragmento(FragmentMovimiento(), "Movimientos")
                     true
                 }
                 R.id.item_gastos_fijos -> {
-                    verFragmentoGastosFijos()
+                    reemplazarFragmento(FragmentGastosFijos(), "Gastos Fijos")
                     true
                 }
-                else->{
-                    verFragmentoInicio()
+                R.id.item_balance -> {
+                    reemplazarFragmento(FragmentBalance(), "Deudas")
                     true
                 }
+                else -> false
             }
         }
     }
@@ -81,43 +84,35 @@ class MainActivity : AppCompatActivity() {
         finishAffinity()
     }
 
-    private fun verFragmentoPerfil(){
-        binding.appName.text = "Perfil"
-        val fragment = FragmentPerfil()
+    // Función interna privada para realizar la transacción de fragmentos
+    private fun reemplazarFragmento(fragment: Fragment, titulo: String) {
+        binding.appName.text = titulo
         supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment, "Fragmento Perfil")
-            .commit()
-    }
-    
-    private fun verFragmentoMovimientos(){
-        binding.appName.text = "Movimientos"
-        val fragment = FragmentMovimiento()
-        supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment, "Fragmento Movimiento")
+            .replace(binding.fragmentoFL.id, fragment)
             .commit()
     }
 
-    private fun verFragmentoGastosFijos(){
-        binding.appName.text = "Gastos Fijos"
-        val fragment = FragmentGastosFijos()
-        supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment, "Fragmento Gastos Fijos")
-            .commit()
+    // Funciones públicas para interactividad desde el Dashboard (FragmentInicio)
+    // Estas funciones mueven el menú, lo que dispara el listener y cambia la pantalla sin bucles.
+    fun verFragmentoPerfil() {
+        // Como Perfil no está en el menú inferior, lo cargamos directamente y limpiamos la selección
+        binding.botonNV.selectedItemId = -1 
+        reemplazarFragmento(FragmentPerfil(), "Perfil")
     }
     
-    private fun verFragmentoBalance(){
-        binding.appName.text = "Balance"
-        val fragment = FragmentBalance()
-        supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment, "Fragmento Balance")
-            .commit()
+    fun verFragmentoMovimientos() {
+        binding.botonNV.selectedItemId = R.id.item_movimientos
     }
 
-    private fun verFragmentoInicio(){
-        binding.appName.text = "My Little FinanControl"
-        val fragment = FragmentInicio()
-        supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment, "Fragmento Inicio")
-            .commit()
+    fun verFragmentoGastosFijos() {
+        binding.botonNV.selectedItemId = R.id.item_gastos_fijos
+    }
+    
+    fun verFragmentoDeudas() {
+        binding.botonNV.selectedItemId = R.id.item_balance
+    }
+
+    fun verFragmentoInicio() {
+        binding.botonNV.selectedItemId = R.id.item_inicio
     }
 }
