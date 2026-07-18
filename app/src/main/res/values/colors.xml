@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Paleta Menta & Carbón -->
-    <color name="primary">#00C292</color>
-    <color name="secondary">#3A4750</color>
-    <color name="background_light">#FAFAFA</color>
-    <color name="background_dark">#1A1E21</color>
+    <color name="primary">#008000</color>
+    <color name="secondary">#33FF00</color>
+    <color name="background_light">#CCFFCC</color>
+    <color name="background_dark">#003300</color>
     <color name="accent_alerta">#E55555</color>
 
     <!-- Colores base -->
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="black">#003300</color>
+    <color name="white">#CCFFCC</color>
     
     <!-- Mapeo para componentes -->
     <color name="btn_primary">#00C292</color>

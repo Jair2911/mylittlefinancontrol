@@ -7,12 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.mylittlefinancontrol.MainActivity
-import com.example.mylittlefinancontrol.Modelos.Deuda
-import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.databinding.FragmentInicioBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 import java.text.NumberFormat
 import java.util.*
 
@@ -20,7 +16,6 @@ class FragmentInicio : Fragment() {
     private lateinit var binding: FragmentInicioBinding
     private lateinit var mContext: Context
     private lateinit var db: NotasDatabaseHelper
-    private lateinit var firebaseAuth: FirebaseAuth
 
     private var totalGastosFijos = 0.0
     private var totalDeudasRestante = 0.0
@@ -39,46 +34,22 @@ class FragmentInicio : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        firebaseAuth = FirebaseAuth.getInstance()
         db = NotasDatabaseHelper(mContext)
 
-        cargarDatosFinancieros()
+        cargarDatosLocales()
         setupClickListeners()
     }
 
-    private fun cargarDatosFinancieros() {
-        val uid = firebaseAuth.uid ?: return
-        val database = FirebaseDatabase.getInstance()
+    private fun cargarDatosLocales() {
+        // 1. Obtener Gastos Fijos localmente
+        val listaGF = db.getAllGastosFijos()
+        totalGastosFijos = listaGF.sumOf { it.monto }
 
-        // 1. Consultar Gastos Fijos desde Firebase
-        database.getReference("GastosFijos").child(uid)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    totalGastosFijos = 0.0
-                    for (ds in snapshot.children) {
-                        val gf = ds.getValue(GastoFijo::class.java)
-                        if (gf != null) totalGastosFijos += gf.monto
-                    }
-                    actualizarInterfaz()
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        // 2. Obtener Deudas localmente
+        val listaD = db.getAllDeudas()
+        totalDeudasRestante = listaD.sumOf { it.totalDeuda - it.totalPagado }
 
-        // 2. Consultar Deudas desde Firebase
-        database.getReference("Deudas").child(uid)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    totalDeudasRestante = 0.0
-                    for (ds in snapshot.children) {
-                        val d = ds.getValue(Deuda::class.java)
-                        if (d != null) totalDeudasRestante += (d.totalDeuda - d.totalPagado)
-                    }
-                    actualizarInterfaz()
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        // 3. Movimientos locales (SQLite)
+        // 3. Calcular Movimientos del Mes (SQLite)
         calcularMovimientosDelMes()
     }
 
@@ -121,6 +92,9 @@ class FragmentInicio : Fragment() {
             val ultimo = todosLosMovimientos[0]
             binding.tvUltimoRegDesc.text = "${ultimo.descripcion} - $${ultimo.valor}"
             binding.tvUltimoRegFecha.text = ultimo.fecha
+        } else {
+            binding.tvUltimoRegDesc.text = "Sin registros"
+            binding.tvUltimoRegFecha.text = "-"
         }
         actualizarInterfaz()
     }
@@ -135,6 +109,7 @@ class FragmentInicio : Fragment() {
         binding.tvTotalGastosFijos.text = format.format(totalGastosFijos)
         binding.tvTotalDeudas.text = format.format(totalDeudasRestante)
 
+        // Balance = Ingresos - (Gastos Variables + Gastos Fijos)
         val balance = ingresosMes - (gastosMes + totalGastosFijos)
         binding.tvBalanceGeneral.text = format.format(balance)
         

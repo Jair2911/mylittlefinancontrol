@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Little FinanControl</string>
+    <string name="app_name">DabaFinn</string>
     <string name="btn_sign_up">Iniciar sesion</string>
     <string name="btn_sign_in">Iniciar con google</string>
     <string name="title_activity_login">LoginActivity</string>

@@ -1,148 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".Fragmentos.FragmentPerfil">
+    android:layout_height="match_parent">
 
-    <RelativeLayout
-        android:id="@+id/rel_end"
+    <ImageView
+        android:id="@+id/imagenFondo"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:src="@drawable/background_1_ligth"
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="40dp"
-        android:paddingBottom="20dp">
+        android:layout_height="match_parent"
+        android:src="@drawable/background_1_ligth"
+        tools:context=".Fragmentos.FragmentPerfil">
 
-        <!-- Nombres -->
-        <TextView
-            android:id="@+id/txt_nombre"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:id="@+id/rel_end"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:text="@string/txt_nombre"
-            android:textColor="@color/secondary"
-            android:textStyle="bold" />
+            android:paddingTop="40dp"
+            android:paddingBottom="20dp">
 
-        <TextView
-            android:id="@+id/tv_nombres"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
-            android:text="@string/tv_nombres" />
+            <!-- Nombres -->
+            <TextView
+                android:id="@+id/txt_nombre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:text="@string/txt_nombre"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
 
-        <!-- email -->
-        <TextView
-            android:id="@+id/txt_email"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_nombres"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/txt_email"
-            android:textColor="@color/secondary"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_nombres"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="20dp"
+                android:text="@string/tv_nombres" />
 
-        <TextView
-            android:id="@+id/tv_email"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_nombres"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/tv_email" />
+            <!-- email -->
+            <TextView
+                android:id="@+id/txt_email"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_nombres"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/txt_email"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
 
-        <!-- proveedor -->
-        <TextView
-            android:id="@+id/txt_proveedor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_email"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/txt_proveedor"
-            android:textColor="@color/secondary"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_email"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_nombres"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/tv_email" />
 
-        <TextView
-            android:id="@+id/tv_proveedor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_email"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/tv_proveedor" />
+            <!-- proveedor -->
+            <TextView
+                android:id="@+id/txt_proveedor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_email"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/txt_proveedor"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
 
-        <!-- miembro desde -->
-        <TextView
-            android:id="@+id/txt_mienbro_Desde"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/txt_proveedor"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/txt_mienbro_Desde"
-            android:textColor="@color/secondary"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_proveedor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_email"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/tv_proveedor" />
 
-        <TextView
-            android:id="@+id/tv_mienbro_Desde"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_proveedor"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/tv_mienbro_Desde" />
+            <!-- miembro desde -->
+            <TextView
+                android:id="@+id/txt_mienbro_Desde"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/txt_proveedor"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/txt_mienbro_Desde"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
 
-        <!-- Tema Oscuro Switch -->
-        <TextView
-            android:id="@+id/txt_tema_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_mienbro_Desde"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="20dp"
-            android:text="@string/txt_tema_oscuro"
-            android:textColor="@color/secondary"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_mienbro_Desde"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_proveedor"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/tv_mienbro_Desde" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/sw_tema"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_mienbro_Desde"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="10dp" />
+            <!-- Tema Oscuro Switch -->
+            <TextView
+                android:id="@+id/txt_tema_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_mienbro_Desde"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/txt_tema_oscuro"
+                android:textColor="@color/secondary"
+                android:textStyle="bold" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnActualizar"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/sw_tema"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="40dp"
-            android:text="@string/btnActualizar"
-            android:textAllCaps="true"
-            android:textSize="14sp"
-            app:backgroundTint="@color/primary"
-            app:cornerRadius="8dp" />
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/sw_tema"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tv_mienbro_Desde"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="10dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_logout"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/btnActualizar"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="10dp"
-            android:text="@string/btn_logout"
-            android:textAllCaps="true"
-            android:textSize="14sp"
-            app:backgroundTint="@color/secondary"
-            app:cornerRadius="8dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnActualizar"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/sw_tema"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="40dp"
+                android:text="@string/btnActualizar"
+                android:textAllCaps="true"
+                android:textSize="14sp"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="8dp" />
 
-    </RelativeLayout>
-</ScrollView>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_logout"
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/btnActualizar"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="10dp"
+                android:text="@string/btn_logout"
+                android:textAllCaps="true"
+                android:textSize="14sp"
+                app:backgroundTint="@color/secondary"
+                app:cornerRadius="8dp" />
+
+        </RelativeLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>
