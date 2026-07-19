@@ -1,104 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat
+<!-- 1. CAMBIO CLAVE: Usamos un RelativeLayout como contenedor raíz para apilar capas -->
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:fitsSystemWindows="true"
     tools:context=".EditarInformacion">
 
-    <RelativeLayout
+    <!-- 2. CAPA DEL FONDO: Imagen independiente que escala sin deformarse (centerCrop) -->
+    <ImageView
+        android:id="@+id/imagenFondo"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:id="@+id/toolbarRL">
+        android:layout_height="match_parent"
+        android:src="@drawable/background_1_ligth"
+        android:scaleType="centerCrop" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/ibRegregar"
-            android:src="@drawable/ic_back"
-            android:background="@android:color/transparent"
-            android:padding="10dp"
-            android:layout_centerVertical="true"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="@string/txt_titulo_update"
-            android:id="@+id/txt_titulo_update"
-            android:textStyle="bold"
-            android:textSize="20sp"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#cccccc"
-            android:layout_alignParentBottom="true"/>
-    </RelativeLayout>
-
-    <ScrollView
+    <!-- 3. CAPA DEL CONTENIDO: Tu LinearLayout original intacto, pero con fondo TRANSPARENTE -->
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/main"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="20dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@android:color/transparent">
 
+        <!-- Barra superior (Toolbar) -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="55dp"
+            android:id="@+id/toolbarRL">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/ibRegregar"
+                android:src="@drawable/ic_back"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
+                android:layout_centerVertical="true"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/txt_titulo_update"
+                android:id="@+id/txt_titulo_update"
+                android:textStyle="bold"
+                android:textSize="20sp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#cccccc"
+                android:layout_alignParentBottom="true"/>
+        </RelativeLayout>
+
+        <!-- Zona de Scroll y Formulario -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp">
 
             <RelativeLayout
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:id="@+id/perfilRL"
-                android:layout_centerHorizontal="true">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-                <de.hdodenhof.circleimageview.CircleImageView
+                <RelativeLayout
                     android:layout_width="120dp"
                     android:layout_height="120dp"
-                    android:id="@+id/ivPerfil"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_perfil"/>
+                    android:id="@+id/perfilRL"
+                    android:layout_centerHorizontal="true">
 
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:src="@drawable/ic_editar"
-                    android:layout_alignParentEnd="true"
-                    android:id="@+id/ivEditarImg"/>
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:id="@+id/ivPerfil"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_perfil"/>
 
-            </RelativeLayout>
+                    <ImageView
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:src="@drawable/ic_editar"
+                        android:layout_alignParentEnd="true"
+                        android:id="@+id/ivEditarImg"/>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/tilNombres"
-                android:layout_below="@id/perfilRL"
-                app:boxCornerRadiusTopStart="8dp"
-                app:boxCornerRadiusBottomEnd="8dp">
+                </RelativeLayout>
 
-                <EditText
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPersonName|textCapWords"
-                    android:id="@+id/et_nombres"
-                    android:hint="@string/et_nombres"/>
+                    android:id="@+id/tilNombres"
+                    android:layout_below="@id/perfilRL"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp">
 
-            </com.google.android.material.textfield.TextInputLayout>
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName|textCapWords"
+                        android:id="@+id/et_nombres"
+                        android:hint="@string/et_nombres"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/tilNombres"
-                android:layout_marginTop="80dp"
-                android:layout_alignParentBottom="true"
-                android:id="@+id/btnActualizar"
-                android:textAllCaps="true"
-                android:text="@string/btnActualizar"/>
+                </com.google.android.material.textfield.TextInputLayout>
 
-        </RelativeLayout>
-    </ScrollView>
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tilNombres"
+                    android:layout_marginTop="80dp"
+                    android:layout_alignParentBottom="true"
+                    android:id="@+id/btnActualizar"
+                    android:textAllCaps="true"
+                    android:textColor="@color/white_ligth"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="10dp"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/primary"
+                    android:text="@string/btnActualizar"/>
 
-</androidx.appcompat.widget.LinearLayoutCompat>
+            </RelativeLayout>
+        </ScrollView>
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</RelativeLayout>

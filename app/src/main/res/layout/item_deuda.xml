@@ -6,9 +6,10 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="?attr/colorSurfaceVariant"
-    app:strokeWidth="0dp">
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/primary_glass"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/primary">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -43,7 +44,7 @@
                     android:textAllCaps="true"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textColor="@color/black" />
 
                 <TextView
                     android:id="@+id/tv_tipo"
@@ -51,7 +52,7 @@
                     android:layout_height="wrap_content"
                     android:text="Tarjeta de Crédito"
                     android:textSize="13sp"
-                    android:textColor="@color/secondary" />
+                    android:textColor="@color/primary" />
             </LinearLayout>
 
             <TextView
@@ -72,7 +73,7 @@
             android:layout_marginTop="8dp"
             android:text="Descripción de la deuda..."
             android:textSize="14sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textColor="@color/black"
             android:maxLines="2"
             android:ellipsize="end" />
 
@@ -119,16 +120,13 @@
                 android:id="@+id/iv_editar"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:padding="4dp"
                 android:src="@drawable/ic_edit"
-                app:tint="@color/secondary"
-                android:layout_marginEnd="12dp" />
+                app:tint="@color/primary" />
 
             <ImageView
                 android:id="@+id/iv_eliminar"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:padding="4dp"
                 android:src="@drawable/ic_delete"
                 app:tint="@color/accent_alerta" />
         </LinearLayout>

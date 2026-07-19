@@ -35,7 +35,7 @@ class ActualizarMovimientoActivity : AppCompatActivity() {
 
         binding.ivActualizarMovimiento.setOnClickListener{
             val descripcion = binding.etDescripcion.text.toString();
-            val valor = binding.etValor.text.toString();
+            val valor = "Valor $ " + binding.etValor.text.toString();
             val tipo_reg = binding.etTipoReg.text.toString();
             val fecha = Constantes.formatoFecha(Constantes.obtenerTiempoD());
 

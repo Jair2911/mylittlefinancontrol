@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Constantes
@@ -15,11 +14,8 @@ import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasAdaptador
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
-import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarMovimientoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentMovimientoBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 import java.text.NumberFormat
 import java.util.*
 
@@ -27,7 +23,6 @@ class FragmentMovimiento : Fragment() {
 
     private lateinit var binding: FragmentMovimientoBinding
     private lateinit var mContext: Context
-    private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: NotasDatabaseHelper
     private lateinit var notasAdaptador: NotasAdaptador
 
@@ -48,12 +43,11 @@ class FragmentMovimiento : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        firebaseAuth = FirebaseAuth.getInstance()
         db = NotasDatabaseHelper(mContext)
 
         setupFiltros()
         setupRecyclerView()
-        cargarDeudasDesdeFirebase()
+        cargarDeudasLocales()
 
         binding.FABAgregarNota.setOnClickListener {
             mostrarDialogoMovimiento()
@@ -105,24 +99,17 @@ class FragmentMovimiento : Fragment() {
         binding.tvTotalMovMonto.text = NumberFormat.getCurrencyInstance(Locale("es", "CO")).format(total)
     }
 
-    private fun cargarDeudasDesdeFirebase() {
-        val uid = firebaseAuth.uid ?: return
-        FirebaseDatabase.getInstance().getReference("Deudas").child(uid)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    listaDeudas.clear()
-                    for (ds in snapshot.children) {
-                        ds.getValue(Deuda::class.java)?.let { listaDeudas.add(it) }
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
+    private fun cargarDeudasLocales() {
+        listaDeudas.clear()
+        listaDeudas.addAll(db.getAllDeudas())
     }
 
     private fun mostrarDialogoMovimiento() {
         val dialogBinding = DialogAgregarMovimientoBinding.inflate(layoutInflater)
         val builder = AlertDialog.Builder(mContext).setView(dialogBinding.root)
         val alertDialog = builder.create()
+
+        cargarDeudasLocales() // Asegurar datos actualizados localmente
 
         val opciones = arrayOf("Gasto", "Ingreso", "Otro")
         dialogBinding.autoTipoMov.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opciones))
@@ -135,7 +122,9 @@ class FragmentMovimiento : Fragment() {
             dialogBinding.tilTipoReg.visibility = if (isChecked) View.GONE else View.VISIBLE
         }
 
-        dialogBinding.autoDeudas.setOnItemClickListener { _, _, pos, _ -> deudaSeleccionada = listaDeudas[pos] }
+        dialogBinding.autoDeudas.setOnItemClickListener { _, _, pos, _ -> 
+            deudaSeleccionada = listaDeudas[pos] 
+        }
 
         dialogBinding.btnGuardar.setOnClickListener {
             val desc = dialogBinding.etDescripcion.text.toString()
@@ -146,9 +135,10 @@ class FragmentMovimiento : Fragment() {
             val fecha = Constantes.formatoFecha(System.currentTimeMillis())
 
             if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
-                val nuevoPagado = deudaSeleccionada!!.totalPagado + valor
-                FirebaseDatabase.getInstance().getReference("Deudas").child(firebaseAuth.uid!!)
-                    .child(deudaSeleccionada!!.id).child("totalPagado").setValue(nuevoPagado)
+                // Actualizar localmente el total pagado de la deuda
+                deudaSeleccionada!!.totalPagado += valor
+                db.updateDeuda(deudaSeleccionada!!)
+                
                 db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
             } else {
                 val tipo = dialogBinding.autoTipoMov.text.toString()

@@ -9,8 +9,12 @@
 
     <!-- Colores base -->
     <color name="black">#003300</color>
+    <color name="primary_glass">#66CCFFCC</color>
+
+
     <color name="white">#CCFFCC</color>
-    
+    <color name="white_ligth">#F6FFF6</color>
+
     <!-- Mapeo para componentes -->
     <color name="btn_primary">#00C292</color>
 </resources>

@@ -38,7 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:text="@string/txt_nombre"
-                android:textColor="@color/secondary"
+                android:textColor="@color/primary"
                 android:textStyle="bold" />
 
             <TextView
@@ -47,6 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
+                android:textColor="@color/primary"
                 android:text="@string/tv_nombres" />
 
             <!-- email -->
@@ -58,7 +59,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_email"
-                android:textColor="@color/secondary"
+                android:textColor="@color/primary"
                 android:textStyle="bold" />
 
             <TextView
@@ -68,6 +69,7 @@
                 android:layout_below="@+id/tv_nombres"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
+                android:textColor="@color/primary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_email" />
 
@@ -80,7 +82,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_proveedor"
-                android:textColor="@color/secondary"
+                android:textColor="@color/primary"
                 android:textStyle="bold" />
 
             <TextView
@@ -90,6 +92,7 @@
                 android:layout_below="@+id/tv_email"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
+                android:textColor="@color/primary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_proveedor" />
 
@@ -102,7 +105,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_mienbro_Desde"
-                android:textColor="@color/secondary"
+                android:textColor="@color/primary"
                 android:textStyle="bold" />
 
             <TextView
@@ -112,6 +115,7 @@
                 android:layout_below="@+id/tv_proveedor"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
+                android:textColor="@color/primary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_mienbro_Desde" />
 
@@ -124,7 +128,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_tema_oscuro"
-                android:textColor="@color/secondary"
+                android:textColor="@color/primary"
                 android:textStyle="bold" />
 
             <com.google.android.material.materialswitch.MaterialSwitch
@@ -142,7 +146,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/sw_tema"
                 android:layout_centerHorizontal="true"
-                android:layout_marginTop="40dp"
+                android:layout_marginTop="300dp"
                 android:text="@string/btnActualizar"
                 android:textAllCaps="true"
                 android:textSize="14sp"
@@ -159,7 +163,7 @@
                 android:text="@string/btn_logout"
                 android:textAllCaps="true"
                 android:textSize="14sp"
-                app:backgroundTint="@color/secondary"
+                app:backgroundTint="@color/primary"
                 app:cornerRadius="8dp" />
 
         </RelativeLayout>

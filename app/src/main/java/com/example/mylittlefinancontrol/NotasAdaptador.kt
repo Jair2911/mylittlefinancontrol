@@ -26,9 +26,9 @@ class NotasAdaptador(
     override fun onBindViewHolder(holder: NotaViewHolder, position: Int) {
         val movimiento = movimientos[position]
 
-        holder.item_descripcion.text = movimiento.descripcion
-        holder.item_valor.text = movimiento.valor.toString()
-        holder.itemTipoReg.text = movimiento.tipo_reg
+        holder.item_descripcion.text = "Concepto: " + movimiento.descripcion
+        holder.item_valor.text = "Monto $ " + movimiento.valor.toString()
+        holder.itemTipoReg.text = "Tipo: " + movimiento.tipo_reg
 
         holder.ivActualizar.setOnClickListener{
             val intent = Intent(holder.itemView.context, ActualizarMovimientoActivity::class.java).apply {
