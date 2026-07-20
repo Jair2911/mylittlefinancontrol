@@ -10,7 +10,7 @@
         android:id="@+id/imagenFondo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/background_1_ligth"
+        android:src="@drawable/background_1"
         android:scaleType="centerCrop" />
 
     <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -34,7 +34,6 @@
                 android:layout_marginBottom="16dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:foreground="@color/white_ligth"
                 app:cardBackgroundColor="@color/white"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
@@ -46,14 +45,14 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="10dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:letterSpacing="0.1"
-                        android:text="BALANCE GENERAL"
-                        android:textColor="@color/black"
+                        android:text="Balance General"
+                        android:textColor="@color/design_default_color_primary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -101,7 +100,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="INGRESOS MES"
-                            android:textColor="@color/primary"
+                            android:textColor="@color/black"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -142,7 +141,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="GASTOS MES"
-                            android:textColor="@color/accent_alerta"
+                            android:textColor="@color/black"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -224,7 +223,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="DEUDAS TOTALES"
-                            android:textColor="@color/accent_alerta"
+                            android:textColor="@color/black"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 

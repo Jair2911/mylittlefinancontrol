@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.ItemGastoFijoBinding
+import java.text.NumberFormat
+import java.util.Locale
 
 class GastosFijosAdapter(
     private var listaGastos: List<GastoFijo>,
@@ -23,10 +25,12 @@ class GastosFijosAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val gasto = listaGastos[position]
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+
         holder.binding.apply {
-            tvConcepto.text = gasto.concepto
-            tvCategoria.text = gasto.categoria
-            tvMonto.text = "$${String.format("%.2f", gasto.monto)}"
+            tvConcepto.text = "Concepto: ${gasto.concepto}"
+            tvCategoria.text = "Categoria: ${gasto.categoria}"
+            tvMonto.text = "Monto: ${format.format(gasto.monto)}"
             tvPagoInfo.text = "Día ${gasto.diaPago} - ${gasto.periodo}"
 
             ivEditar.setOnClickListener { onEditarClick(gasto) }

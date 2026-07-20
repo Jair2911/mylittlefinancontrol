@@ -78,6 +78,8 @@ class FragmentBalance : Fragment() {
         }
 
         val alertDialog = builder.create()
+        // 🔥 ESTA ES LA LÍNEA MÁGICA: Borra el marco cuadrado que Android pone por defecto
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         alertDialog.show()
 
         dialogBinding.btnGuardar.setOnClickListener {
@@ -106,7 +108,6 @@ class FragmentBalance : Fragment() {
         }
         dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
     }
-
     private fun cargarDeudas() {
         listaDeudas = db.getAllDeudas().toMutableList()
         adapter.actualizarLista(listaDeudas)

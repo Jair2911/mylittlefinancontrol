@@ -1,112 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 1. RAÍZ: Tarjeta flotante que le da forma de diálogo con bordes redondos y wrap_content -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:strokeWidth="1dp"
+    app:strokeColor="#CCCCCC">
 
-    <LinearLayout
+    <!-- 2. CONTENEDOR DE APILAMIENTO: Para apilar el fondo HD y tu formulario -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/tv_titulo_dialogo"
+        <!-- 3. IMAGEN DE FONDO: Se ata a la altura del ScrollView para no estirar la pantalla -->
+        <ImageView
+            android:id="@+id/imagenFondo"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_alignTop="@id/scrollViewContenido"
+            android:layout_alignBottom="@id/scrollViewContenido"
+            android:src="@drawable/background_1"
+            android:scaleType="centerCrop" />
+
+        <!-- 4. CONTENIDO: ScrollView con wrap_content para solo ocupar lo que mida el formulario -->
+        <ScrollView
+            android:id="@+id/scrollViewContenido"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:text="@string/txtAgregarNota"
-            android:textColor="@color/primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:background="@android:color/transparent">
 
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/cb_es_pago_deuda"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="¿Es un pago de deuda / préstamo?" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_seleccion_deuda"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="Selecciona la deuda"
-            android:visibility="gone">
-
-            <AutoCompleteTextView
-                android:id="@+id/auto_deudas"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="none" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:orientation="vertical"
+                android:padding="24dp">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/til_tipo_reg"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/etTipoReg">
+                <TextView
+                    android:id="@+id/tv_titulo_dialogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:text="@string/txtAgregarNota"
+                    android:textColor="@color/primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
-            <AutoCompleteTextView
-                android:id="@+id/auto_tipo_mov"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none" />
-        </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_es_pago_deuda"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:text="¿Es un pago de deuda / préstamo?" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/etDescripcion">
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_deuda"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Selecciona la deuda"
+                    android:visibility="gone">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDescripcion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textCapSentences" />
-        </com.google.android.material.textfield.TextInputLayout>
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_deudas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:hint="@string/etValor">
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_tipo_reg"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="@string/etTipoReg">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etValor"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
-        </com.google.android.material.textfield.TextInputLayout>
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_tipo_mov"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end"
-            android:orientation="horizontal">
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="@string/etDescripcion">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancelar"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="@string/btn_cancelar"
-                android:textColor="@color/accent_alerta" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etDescripcion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_guardar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_guardar"
-                app:backgroundTint="@color/primary" />
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:hint="@string/etValor">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etValor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_cancelar"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:text="@string/btn_cancelar"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="@color/accent_alerta"
+                        android:textColor="@color/accent_alerta" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_guardar"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_guardar"
+                        app:backgroundTint="@color/primary" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </RelativeLayout>
+</com.google.android.material.card.MaterialCardView>

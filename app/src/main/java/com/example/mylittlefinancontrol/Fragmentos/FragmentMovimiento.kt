@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Constantes
@@ -50,7 +51,7 @@ class FragmentMovimiento : Fragment() {
         cargarDeudasLocales()
 
         binding.FABAgregarNota.setOnClickListener {
-            mostrarDialogoMovimiento()
+            mostrarDialogoMovimiento(null)
         }
     }
 
@@ -78,7 +79,12 @@ class FragmentMovimiento : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        notasAdaptador = NotasAdaptador(mutableListOf(), mContext)
+        notasAdaptador = NotasAdaptador(
+            mutableListOf(),
+            mContext,
+            onEditarClick = { mov -> mostrarDialogoMovimiento(mov) },
+            onEliminarClick = { mov -> eliminarMovimiento(mov) }
+        )
         binding.notasRv.layoutManager = LinearLayoutManager(mContext)
         binding.notasRv.adapter = notasAdaptador
         actualizarListaFiltrada()
@@ -104,18 +110,31 @@ class FragmentMovimiento : Fragment() {
         listaDeudas.addAll(db.getAllDeudas())
     }
 
-    private fun mostrarDialogoMovimiento() {
+    private fun mostrarDialogoMovimiento(movimientoExistente: Movimiento?) {
         val dialogBinding = DialogAgregarMovimientoBinding.inflate(layoutInflater)
         val builder = AlertDialog.Builder(mContext).setView(dialogBinding.root)
         val alertDialog = builder.create()
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        cargarDeudasLocales() // Asegurar datos actualizados localmente
+        cargarDeudasLocales()
 
         val opciones = arrayOf("Gasto", "Ingreso", "Otro")
         dialogBinding.autoTipoMov.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opciones))
 
         val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
         dialogBinding.autoDeudas.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresDeudas))
+
+        if (movimientoExistente != null) {
+            dialogBinding.tvTituloDialogo.text = "Editar Movimiento"
+            dialogBinding.etDescripcion.setText(movimientoExistente.descripcion)
+            dialogBinding.etValor.setText(movimientoExistente.valor.toString())
+            dialogBinding.autoTipoMov.setText(movimientoExistente.tipo_reg.lowercase().capitalize(), false)
+            
+            // Si es un pago de deuda, podrías querer manejarlo, pero por simplicidad permitimos editar tipo
+            if (movimientoExistente.tipo_reg == "PAGO DEUDA") {
+                dialogBinding.cbEsPagoDeuda.visibility = View.GONE // Ocultar para evitar inconsistencias al editar
+            }
+        }
 
         dialogBinding.cbEsPagoDeuda.setOnCheckedChangeListener { _, isChecked ->
             dialogBinding.tilSeleccionDeuda.visibility = if (isChecked) View.VISIBLE else View.GONE
@@ -129,25 +148,54 @@ class FragmentMovimiento : Fragment() {
         dialogBinding.btnGuardar.setOnClickListener {
             val desc = dialogBinding.etDescripcion.text.toString()
             val valStr = dialogBinding.etValor.text.toString()
-            if (desc.isEmpty() || valStr.isEmpty()) return@setOnClickListener
+            if (desc.isEmpty() || valStr.isEmpty()) {
+                Toast.makeText(mContext, "Por favor llene todos los campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val valor = valStr.toInt()
-            val fecha = Constantes.formatoFecha(System.currentTimeMillis())
-
-            if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
-                // Actualizar localmente el total pagado de la deuda
-                deudaSeleccionada!!.totalPagado += valor
-                db.updateDeuda(deudaSeleccionada!!)
-                
-                db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
+            
+            if (movimientoExistente == null) {
+                // CREAR
+                val fecha = Constantes.formatoFecha(System.currentTimeMillis())
+                if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
+                    deudaSeleccionada!!.totalPagado += valor
+                    db.updateDeuda(deudaSeleccionada!!)
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
+                } else {
+                    val tipo = dialogBinding.autoTipoMov.text.toString()
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fecha))
+                }
             } else {
-                val tipo = dialogBinding.autoTipoMov.text.toString()
-                db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fecha))
+                // EDITAR
+                // Nota: Aquí podrías ajustar si el valor cambió y era pago de deuda, 
+                // pero implementaremos la edición básica del movimiento.
+                val nuevoMov = Movimiento(
+                    movimientoExistente.id,
+                    desc.uppercase(),
+                    valor,
+                    if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else dialogBinding.autoTipoMov.text.toString().uppercase(),
+                    movimientoExistente.fecha
+                )
+                db.updateMovimiento(nuevoMov)
             }
+            
             alertDialog.dismiss()
             actualizarListaFiltrada()
         }
         dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
         alertDialog.show()
+    }
+
+    private fun eliminarMovimiento(movimiento: Movimiento) {
+        AlertDialog.Builder(mContext)
+            .setTitle("Eliminar Movimiento")
+            .setMessage("¿Estás seguro de eliminar este movimiento?")
+            .setPositiveButton("Eliminar") { _, _ ->
+                db.deleteMovimiento(movimiento.id)
+                actualizarListaFiltrada()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 }

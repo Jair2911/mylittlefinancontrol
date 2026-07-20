@@ -10,7 +10,7 @@
         android:id="@+id/imagenFondo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/background_1_ligth"
+        android:src="@drawable/background_1"
         android:scaleType="centerCrop" />
 
     <!-- Resumen de Movimientos del Mes -->
@@ -31,15 +31,15 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="10dp"
-            android:gravity="center_vertical">
+            android:gravity="center">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="TOTAL FILTRADO"
+                android:text="Total Movimientos"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="@color/black"
                 android:textStyle="bold" />
 
             <TextView

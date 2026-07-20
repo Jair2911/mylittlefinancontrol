@@ -1,18 +1,21 @@
 package com.example.mylittlefinancontrol
 
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import java.text.NumberFormat
+import java.util.Locale
 
 class NotasAdaptador(
     private var movimientos: List<Movimiento>,
-    context: Context) : RecyclerView.Adapter<NotasAdaptador.NotaViewHolder>()
+    private val context: Context,
+    private val onEditarClick: (Movimiento) -> Unit,
+    private val onEliminarClick: (Movimiento) -> Unit
+) : RecyclerView.Adapter<NotasAdaptador.NotaViewHolder>()
 {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotaViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_movimiento, parent, false)
@@ -25,24 +28,18 @@ class NotasAdaptador(
 
     override fun onBindViewHolder(holder: NotaViewHolder, position: Int) {
         val movimiento = movimientos[position]
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
         holder.item_descripcion.text = "Concepto: " + movimiento.descripcion
-        holder.item_valor.text = "Monto $ " + movimiento.valor.toString()
+        holder.item_valor.text = "Monto: ${format.format(movimiento.valor)}"
         holder.itemTipoReg.text = "Tipo: " + movimiento.tipo_reg
 
         holder.ivActualizar.setOnClickListener{
-            val intent = Intent(holder.itemView.context, ActualizarMovimientoActivity::class.java).apply {
-                putExtra("id_movimiento", movimiento.id)
-            }
-
-            holder.itemView.context.startActivity(intent)
+            onEditarClick(movimiento)
         }
 
         holder.ivEliminarMov.setOnClickListener {
-            val intent = Intent(holder.itemView.context, EliminarMovimientoActivity::class.java).apply {
-                putExtra("id_movimiento", movimiento.id)
-            }
-            holder.itemView.context.startActivity(intent)
+            onEliminarClick(movimiento)
         }
     }
 
@@ -50,7 +47,6 @@ class NotasAdaptador(
         val item_descripcion : TextView = itemView.findViewById(R.id.item_descripcion)
         val item_valor : TextView = itemView.findViewById(R.id.item_valor)
         val itemTipoReg : TextView = itemView.findViewById(R.id.item_tipo)
-        val itemFecha = Constantes.formatoFecha(Constantes.obtenerTiempoD());
 
         val ivActualizar : ImageView = itemView.findViewById(R.id.ivActualizar)
         val ivEliminarMov : ImageView = itemView.findViewById(R.id.ivEliminarMov)

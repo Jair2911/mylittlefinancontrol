@@ -5,10 +5,11 @@
     <color name="secondary">#33FF00</color>
     <color name="background_light">#CCFFCC</color>
     <color name="background_dark">#003300</color>
-    <color name="accent_alerta">#E55555</color>
+    <color name="accent_alerta">#FF7878</color>
 
     <!-- Colores base -->
     <color name="black">#003300</color>
+    <color name="accent_alerta_ligth">#7BF69F9F</color>
     <color name="primary_glass">#66CCFFCC</color>
 
 

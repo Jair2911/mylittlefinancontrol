@@ -16,6 +16,8 @@ import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarGastoFijoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentGastosFijosBinding
+import java.text.NumberFormat
+import java.util.Locale
 
 class FragmentGastosFijos : Fragment() {
 
@@ -76,6 +78,8 @@ class FragmentGastosFijos : Fragment() {
         }
 
         val alertDialog = builder.create()
+        // 🔥 ESTA ES LA LÍNEA MÁGICA: Borra el lienzo cuadrado nativo de Android
+        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         alertDialog.show()
 
         dialogBinding.btnGuardar.setOnClickListener {
@@ -104,12 +108,13 @@ class FragmentGastosFijos : Fragment() {
         }
         dialogBinding.btnCancelar.setOnClickListener { alertDialog.dismiss() }
     }
-
     private fun cargarGastosFijos() {
         listaGastos = db.getAllGastosFijos().toMutableList()
         adapter.actualizarLista(listaGastos)
         val total = listaGastos.sumOf { it.monto }
-        binding.tvTotalMonto.text = "$${String.format("%.2f", total)}"
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+
+        binding.tvTotalMonto.text = "${format.format(total)}"
     }
 
     private fun eliminarGastoFijo(gasto: GastoFijo) {
