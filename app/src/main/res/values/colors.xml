@@ -2,19 +2,32 @@
 <resources>
     <!-- Paleta Menta & Carbón -->
     <color name="primary">#008000</color>
+    <color name="verde_oscuro">#008000</color>
+
     <color name="secondary">#33FF00</color>
+    <color name="verde_brillante">#33FF00</color>
+
     <color name="background_light">#CCFFCC</color>
+    <color name="verde_claro">#CCFFCC</color>
+
     <color name="background_dark">#003300</color>
+    <color name="verde_negro">#003300</color>
+
     <color name="accent_alerta">#FF7878</color>
+    <color name="rojo_alerta">#FF7878</color>
 
     <!-- Colores base -->
     <color name="black">#003300</color>
     <color name="accent_alerta_ligth">#7BF69F9F</color>
+    <color name="rojo_transparente">#7BF69F9F</color>
+
     <color name="primary_glass">#66CCFFCC</color>
+    <color name="verde_transparente">#5FCCFFCC</color>
 
 
     <color name="white">#CCFFCC</color>
     <color name="white_ligth">#F6FFF6</color>
+    <color name="verde_blanco_transparente">#D3F6FFF6</color>
 
     <!-- Mapeo para componentes -->
     <color name="btn_primary">#00C292</color>

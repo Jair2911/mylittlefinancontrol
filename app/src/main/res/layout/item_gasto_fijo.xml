@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@color/primary_glass"
+    app:cardBackgroundColor="?attr/colorPrimaryContainer"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
     app:cardUseCompatPadding="true"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/primary">
+    app:strokeColor="?attr/colorOnSurface">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -22,15 +22,31 @@
             android:layout_toStartOf="@+id/ll_acciones"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tv_concepto"
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Concepto"
-                android:textAllCaps="true"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black" />
+                android:padding="1dp">
+
+                <ImageView
+                    android:id="@+id/iv_icono_deuda"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_gastos_fijos"
+                    app:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/tv_concepto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="30dp"
+                    android:text="Concepto"
+                    android:layout_centerVertical="true"
+                    android:textAllCaps="true"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface" />
+            </RelativeLayout>
 
             <TextView
                 android:id="@+id/tv_monto"
@@ -39,7 +55,7 @@
                 android:layout_marginTop="4dp"
                 android:text="1000000"
                 android:textSize="15sp"
-                android:textColor="@color/primary" />
+                android:textColor="?attr/colorPrimary" />
 
             <TextView
                 android:id="@+id/tv_categoria"
@@ -50,7 +66,7 @@
                 android:textAllCaps="true"
                 android:textStyle="bold"
                 android:textSize="14sp"
-                android:textColor="@color/black"/>
+                android:textColor="?attr/colorOnSurface"/>
 
             <TextView
                 android:id="@+id/tv_pago_info"
@@ -59,7 +75,7 @@
                 android:layout_marginTop="2dp"
                 android:text="Día 15 - Mensual"
                 android:textSize="11sp"
-                android:textColor="@color/primary" />
+                android:textColor="?attr/colorPrimary" />
 
         </LinearLayout>
 
@@ -70,11 +86,12 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:orientation="horizontal">
+
             <ImageView
                 android:id="@+id/iv_editar"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_edit"
-                app:tint="@color/primary"
+                app:tint="?attr/colorPrimary"
                 android:layout_width="28dp"
                 android:layout_height="28dp"/>
 

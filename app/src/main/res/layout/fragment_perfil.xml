@@ -21,7 +21,6 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/background_1"
         tools:context=".Fragmentos.FragmentPerfil">
 
         <RelativeLayout
@@ -38,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
                 android:text="@string/txt_nombre"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <TextView
@@ -47,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:text="@string/tv_nombres" />
 
             <!-- email -->
@@ -59,7 +58,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_email"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <TextView
@@ -69,7 +68,7 @@
                 android:layout_below="@+id/tv_nombres"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_email" />
 
@@ -82,7 +81,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_proveedor"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <TextView
@@ -92,7 +91,7 @@
                 android:layout_below="@+id/tv_email"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_proveedor" />
 
@@ -105,7 +104,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_mienbro_Desde"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <TextView
@@ -115,7 +114,7 @@
                 android:layout_below="@+id/tv_proveedor"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_mienbro_Desde" />
 
@@ -128,7 +127,7 @@
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="20dp"
                 android:text="@string/txt_tema_oscuro"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorPrimary"
                 android:textStyle="bold" />
 
             <com.google.android.material.materialswitch.MaterialSwitch
@@ -150,7 +149,7 @@
                 android:text="@string/btnActualizar"
                 android:textAllCaps="true"
                 android:textSize="14sp"
-                app:backgroundTint="@color/primary"
+                app:backgroundTint="?attr/colorPrimary"
                 app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
@@ -163,7 +162,7 @@
                 android:text="@string/btn_logout"
                 android:textAllCaps="true"
                 android:textSize="14sp"
-                app:backgroundTint="@color/primary"
+                app:backgroundTint="?attr/colorPrimary"
                 app:cornerRadius="8dp" />
 
         </RelativeLayout>

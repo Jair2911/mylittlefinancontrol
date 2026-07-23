@@ -2,10 +2,12 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.MyLittleFinanControl" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Colores Principales -->
-        <item name="colorPrimary">@color/white</item>
-        <item name="colorOnPrimary">@color/primary</item>
-        <item name="colorSecondary">@color/secondary</item>
-        <item name="colorOnSecondary">@color/primary</item>
+        <item name="colorPrimary">@color/verde_claro</item>
+        <item name="colorOnPrimary">@color/verde_oscuro</item>
+        <item name="colorPrimaryContainer">@color/verde_negro</item>
+        <item name="colorOnPrimaryContainer">@color/verde_transparente</item>
+
+        <item name="colorOutline">@color/verde_claro</item>
 
         <!-- Fondos y Superficies -->
         <item name="android:windowBackground">@color/background_light</item>

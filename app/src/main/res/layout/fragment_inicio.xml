@@ -13,9 +13,7 @@
         android:src="@drawable/background_1"
         android:scaleType="centerCrop" />
 
-    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".Fragmentos.FragmentInicio">
@@ -34,10 +32,10 @@
                 android:layout_marginBottom="16dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/primary"
+                app:strokeColor="?attr/colorPrimary"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -52,7 +50,7 @@
                         android:layout_height="wrap_content"
                         android:letterSpacing="0.1"
                         android:text="Balance General"
-                        android:textColor="@color/design_default_color_primary"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="12sp"
                         android:textStyle="bold" />
 
@@ -62,7 +60,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:text="$0.00"
-                        android:textColor="@color/primary"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="36sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -85,8 +83,8 @@
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
                     android:layout_margin="4dp"
-                    app:cardBackgroundColor="@color/primary_glass"
-                    app:strokeColor="@color/primary"
+                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                    app:strokeColor="?attr/colorPrimary"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -100,7 +98,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="INGRESOS MES"
-                            android:textColor="@color/black"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -110,7 +108,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="$0.00"
-                            android:textColor="@color/primary"
+                            android:textColor="?attr/colorPrimary"
                             android:textSize="16sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -123,11 +121,10 @@
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:clickable="true"
-                    app:strokeColor="@color/accent_alerta"
+                    app:strokeColor="?attr/colorPrimary"
                     android:focusable="true"
                     android:layout_margin="4dp"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/primary_glass"
+                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -141,7 +138,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="GASTOS MES"
-                            android:textColor="@color/black"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -165,10 +162,10 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:clickable="true"
-                    app:strokeColor="@color/primary"
+                    app:strokeColor="?attr/colorPrimary"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/primary_glass"
+                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -182,7 +179,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="GASTOS FIJOS"
-                            android:textColor="@color/black"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -191,7 +188,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:textColor="@color/black"
+                            android:textColor="?attr/colorPrimary"
                             android:text="$0.00"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -205,11 +202,11 @@
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
-                    app:strokeColor="@color/accent_alerta"
+                    app:strokeColor="?attr/colorPrimary"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/primary_glass"
+                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -223,7 +220,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="DEUDAS TOTALES"
-                            android:textColor="@color/black"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="10sp"
                             android:textStyle="bold" />
 
@@ -249,7 +246,7 @@
                 android:layout_marginTop="24dp"
                 android:letterSpacing="0.1"
                 android:text="ÚLTIMO REGISTRO"
-                android:textColor="@color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -257,8 +254,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@color/primary_glass"
-                app:strokeColor="@color/primary"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeColor="?attr/colorPrimary"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp">
 
@@ -273,6 +270,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Ningún registro"
+                        android:textColor="?attr/colorOnSurface"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -282,7 +280,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:text="-"
-                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
