@@ -21,10 +21,9 @@
             android:layout_height="50dp"
             android:src="@drawable/ic_perfil"
             android:background="@android:color/transparent"
-            android:padding="8dp"
             android:layout_marginStart="10dp"
             android:layout_centerVertical="true"
-            app:tint="?attr/colorPrimary" />
+            app:tint="?attr/colorOnSurface" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -46,7 +45,7 @@
             android:background="@android:color/transparent"
             android:layout_centerVertical="true"
             android:contentDescription="Cerrar Sesión"
-            app:tint="?attr/colorPrimary"/>
+            app:tint="?attr/colorOnSurface"/>
 
         <View
             android:layout_width="match_parent"
@@ -76,7 +75,7 @@
         android:id="@+id/botonNV"
         android:layout_alignParentBottom="true"
         app:menu="@menu/menu_bottom"
-        app:itemIconTint="?attr/colorPrimary"
+        app:itemIconTint="?attr/colorOnSurface"
         app:itemTextColor="?attr/colorOnSurface"
         android:background="?attr/colorSecondary"
         app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"

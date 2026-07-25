@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorOnSurface"
                 android:text="@string/tv_nombres" />
 
             <!-- email -->
@@ -68,7 +68,7 @@
                 android:layout_below="@+id/tv_nombres"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_email" />
 
@@ -91,7 +91,7 @@
                 android:layout_below="@+id/tv_email"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_proveedor" />
 
@@ -114,7 +114,7 @@
                 android:layout_below="@+id/tv_proveedor"
                 android:layout_alignParentEnd="true"
                 android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginTop="20dp"
                 android:text="@string/tv_mienbro_Desde" />
 

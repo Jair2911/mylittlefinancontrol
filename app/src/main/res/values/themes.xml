@@ -1,38 +1,54 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.MyLittleFinanControl" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Colores Principales -->
-<!--        color primario-->
-        <item name="colorPrimary">@color/verde_oscuro</item>
-<!--        color sobre el color primario -->
-        <item name="colorOnPrimary">@color/verde_claro</item>
 
-<!--        color para tarietas verdes trasnsparentes-->
-        <item name="colorPrimaryContainer">@color/verde_transparente</item>
+        <!-- colorPrimary: Es el color principal de la marca, el verde medio profesional. -->
+        <item name="colorPrimary">@color/verde_oscuro</item>
+        <!-- colorOnPrimary: Blanco puro para máximo contraste sobre el verde medio. -->
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <!-- colorPrimaryContainer: Un contenedor suave para tarjetas destacadas en tema claro. -->
+        <item name="colorPrimaryContainer">@color/verde_claro</item>
+        <!-- colorOnPrimaryContainer: Texto oscuro sobre el contenedor claro. -->
         <item name="colorOnPrimaryContainer">@color/verde_negro</item>
 
-<!--        color secundario-->
-        <item name="colorSecondary">@color/white</item>
-<!--        color sobre el color secundario-->
-        <item name="colorOnSecondary">@color/secondary</item>
+        <!-- colorSecondary: El color neón brillante, reservado para acentos específicos (ej. FAB). -->
+        <item name="colorSecondary">@color/verde</item>
+        <!-- colorOnSecondary: Texto oscuro sobre el color secundario neón. -->
+        <item name="colorOnSecondary">@color/verde_negro</item>
 
-<!--        color borde primario-->
+        <!-- Contenedores secundarios usando tus colores con transparencia -->
+        <item name="colorSecondaryContainer">@color/verde_transparente</item>
+        <item name="colorOnSecondaryContainer">@color/verde_negro</item>
+
+        <!-- colorTertiary: Un tercer acento. Usado para elementos de fondo o variaciones sutiles. -->
+        <item name="colorTertiary">@color/verde_blanco_transparente</item>
+        <item name="colorOnTertiary">@color/verde_negro</item>
+
+        <!-- colorOutline: Usado para los bordes de los campos de texto, botones delineados, etc. -->
         <item name="colorOutline">@color/verde_negro</item>
 
-<!--        titulos y subtitulos-->
+        <!-- colorOnSurface: Texto principal para títulos, subtítulos, párrafos, etc. -->
         <item name="colorOnSurface">@color/verde_negro</item>
 
         <!-- Fondos y Superficies -->
-        <item name="android:windowBackground">@color/background_light</item>
-        <item name="colorSurface">@color/verde_transparente</item>
-<!--        fondo rojo-->
-        <item name="colorError">@color/accent_alerta</item>
-<!--        texto color rojo-->
-        <item name="colorOnError">@color/accent_alerta</item>
+        <!-- windowBackground: El fondo base de toda la aplicación, blanco para limpieza. -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- colorSurface: El color de fondo de las tarjetas, menús y hojas inferiores. -->
+        <item name="colorSurface">@color/verde_blanco_transparente</item>
 
-        <!-- Status Bar -->
-        <item name="android:statusBarColor">@color/background_light</item>
+        <!-- Error: El color para indicar alertas o campos inválidos usando tu rojo. -->
+        <item name="colorError">@color/rojo_alerta</item>
+        <item name="colorOnError">@color/rojo_transparente</item>
+
+        <!-- Status Bar: Blanca para fundirse con la cabecera. -->
+        <item name="android:statusBarColor">@android:color/white</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Superficies y Fondos Variant: Usados para separadores o variaciones de fondo. -->
+        <item name="colorSurfaceVariant">#E0E0E0</item>
+        <item name="colorOnSurfaceVariant">#49454F</item>
+
     </style>
 
     <style name="Theme.MyLittleFinanControl" parent="Base.Theme.MyLittleFinanControl" />

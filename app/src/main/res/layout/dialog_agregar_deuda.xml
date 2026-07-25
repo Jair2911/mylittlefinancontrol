@@ -9,7 +9,7 @@
     app:cardElevation="8dp"
     app:cardBackgroundColor="@android:color/white"
     app:strokeWidth="1dp"
-    app:strokeColor="#CCCCCC">
+    app:strokeColor="?attr/colorOutline">
 
     <!-- 2. CONTENEDOR DE APILAMIENTO: Monta la imagen detrás y el formulario al frente -->
     <RelativeLayout
@@ -45,7 +45,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:text="@string/txt_agregar_deuda"
-                    android:textColor="@color/primary"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
@@ -141,15 +141,16 @@
                         android:layout_marginEnd="8dp"
                         android:text="@string/btn_cancelar"
                         app:strokeWidth="1dp"
-                        app:strokeColor="@color/accent_alerta"
-                        android:textColor="@color/accent_alerta" />
+                        app:strokeColor="?attr/colorError"
+                        android:textColor="?attr/colorOnPrimary"
+                        android:backgroundTint="?attr/colorError"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_guardar"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/btn_guardar"
-                        app:backgroundTint="@color/primary" />
+                        app:backgroundTint="?attr/colorPrimary" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>

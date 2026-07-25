@@ -114,9 +114,9 @@ class FragmentInicio : Fragment() {
         binding.tvBalanceGeneral.text = format.format(balance)
         
         val colorBalance = if (balance < 0) 
-            com.example.mylittlefinancontrol.R.color.accent_alerta 
+            com.example.mylittlefinancontrol.R.color.rojo_alerta
         else 
-            com.example.mylittlefinancontrol.R.color.primary
+            com.example.mylittlefinancontrol.R.color.verde_oscuro
             
         binding.tvBalanceGeneral.setTextColor(mContext.getColor(colorBalance))
     }

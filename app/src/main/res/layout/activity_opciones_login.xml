@@ -23,11 +23,11 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="10dp"
         android:text="Ingresar con Email"
         android:textAllCaps="true"
         android:textStyle="bold"
-        app:backgroundTint="@color/primary"
+        app:backgroundTint="?attr/colorPrimary"
         app:cornerRadius="10dp"
         app:layout_constraintBottom_toTopOf="@id/btn_sign_in" />
 
@@ -39,11 +39,10 @@
         android:layout_marginBottom="20dp"
         android:text="@string/btn_sign_in"
         android:textAllCaps="true"
-        android:textColor="@color/white"
         app:cornerRadius="10dp"
         app:iconGravity="textStart"
-        app:iconTint="@color/secondary"
+        app:iconTint="?attr/colorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:strokeColor="@color/secondary" />
+        app:strokeColor="?attr/colorPrimary" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

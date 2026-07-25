@@ -113,11 +113,9 @@
                     android:layout_alignParentBottom="true"
                     android:id="@+id/btnActualizar"
                     android:textAllCaps="true"
-                    android:textColor="@color/white_ligth"
-                    app:backgroundTint="@color/primary"
+                    app:backgroundTint="?attr/colorPrimary"
                     app:cornerRadius="10dp"
                     app:iconGravity="textStart"
-                    app:iconTint="@color/primary"
                     android:text="@string/btnActualizar"/>
 
             </RelativeLayout>

@@ -16,7 +16,7 @@
         android:layout_height="100dp"
         android:layout_marginBottom="24dp"
         android:src="@drawable/ic_perfil"
-        app:tint="@color/primary" />
+        app:tint="?attr/colorPrimary" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -62,7 +62,7 @@
         android:layout_height="56dp"
         android:text="@string/btn_ingresar"
         android:textAllCaps="true"
-        app:backgroundTint="@color/primary"
+        app:backgroundTint="?attr/colorPrimary"
         app:cornerRadius="12dp" />
 
     <LinearLayout
@@ -87,7 +87,7 @@
             android:layout_marginTop="4dp"
             android:text="@string/tv_registrarme"
             android:textAllCaps="true"
-            android:textColor="@color/primary"
+            android:textColor="?attr/colorPrimary"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>

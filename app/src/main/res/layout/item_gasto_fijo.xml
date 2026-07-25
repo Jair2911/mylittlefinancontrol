@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+    app:cardBackgroundColor="?attr/colorSecondaryContainer"
     app:cardCornerRadius="8dp"
     app:cardElevation="0dp"
     app:cardUseCompatPadding="true"
@@ -33,7 +33,7 @@
                     android:layout_height="25dp"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_gastos_fijos"
-                    app:tint="?attr/colorOnSurface" />
+                    app:tint="?attr/colorSecondary" />
 
                 <TextView
                     android:id="@+id/tv_concepto"
@@ -100,7 +100,7 @@
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_delete"
                 android:layout_marginEnd="10dp"
-                app:tint="@color/accent_alerta"
+                app:tint="?attr/colorError"
                 android:layout_width="28dp"
                 android:layout_height="28dp" />
         </LinearLayout>

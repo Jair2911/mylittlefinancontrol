@@ -18,7 +18,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_marginTop="15dp"
-        android:textColor="@color/btn_primary"
         android:textSize="20sp"
         android:padding="10dp"/>
 

@@ -35,7 +35,7 @@
                 app:cardBackgroundColor="?attr/colorSurface"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp"
-                app:strokeColor="?attr/colorPrimary"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -149,7 +149,7 @@
                             android:layout_marginTop="4dp"
                             android:text="$0.00"
                             android:textSize="16sp"
-                            android:textColor="@color/accent_alerta"
+                            android:textColor="?attr/colorError"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -231,7 +231,7 @@
                             android:layout_marginTop="4dp"
                             android:text="$0.00"
                             android:textSize="16sp"
-                            android:textColor="@color/accent_alerta"
+                            android:textColor="?attr/colorError"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -255,7 +255,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:cardBackgroundColor="?attr/colorSurface"
-                app:strokeColor="?attr/colorPrimary"
+                app:strokeColor="?attr/colorOutline"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="0dp">
 

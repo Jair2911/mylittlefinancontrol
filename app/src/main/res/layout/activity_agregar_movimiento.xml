@@ -18,7 +18,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:text="@string/txtAgregarNota"
-            android:textColor="@color/primary"
             android:textSize="24sp"
             android:textStyle="bold" />
 
@@ -104,15 +103,13 @@
                 android:id="@+id/iv_guardar_movimiento"
                 android:layout_width="80dp"
                 android:layout_height="80dp"
-                android:src="@drawable/ic_check"
-                app:tint="@color/primary" />
+                android:src="@drawable/ic_check" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="GUARDAR MOVIMIENTO"
-                android:textColor="@color/secondary"
                 android:textStyle="bold" />
         </LinearLayout>
 
