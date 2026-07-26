@@ -29,7 +29,7 @@
                 android:layout_height="25dp"
                 android:layout_centerVertical="true"
                 android:src="@drawable/ic_movimientos"
-                app:tint="?attr/colorSecondary" />
+                app:tint="?attr/colorPrimary" />
 
             <TextView
                 android:id="@+id/item_descripcion"
@@ -85,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_alignParentEnd="true"
-                android:textColor="?attr/colorSecondary"/>
+                android:textColor="?attr/colorOnSurface"/>
         </RelativeLayout>
 
     </androidx.appcompat.widget.LinearLayoutCompat>

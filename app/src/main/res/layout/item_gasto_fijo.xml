@@ -33,7 +33,7 @@
                     android:layout_height="25dp"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_gastos_fijos"
-                    app:tint="?attr/colorSecondary" />
+                    app:tint="?attr/colorPrimary" />
 
                 <TextView
                     android:id="@+id/tv_concepto"

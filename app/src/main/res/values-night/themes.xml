@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.MyLittleFinanControl" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.MyLittleFinanControl" parent="Theme.MyLittleFinanControl">
 
         <!-- colorPrimary: Es el color principal de la marca, el verde medio profesional. -->
         <item name="colorPrimary">@color/verde_oscuro</item>
@@ -33,7 +33,8 @@
 
         <!-- Fondos y Superficies -->
         <!-- windowBackground: El fondo base de toda la aplicación, blanco para limpieza. -->
-        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowBackground">?attr/colorPrimaryContainer</item>
+
         <!-- colorSurface: El color de fondo de las tarjetas, menús y hojas inferiores. -->
         <item name="colorSurface">@color/verde_blanco_transparente</item>
 
@@ -43,7 +44,7 @@
 
         <!-- Status Bar: Blanca para fundirse con la cabecera. -->
         <item name="android:statusBarColor">@android:color/white</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightStatusBar">true</item>
 
         <!-- Superficies y Fondos Variant: Usados para separadores o variaciones de fondo. -->
         <item name="colorSurfaceVariant">#E0E0E0</item>

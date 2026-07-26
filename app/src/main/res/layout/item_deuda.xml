@@ -25,7 +25,8 @@
                 android:id="@+id/iv_icono_deuda"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:src="@drawable/ic_deuda" />
+                android:src="@drawable/ic_deuda"
+                app:tint="?attr/colorPrimary"/>
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -72,7 +73,7 @@
             android:layout_marginTop="8dp"
             android:text="Descripción de la deuda..."
             android:textSize="14sp"
-            android:textColor="?attr/colorSecondary"
+            android:textColor="?attr/colorPrimary"
             android:maxLines="2"
             android:ellipsize="end" />
 
@@ -119,7 +120,8 @@
                 android:id="@+id/iv_editar"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
-                android:src="@drawable/ic_edit"/>
+                android:src="@drawable/ic_edit"
+                app:tint="?attr/colorPrimary" />
 
             <ImageView
                 android:id="@+id/iv_eliminar"
