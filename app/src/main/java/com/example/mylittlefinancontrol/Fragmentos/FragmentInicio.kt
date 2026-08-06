@@ -8,7 +8,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
+import com.example.mylittlefinancontrol.Adaptadores.MovimientoInicioAdapter
 import com.example.mylittlefinancontrol.databinding.FragmentInicioBinding
+import androidx.recyclerview.widget.LinearLayoutManager
 import java.text.NumberFormat
 import java.util.*
 
@@ -16,11 +18,14 @@ class FragmentInicio : Fragment() {
     private lateinit var binding: FragmentInicioBinding
     private lateinit var mContext: Context
     private lateinit var db: NotasDatabaseHelper
+    private lateinit var movAdapter: MovimientoInicioAdapter
 
     private var totalGastosFijos = 0.0
     private var totalDeudasRestante = 0.0
     private var ingresosMes = 0.0
     private var gastosMes = 0.0
+    private var ingresosTotales = 0.0
+    private var gastosTotales = 0.0
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -36,8 +41,17 @@ class FragmentInicio : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         db = NotasDatabaseHelper(mContext)
 
+        setupRecyclerView()
         cargarDatosLocales()
         setupClickListeners()
+    }
+
+    private fun setupRecyclerView() {
+        movAdapter = MovimientoInicioAdapter(emptyList())
+        binding.rvUltimosMovimientos.apply {
+            layoutManager = LinearLayoutManager(mContext)
+            adapter = movAdapter
+        }
     }
 
     private fun cargarDatosLocales() {
@@ -71,8 +85,18 @@ class FragmentInicio : Fragment() {
         val todosLosMovimientos = db.getAllNotas()
         ingresosMes = 0.0
         gastosMes = 0.0
+        ingresosTotales = 0.0
+        gastosTotales = 0.0
 
         for (mov in todosLosMovimientos) {
+            // Cálculos Históricos (Sin filtro de fecha)
+            if (mov.tipo_reg.contains("INGRESO", true)) {
+                ingresosTotales += mov.valor
+            } else {
+                gastosTotales += mov.valor
+            }
+
+            // Cálculos del Mes Actual
             try {
                 val partes = mov.fecha.split("-")
                 val anio = partes[0].toInt()
@@ -88,14 +112,14 @@ class FragmentInicio : Fragment() {
             } catch (e: Exception) {}
         }
         
-        if (todosLosMovimientos.isNotEmpty()) {
-            val ultimo = todosLosMovimientos[0]
-            binding.tvUltimoRegDesc.text = "${ultimo.descripcion} - $${ultimo.valor}"
-            binding.tvUltimoRegFecha.text = ultimo.fecha
+        // Actualizar lista de últimos 5 movimientos
+        val ultimosMovimientos = if (todosLosMovimientos.size > 5) {
+            todosLosMovimientos.take(5)
         } else {
-            binding.tvUltimoRegDesc.text = "Sin registros"
-            binding.tvUltimoRegFecha.text = "-"
+            todosLosMovimientos
         }
+        movAdapter.actualizarLista(ultimosMovimientos)
+
         actualizarInterfaz()
     }
 
@@ -109,11 +133,12 @@ class FragmentInicio : Fragment() {
         binding.tvTotalGastosFijos.text = format.format(totalGastosFijos)
         binding.tvTotalDeudas.text = format.format(totalDeudasRestante)
 
-        // Balance = Ingresos - (Gastos Variables + Gastos Fijos)
-        val balance = ingresosMes - (gastosMes + totalGastosFijos)
-        binding.tvBalanceGeneral.text = format.format(balance)
+        // Balance Total = Ingresos Totales - Gastos Totales
+        // Nota: Los Gastos Fijos son conceptuales, aquí usamos los registros reales de la DB
+        val balanceTotal = ingresosTotales - gastosTotales
+        binding.tvBalanceGeneral.text = format.format(balanceTotal)
         
-        val colorBalance = if (balance < 0) 
+        val colorBalance = if (balanceTotal < 0) 
             com.example.mylittlefinancontrol.R.color.rojo_alerta
         else 
             com.example.mylittlefinancontrol.R.color.verde_oscuro

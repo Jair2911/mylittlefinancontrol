@@ -1,28 +1,17 @@
-# Ajuste de Temas y Modo Oscuro
+# Walkthrough: Corrección de Interferencia del Botón Agregar
 
-Se ha realizado una actualización integral del sistema de diseño para soportar correctamente el modo oscuro y estandarizar el uso de colores mediante atributos de tema.
+Se ha ajustado la posición del botón flotante para asegurar que no interfiera con las acciones de los registros en la lista de movimientos.
 
-## Cambios Principales
+## Cambios Realizados
 
-### 1. Paleta de Colores (`colors.xml`)
-- Se definieron colores base para fondos claros (`background_light`) y oscuros (`background_dark`).
-- Se añadieron variantes para componentes en modo noche (`surface_dark`).
-- Se estandarizaron los nombres de los colores principales (`primary`, `secondary`, `accent_alerta`).
+### 1. Posicionamiento del FAB (`fragment_movimiento.xml`)
+- Se corrigieron los márgenes del `FloatingActionButton`. Anteriormente tenía un margen inferior excesivo de `84dp`, lo que lo situaba justo encima de los botones de edición de los registros.
+- Ahora utiliza un margen estándar de `16dp`, situándose en la esquina inferior derecha de la pantalla.
 
-### 2. Temas Dinámicos (`themes.xml`)
-- **Modo Claro:** Configurado con fondos claros y texto negro para máxima legibilidad.
-- **Modo Oscuro:** Configurado con fondos casi negros (`#121212`) y textos en blanco/verde claro. Se ajustó la barra de estado para que no use el modo de iconos claros sobre fondo oscuro.
+### 2. Espaciado del RecyclerView
+- Se mantiene el `paddingBottom="80dp"` con `clipToPadding="false"`.
+- Esta combinación permite que, al hacer scroll hasta el final, el último registro de la lista suba lo suficiente para quedar **completamente por encima** del botón flotante, dejando libres los iconos de Editar y Eliminar.
 
-### 3. Layouts Adaptativos
-Se migraron múltiples layouts para usar atributos semánticos (`?attr/colorPrimary`, `?attr/colorSurface`, etc.) en lugar de colores fijos. Esto incluye:
-- `activity_actualizar_movimiento.xml`
-- `activity_login_email.xml`
-- `dialog_agregar_movimiento.xml`
-- `activity_main.xml`
-
-## Verificación Realizada
-- Los layouts de los items (ej. `item_movimiento.xml`) ya estaban usando atributos de tema, por lo que heredarán automáticamente los nuevos colores.
-- Se aseguró que los contrastes en modo noche cumplan con las guías de Material Design 3.
-
-> [!TIP]
-> Para probar los cambios, simplemente cambia el tema del sistema de tu dispositivo a "Modo Oscuro". La aplicación se adaptará instantáneamente.
+## Beneficios
+- **Acceso sin obstáculos:** Ahora puedes tocar los iconos de lápiz y papelera incluso en el último registro de la lista sin que el botón "+" se interponga en tu camino.
+- **Diseño Estándar:** El botón vuelve a la posición familiar para los usuarios de Android, mejorando la ergonomía.

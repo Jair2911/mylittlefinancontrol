@@ -1,12 +1,6 @@
-# Tareas de Ajuste de Temas y Colores
+# Tareas: Rediseño de Item Movimiento y Usabilidad
 
-- [x] Ajustar recursos de colores en `colors.xml`
-- [x] Configurar `themes.xml` (Modo Claro)
-- [x] Configurar `themes.xml` (Modo Oscuro/Night)
-- [x] Actualizar layouts para usar atributos de tema
-    - [x] `activity_actualizar_movimiento.xml`
-    - [x] `activity_login_email.xml`
-    - [x] `dialog_agregar_movimiento.xml`
-    - [x] `activity_main.xml`
-    - [ ] Otros layouts relevantes
-- [ ] Verificación final
+- [x] Ajustar `item_movimiento.xml` (reorganizar diseño y añadir fecha)
+- [x] Ajustar `fragment_movimiento.xml` (padding para evitar obstrucción del FAB)
+- [x] Actualizar `NotasAdaptador.kt` (vincular fecha y nuevos IDs)
+- [x] Verificación final

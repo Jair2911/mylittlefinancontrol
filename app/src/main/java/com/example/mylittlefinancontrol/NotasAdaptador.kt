@@ -30,9 +30,16 @@ class NotasAdaptador(
         val movimiento = movimientos[position]
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
-        holder.item_descripcion.text = "Concepto: " + movimiento.descripcion
-        holder.item_valor.text = "Monto: ${format.format(movimiento.valor)}"
-        holder.itemTipoReg.text = "Tipo: " + movimiento.tipo_reg
+        holder.item_descripcion.text = movimiento.descripcion
+        holder.item_valor.text = format.format(movimiento.valor)
+        holder.itemTipoReg.text = movimiento.tipo_reg
+        holder.item_fecha.text = movimiento.fecha
+
+        if (movimiento.tipo_reg.contains("INGRESO", true)) {
+            holder.item_valor.setTextColor(context.getColor(R.color.verde_oscuro))
+        } else {
+            holder.item_valor.setTextColor(context.getColor(R.color.rojo_alerta))
+        }
 
         holder.ivActualizar.setOnClickListener{
             onEditarClick(movimiento)
@@ -47,6 +54,7 @@ class NotasAdaptador(
         val item_descripcion : TextView = itemView.findViewById(R.id.item_descripcion)
         val item_valor : TextView = itemView.findViewById(R.id.item_valor)
         val itemTipoReg : TextView = itemView.findViewById(R.id.item_tipo)
+        val item_fecha : TextView = itemView.findViewById(R.id.item_fecha)
 
         val ivActualizar : ImageView = itemView.findViewById(R.id.ivActualizar)
         val ivEliminarMov : ImageView = itemView.findViewById(R.id.ivEliminarMov)

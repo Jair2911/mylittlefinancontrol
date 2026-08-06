@@ -49,7 +49,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:letterSpacing="0.1"
-                        android:text="Balance General"
+                        android:text="Balance Total (Histórico)"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -238,52 +238,26 @@
 
             </GridLayout>
 
-            <!-- Último Registro (Sección inferior) -->
+            <!-- Últimos Movimientos (Sección inferior) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="24dp"
                 android:letterSpacing="0.1"
-                android:text="ÚLTIMO REGISTRO"
+                android:text="ÚLTIMOS MOVIMIENTOS"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
-            <com.google.android.material.card.MaterialCardView
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_ultimos_movimientos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:strokeColor="?attr/colorOutline"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:id="@+id/tv_ultimo_reg_desc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Ningún registro"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_ultimo_reg_fecha"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="-"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="14sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_movimiento_inicio" />
 
         </LinearLayout>
     </ScrollView>

@@ -103,6 +103,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/ll_filtros"
         android:layout_marginHorizontal="5dp"
+        android:paddingBottom="100dp"
+        android:clipToPadding="false"
         tools:listitem="@layout/item_movimiento" />
 
     <!-- Botón Agregar (Modal) -->
