@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.MyLittleFinanControl" parent="Theme.MyLittleFinanControl">
+    <style name="Base.Theme.MyLittleFinanControl" parent="Theme.Material3.DayNight.NoActionBar">
 
         <!-- colorPrimary: Es el color principal de la marca, el verde medio profesional. -->
         <item name="colorPrimary">@color/verde_oscuro</item>
@@ -33,8 +33,7 @@
 
         <!-- Fondos y Superficies -->
         <!-- windowBackground: El fondo base de toda la aplicación, blanco para limpieza. -->
-        <item name="android:windowBackground">?attr/colorPrimaryContainer</item>
-
+        <item name="android:windowBackground">@color/verde_claro</item>
         <!-- colorSurface: El color de fondo de las tarjetas, menús y hojas inferiores. -->
         <item name="colorSurface">@color/verde_blanco_transparente</item>
 
@@ -47,9 +46,17 @@
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Superficies y Fondos Variant: Usados para separadores o variaciones de fondo. -->
-        <item name="colorSurfaceVariant">#E0E0E0</item>
-        <item name="colorOnSurfaceVariant">#49454F</item>
+        <item name="colorSurfaceVariant">@color/verde_transparente</item>
+        <item name="colorOnSurfaceVariant">@color/verde_gris</item>
 
+        <!-- Fondo de la lista desplegable abierta -->
+        <item name="popupMenuBackground">@android:color/white</item>
+        <item name="android:popupBackground">@android:color/white</item>
+
+        <item name="colorSurfaceContainer">@color/verde_claro</item>
+        <item name="colorSurfaceContainerLow">@color/verde_claro</item>
+        <item name="colorSurfaceContainerHigh">@color/verde_claro</item>
+        <item name="colorSurfaceContainerHighest">@color/verde_claro</item>
     </style>
 
     <style name="Theme.MyLittleFinanControl" parent="Base.Theme.MyLittleFinanControl" />
