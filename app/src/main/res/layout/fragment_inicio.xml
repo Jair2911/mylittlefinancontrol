@@ -10,7 +10,7 @@
         android:id="@+id/imagenFondo"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/background_1"
+        android:src="@drawable/bg_1"
         android:scaleType="centerCrop" />
 
     <ScrollView
@@ -83,7 +83,7 @@
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
                     android:layout_margin="4dp"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:strokeColor="?attr/colorPrimary"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
@@ -124,7 +124,7 @@
                     app:strokeColor="?attr/colorPrimary"
                     android:focusable="true"
                     android:layout_margin="4dp"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -165,7 +165,7 @@
                     app:strokeColor="?attr/colorPrimary"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 
@@ -206,7 +206,7 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
 

@@ -23,7 +23,7 @@
             android:layout_height="0dp"
             android:layout_alignTop="@id/scrollViewContenido"
             android:layout_alignBottom="@id/scrollViewContenido"
-            android:src="@drawable/background_1"
+            android:src="@drawable/bg_1"
             android:scaleType="centerCrop" />
 
         <!-- 4. CONTENIDO: ScrollView transparente para permitir el desplazamiento en pantallas pequeñas -->
