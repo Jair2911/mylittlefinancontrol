@@ -1,7 +1,7 @@
 package com.example.mylittlefinancontrol.Servicios
 
 import android.content.Context
-import com.google.api.client.extensions.android.http.AndroidHttp
+import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
@@ -23,7 +23,7 @@ class GoogleDriveService(context: Context, accountName: String) {
         ).setSelectedAccountName(accountName)
 
         driveService = Drive.Builder(
-            AndroidHttp.newCompatibleTransport(),
+            NetHttpTransport(),
             GsonFactory.getDefaultInstance(),
             credential
         ).setApplicationName("My Little Finan Control").build()
@@ -33,20 +33,24 @@ class GoogleDriveService(context: Context, accountName: String) {
      * Sube un archivo a la carpeta de datos de la aplicación en Google Drive.
      */
     fun uploadFile(localFile: java.io.File, driveFileName: String): String? {
-        val metadata = File().apply {
-            name = driveFileName
-            parents = Collections.singletonList("appDataFolder")
-        }
-
         val content = FileContent("application/x-sqlite3", localFile)
         
         // Buscar si ya existe para actualizarlo
         val existingFile = findFile(driveFileName)
         
         return if (existingFile != null) {
-            driveService.files().update(existingFile.id, metadata, content).execute().id
+            // Para actualizar (PATCH), no enviamos 'parents' de nuevo ya que causaría conflicto
+            val updateMetadata = File().apply {
+                name = driveFileName
+            }
+            driveService.files().update(existingFile.id, updateMetadata, content).execute().id
         } else {
-            driveService.files().create(metadata, content).execute().id
+            // Para crear (POST)
+            val createMetadata = File().apply {
+                name = driveFileName
+                parents = Collections.singletonList("appDataFolder")
+            }
+            driveService.files().create(createMetadata, content).execute().id
         }
     }
 
