@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,6 +10,13 @@ android {
     namespace = "com.example.mylittlefinancontrol"
     compileSdk = 35
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.inputStream())
+    }
+    val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+
     defaultConfig {
         applicationId = "com.example.mylittlefinancontrol"
         minSdk = 24
@@ -16,6 +25,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "GEMINI_API_KEY", "\"${geminiApiKey}\"")
     }
 
     buildTypes {
@@ -36,6 +46,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     packaging {
@@ -75,6 +86,7 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.google.firebase:firebase-storage")
+    implementation("uk.co.samuelwall:material-tap-target-prompt:3.3.2")
 
     // Google Drive & Backup
     implementation(libs.androidx.work.runtime.ktx)
@@ -82,6 +94,11 @@ dependencies {
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
     implementation(libs.google.http.client.android.ext)
+
+    // Gemini AI
+    implementation(libs.generativeai)
+    implementation(libs.firebase.vertexai)
+    implementation(libs.firebase.vertexai)
 
     // Exclude conflicting libraries from Google API
     configurations.all {

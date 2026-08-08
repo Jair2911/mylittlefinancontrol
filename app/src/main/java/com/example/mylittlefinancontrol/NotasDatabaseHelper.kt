@@ -179,4 +179,42 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         db.delete(TABLE_DEUDAS, "$COLUMN_D_ID = ?", arrayOf(id))
         db.close()
     }
+
+    fun getResumenFinanciero(): com.example.mylittlefinancontrol.Modelos.ResumenFinanciero {
+        val db = readableDatabase
+        
+        // 1. Balance Total (Ingresos - Gastos de movimientos)
+        var ingresos = 0.0
+        var gastos = 0.0
+        val cursorMov = db.rawQuery("SELECT $COLUMN_MOV_VALOR, $COLUMN_MOV_TIPO FROM $TABLE_MOVIMIENTO", null)
+        while (cursorMov.moveToNext()) {
+            val valor = cursorMov.getDouble(0)
+            val tipo = cursorMov.getString(1)
+            if (tipo.equals("Ingreso", ignoreCase = true)) {
+                ingresos += valor
+            } else {
+                gastos += valor
+            }
+        }
+        cursorMov.close()
+        val balance = ingresos - gastos
+
+        // 2. Total Gastos Fijos
+        var totalGF = 0.0
+        val cursorGF = db.rawQuery("SELECT SUM($COLUMN_GF_MONTO) FROM $TABLE_GASTOS_FIJOS", null)
+        if (cursorGF.moveToFirst()) {
+            totalGF = cursorGF.getDouble(0)
+        }
+        cursorGF.close()
+
+        // 3. Total Deudas Pendientes (Total - Pagado)
+        var totalDeudas = 0.0
+        val cursorD = db.rawQuery("SELECT SUM($COLUMN_D_TOTAL - $COLUMN_D_PAGADO) FROM $TABLE_DEUDAS", null)
+        if (cursorD.moveToFirst()) {
+            totalDeudas = cursorD.getDouble(0)
+        }
+        cursorD.close()
+
+        return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(balance, totalGF, totalDeudas)
+    }
 }
