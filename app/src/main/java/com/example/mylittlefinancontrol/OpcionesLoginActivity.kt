@@ -130,6 +130,7 @@ class OpcionesLoginActivity : AppCompatActivity() {
         datos_usuario["proveedor"] = "Google"
         datos_usuario["estado"] = "Online"
         datos_usuario["image"] = ""
+        datos_usuario["tutorial"] = false
 
         val reference = FirebaseDatabase.getInstance().getReference("usuarios")
         reference.child(uidu!!)

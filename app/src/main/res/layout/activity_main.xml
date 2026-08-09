@@ -36,6 +36,17 @@
             android:textColor="?attr/colorPrimaryContainer"/>
 
         <ImageButton
+            android:id="@+id/btnGeminiAdvisor"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_toStartOf="@id/ic_sign_out"
+            android:src="@drawable/ic_lightbulb"
+            android:background="@android:color/transparent"
+            android:layout_centerVertical="true"
+            android:contentDescription="Asesor Gemini"
+            app:tint="?attr/colorPrimaryContainer"/>
+
+        <ImageButton
             android:id="@+id/ic_sign_out"
             android:layout_width="50dp"
             android:layout_height="50dp"

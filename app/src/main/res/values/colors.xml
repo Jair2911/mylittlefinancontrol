@@ -6,9 +6,11 @@
     <color name="verde_claro">#CCFFCC</color>
     <color name="verde_negro">#003300</color>
     <color name="verde_gris">#ED003300</color>
-    <color name="rojo_alerta">#FF6666</color>
+    <color name="rojo_alerta">#F20000</color>
     <color name="rojo_transparente">#7BF69F9F</color>
     <color name="verde_transparente">#5FCCFFCC</color>
     <color name="verde_blanco_transparente">#D3F6FFF6</color>
     <color name="verde">#00C292</color>
+    <color name="verde_oscuro_transparente">#CC003300</color>
+    <color name="negro_transparente">#CC000000</color>
 </resources>

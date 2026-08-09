@@ -60,3 +60,7 @@ gradle-app.setting
 
 # Windows
 Thumbs.db
+
+# IDE Artifacts
+.artifacts/
+
