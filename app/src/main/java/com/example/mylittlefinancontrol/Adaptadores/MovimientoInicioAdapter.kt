@@ -20,6 +20,7 @@ class MovimientoInicioAdapter(private var lista: List<Movimiento>) :
         val fecha: TextView = view.findViewById(R.id.tv_fecha)
         val monto: TextView = view.findViewById(R.id.tv_monto)
         val icono: ImageView = view.findViewById(R.id.iv_tipo_icono)
+        val etiquetaFijo: TextView = view.findViewById(R.id.tv_etiqueta_fijo)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -43,6 +44,12 @@ class MovimientoInicioAdapter(private var lista: List<Movimiento>) :
         } else {
             holder.monto.setTextColor(ContextCompat.getColor(context, R.color.rojo_alerta))
             holder.icono.setImageResource(R.drawable.ic_movimientos)
+        }
+
+        if (mov.gastoFijoId != null) {
+            holder.etiquetaFijo.visibility = View.VISIBLE
+        } else {
+            holder.etiquetaFijo.visibility = View.GONE
         }
     }
 

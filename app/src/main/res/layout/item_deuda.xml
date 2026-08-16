@@ -53,6 +53,15 @@
                     android:text="Tarjeta de Crédito"
                     android:textSize="13sp"
                     android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/tv_fechas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fecha: 2024/01/01 - 2024/12/31"
+                    android:textSize="11sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView

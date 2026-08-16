@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Constantes
 import com.example.mylittlefinancontrol.Modelos.Deuda
+import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasAdaptador
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
@@ -31,6 +32,8 @@ class FragmentMovimiento : Fragment() {
     private var anioSeleccionado: Int = 0
     private val listaDeudas = mutableListOf<Deuda>()
     private var deudaSeleccionada: Deuda? = null
+    private val listaGastosFijos = mutableListOf<GastoFijo>()
+    private var gastoFijoSeleccionado: GastoFijo? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -108,6 +111,8 @@ class FragmentMovimiento : Fragment() {
     private fun cargarDeudasLocales() {
         listaDeudas.clear()
         listaDeudas.addAll(db.getAllDeudas())
+        listaGastosFijos.clear()
+        listaGastosFijos.addAll(db.getAllGastosFijos())
     }
 
     private fun mostrarDialogoMovimiento(movimientoExistente: Movimiento?) {
@@ -117,6 +122,8 @@ class FragmentMovimiento : Fragment() {
         alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         cargarDeudasLocales()
+        deudaSeleccionada = null
+        gastoFijoSeleccionado = null
 
         val opciones = arrayOf("Gasto", "Ingreso", "Otro")
         dialogBinding.autoTipoMov.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opciones))
@@ -124,25 +131,65 @@ class FragmentMovimiento : Fragment() {
         val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
         dialogBinding.autoDeudas.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresDeudas))
 
+        val nombresGastos = listaGastosFijos.map { "${it.concepto} ($${it.monto})" }
+        dialogBinding.autoGastosFijos.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresGastos))
+
+        val opcionesQuincena = arrayOf("1ª Quincena", "2ª Quincena")
+        dialogBinding.autoQuincena.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opcionesQuincena))
+        
+        // Selección de quincena por defecto basada en el día actual
+        val diaActual = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+        val defaultQ = if (diaActual <= 15) "1ª Quincena" else "2ª Quincena"
+        dialogBinding.autoQuincena.setText(defaultQ, false)
+
         if (movimientoExistente != null) {
             dialogBinding.tvTituloDialogo.text = "Editar Movimiento"
             dialogBinding.etDescripcion.setText(movimientoExistente.descripcion)
             dialogBinding.etValor.setText(movimientoExistente.valor.toString())
             dialogBinding.autoTipoMov.setText(movimientoExistente.tipo_reg.lowercase().capitalize(), false)
             
-            // Si es un pago de deuda, podrías querer manejarlo, pero por simplicidad permitimos editar tipo
-            if (movimientoExistente.tipo_reg == "PAGO DEUDA") {
-                dialogBinding.cbEsPagoDeuda.visibility = View.GONE // Ocultar para evitar inconsistencias al editar
+            // Si es un pago de deuda o gasto fijo, podrías querer manejarlo, pero por simplicidad permitimos editar tipo
+            if (movimientoExistente.tipo_reg == "PAGO DEUDA" || movimientoExistente.tipo_reg == "GASTO FIJO") {
+                dialogBinding.cbEsPagoDeuda.visibility = View.GONE 
+                dialogBinding.cbEsGastoFijo.visibility = View.GONE
             }
         }
 
         dialogBinding.cbEsPagoDeuda.setOnCheckedChangeListener { _, isChecked ->
             dialogBinding.tilSeleccionDeuda.visibility = if (isChecked) View.VISIBLE else View.GONE
-            dialogBinding.tilTipoReg.visibility = if (isChecked) View.GONE else View.VISIBLE
+            dialogBinding.tilTipoReg.visibility = if (isChecked || dialogBinding.cbEsGastoFijo.isChecked) View.GONE else View.VISIBLE
+            
+            // Ocultar el otro checkbox para que sean mutuamente excluyentes
+            dialogBinding.cbEsGastoFijo.visibility = if (isChecked) View.GONE else View.VISIBLE
+            
+            if (isChecked) {
+                dialogBinding.cbEsGastoFijo.isChecked = false
+                gastoFijoSeleccionado = null
+            }
+        }
+
+        dialogBinding.cbEsGastoFijo.setOnCheckedChangeListener { _, isChecked ->
+            dialogBinding.tilSeleccionGastoFijo.visibility = if (isChecked) View.VISIBLE else View.GONE
+            dialogBinding.tilTipoReg.visibility = if (isChecked || dialogBinding.cbEsPagoDeuda.isChecked) View.GONE else View.VISIBLE
+            
+            // Ocultar el otro checkbox
+            dialogBinding.cbEsPagoDeuda.visibility = if (isChecked) View.GONE else View.VISIBLE
+            
+            if (isChecked) {
+                dialogBinding.cbEsPagoDeuda.isChecked = false
+                deudaSeleccionada = null
+            }
         }
 
         dialogBinding.autoDeudas.setOnItemClickListener { _, _, pos, _ -> 
             deudaSeleccionada = listaDeudas[pos] 
+        }
+
+        dialogBinding.autoGastosFijos.setOnItemClickListener { _, _, pos, _ ->
+            gastoFijoSeleccionado = listaGastosFijos[pos]
+            dialogBinding.tilSeleccionQuincena.visibility = if (gastoFijoSeleccionado?.periodo == "Quincenal") View.VISIBLE else View.GONE
+            dialogBinding.etDescripcion.setText("PAGO: ${gastoFijoSeleccionado?.concepto}")
+            dialogBinding.etValor.setText(gastoFijoSeleccionado?.monto?.toInt().toString())
         }
 
         dialogBinding.btnGuardar.setOnClickListener {
@@ -157,11 +204,31 @@ class FragmentMovimiento : Fragment() {
             
             if (movimientoExistente == null) {
                 // CREAR
-                val fecha = Constantes.formatoFecha(System.currentTimeMillis())
+                val fecha = Constantes.formatoFecha(System.currentTimeMillis()) // yyyy-MM-dd
+                val mesAnio = fecha.substring(0, 7) // yyyy-MM
+
                 if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
                     deudaSeleccionada!!.totalPagado += valor
                     db.updateDeuda(deudaSeleccionada!!)
                     db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
+                } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
+                    val gf = gastoFijoSeleccionado!!
+                    var quincena: Int? = null
+                    if (gf.periodo == "Quincenal") {
+                        val qPos = dialogBinding.autoQuincena.text.toString()
+                        if (qPos == "1ª Quincena") {
+                            gf.ultimoPagoQ1 = mesAnio
+                            quincena = 1
+                        } else if (qPos == "2ª Quincena") {
+                            gf.ultimoPagoQ2 = mesAnio
+                            quincena = 2
+                        }
+                    } else {
+                        gf.ultimoPagoQ1 = mesAnio // Para mensual usamos Q1 como indicador principal
+                        quincena = 0
+                    }
+                    db.updateGastoFijo(gf)
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), quincena))
                 } else {
                     val tipo = dialogBinding.autoTipoMov.text.toString()
                     db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fecha))

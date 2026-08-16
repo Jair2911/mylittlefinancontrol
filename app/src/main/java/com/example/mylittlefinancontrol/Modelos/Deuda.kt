@@ -6,5 +6,7 @@ data class Deuda(
     var concepto: String = "",
     var descripcion: String = "",
     var totalDeuda: Double = 0.0,
-    var totalPagado: Double = 0.0
+    var totalPagado: Double = 0.0,
+    var fechaInicio: String = "",
+    var fechaFin: String = ""
 )

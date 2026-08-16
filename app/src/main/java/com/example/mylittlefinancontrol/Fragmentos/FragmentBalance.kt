@@ -88,16 +88,20 @@ class FragmentBalance : Fragment() {
             val descripcion = dialogBinding.etDescripcion.text.toString()
             val total = dialogBinding.etTotalDeuda.text.toString().toDoubleOrNull() ?: 0.0
             val pagado = dialogBinding.etTotalPagado.text.toString().toDoubleOrNull() ?: 0.0
+            val fechaIni = dialogBinding.etFechaInicio.text.toString()
+            val fechaFin = dialogBinding.etFechaFin.text.toString()
 
             if (tipo.isNotEmpty() && concepto.isNotEmpty() && total > 0) {
                 if (deudaExistente == null) {
-                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, total, pagado))
+                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, total, pagado, fechaIni, fechaFin))
                 } else {
                     deudaExistente.tipo = tipo
                     deudaExistente.concepto = concepto
                     deudaExistente.descripcion = descripcion
                     deudaExistente.totalDeuda = total
                     deudaExistente.totalPagado = pagado
+                    deudaExistente.fechaInicio = fechaIni
+                    deudaExistente.fechaFin = fechaFin
                     db.updateDeuda(deudaExistente)
                 }
                 cargarDeudas()

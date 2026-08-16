@@ -36,6 +36,13 @@ class DeudasAdapter(
             tvPagadoLabel.text = "Pagado: ${format.format(deuda.totalPagado)}"
             tvRestanteLabel.text = "Restante: ${format.format(restante)}"
             
+            if (deuda.fechaInicio.isNotEmpty() || deuda.fechaFin.isNotEmpty()) {
+                tvFechas.visibility = android.view.View.VISIBLE
+                tvFechas.text = "Plazo: ${deuda.fechaInicio} - ${deuda.fechaFin}"
+            } else {
+                tvFechas.visibility = android.view.View.GONE
+            }
+
             // Configurar ProgressBar
             pbDeuda.max = if (deuda.totalDeuda > 0) deuda.totalDeuda.toInt() else 100
             pbDeuda.progress = deuda.totalPagado.toInt()

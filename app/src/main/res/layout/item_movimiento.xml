@@ -53,6 +53,20 @@
                     android:text="Tipo"
                     android:textSize="13sp"
                     android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/tv_etiqueta_fijo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_corners_background"
+                    android:backgroundTint="?attr/colorTertiary"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="1dp"
+                    android:text="FIJO"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView

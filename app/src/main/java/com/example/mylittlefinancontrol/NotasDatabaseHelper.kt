@@ -13,7 +13,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 6
+        private const val DATABASE_VERSION = 7
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -21,6 +21,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_MOV_VALOR = "valor"
         private const val COLUMN_MOV_TIPO = "tipo_reg"
         private const val COLUMN_MOV_FECHA = "fecha"
+        private const val COLUMN_MOV_GF_ID = "gasto_fijo_id"
+        private const val COLUMN_MOV_Q_PAGADA = "quincena_pagada"
 
         private const val TABLE_GASTOS_FIJOS = "gastos_fijos"
         private const val COLUMN_GF_ID = "id"
@@ -29,6 +31,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_GF_MONTO = "monto"
         private const val COLUMN_GF_DIA = "diaPago"
         private const val COLUMN_GF_PERIODO = "periodo"
+        private const val COLUMN_GF_U_PAGO_Q1 = "ultimo_pago_q1"
+        private const val COLUMN_GF_U_PAGO_Q2 = "ultimo_pago_q2"
 
         private const val TABLE_DEUDAS = "deudas"
         private const val COLUMN_D_ID = "id"
@@ -37,19 +41,27 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_D_DESC = "descripcion"
         private const val COLUMN_D_TOTAL = "totalDeuda"
         private const val COLUMN_D_PAGADO = "totalPagado"
+        private const val COLUMN_D_FECHA_INI = "fecha_inicio"
+        private const val COLUMN_D_FECHA_FIN = "fecha_fin"
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT)")
-        db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT)")
-        db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL)")
+        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER)")
+        db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT)")
+        db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_MOVIMIENTO")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_GASTOS_FIJOS")
-        db?.execSQL("DROP TABLE IF EXISTS $TABLE_DEUDAS")
-        onCreate(db)
+        if (oldVersion < 7) {
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_GF_ID INTEGER")
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_Q_PAGADA INTEGER")
+            
+            db?.execSQL("ALTER TABLE $TABLE_GASTOS_FIJOS ADD COLUMN $COLUMN_GF_U_PAGO_Q1 TEXT")
+            db?.execSQL("ALTER TABLE $TABLE_GASTOS_FIJOS ADD COLUMN $COLUMN_GF_U_PAGO_Q2 TEXT")
+            
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_FECHA_INI TEXT")
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_FECHA_FIN TEXT")
+        }
     }
 
     // --- MÉTODOS MOVIMIENTOS ---
@@ -60,6 +72,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_VALOR, mov.valor)
             put(COLUMN_MOV_TIPO, mov.tipo_reg)
             put(COLUMN_MOV_FECHA, mov.fecha)
+            put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
+            put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
         }
         db.insert(TABLE_MOVIMIENTO, null, v)
         db.close()
@@ -70,7 +84,15 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO ORDER BY $COLUMN_MOV_ID DESC", null)
         while (cursor.moveToNext()) {
-            lista.add(Movimiento(cursor.getInt(0), cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getString(4)))
+            lista.add(Movimiento(
+                cursor.getInt(0), 
+                cursor.getString(1), 
+                cursor.getInt(2), 
+                cursor.getString(3), 
+                cursor.getString(4),
+                if (cursor.isNull(5)) null else cursor.getInt(5),
+                if (cursor.isNull(6)) null else cursor.getInt(6)
+            ))
         }
         cursor.close()
         return lista
@@ -80,7 +102,15 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_ID = ?", arrayOf(id.toString()))
         cursor.moveToFirst()
-        val mov = Movimiento(cursor.getInt(0), cursor.getString(1), cursor.getInt(2), cursor.getString(3), cursor.getString(4))
+        val mov = Movimiento(
+            cursor.getInt(0), 
+            cursor.getString(1), 
+            cursor.getInt(2), 
+            cursor.getString(3), 
+            cursor.getString(4),
+            if (cursor.isNull(5)) null else cursor.getInt(5),
+            if (cursor.isNull(6)) null else cursor.getInt(6)
+        )
         cursor.close()
         return mov
     }
@@ -92,6 +122,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_VALOR, mov.valor)
             put(COLUMN_MOV_TIPO, mov.tipo_reg)
             put(COLUMN_MOV_FECHA, mov.fecha)
+            put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
+            put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
         }
         db.update(TABLE_MOVIMIENTO, v, "$COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
         db.close()
@@ -110,6 +142,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val v = ContentValues().apply {
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
             put(COLUMN_GF_MONTO, gf.monto); put(COLUMN_GF_DIA, gf.diaPago); put(COLUMN_GF_PERIODO, gf.periodo)
+            put(COLUMN_GF_U_PAGO_Q1, gf.ultimoPagoQ1); put(COLUMN_GF_U_PAGO_Q2, gf.ultimoPagoQ2)
         }
         db.insert(TABLE_GASTOS_FIJOS, null, v)
         db.close()
@@ -120,6 +153,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val v = ContentValues().apply {
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
             put(COLUMN_GF_MONTO, gf.monto); put(COLUMN_GF_DIA, gf.diaPago); put(COLUMN_GF_PERIODO, gf.periodo)
+            put(COLUMN_GF_U_PAGO_Q1, gf.ultimoPagoQ1); put(COLUMN_GF_U_PAGO_Q2, gf.ultimoPagoQ2)
         }
         db.update(TABLE_GASTOS_FIJOS, v, "$COLUMN_GF_ID = ?", arrayOf(gf.id))
         db.close()
@@ -130,7 +164,16 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_GASTOS_FIJOS", null)
         while (cursor.moveToNext()) {
-            lista.add(GastoFijo(cursor.getInt(0).toString(), cursor.getString(1), cursor.getString(2), cursor.getDouble(3), cursor.getString(4), cursor.getString(5)))
+            lista.add(GastoFijo(
+                cursor.getInt(0).toString(), 
+                cursor.getString(1), 
+                cursor.getString(2), 
+                cursor.getDouble(3), 
+                cursor.getString(4), 
+                cursor.getString(5),
+                cursor.getString(6) ?: "",
+                cursor.getString(7) ?: ""
+            ))
         }
         cursor.close()
         return lista
@@ -148,6 +191,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val v = ContentValues().apply {
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
             put(COLUMN_D_DESC, d.descripcion); put(COLUMN_D_TOTAL, d.totalDeuda); put(COLUMN_D_PAGADO, d.totalPagado)
+            put(COLUMN_D_FECHA_INI, d.fechaInicio); put(COLUMN_D_FECHA_FIN, d.fechaFin)
         }
         db.insert(TABLE_DEUDAS, null, v)
         db.close()
@@ -158,6 +202,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val v = ContentValues().apply {
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
             put(COLUMN_D_DESC, d.descripcion); put(COLUMN_D_TOTAL, d.totalDeuda); put(COLUMN_D_PAGADO, d.totalPagado)
+            put(COLUMN_D_FECHA_INI, d.fechaInicio); put(COLUMN_D_FECHA_FIN, d.fechaFin)
         }
         db.update(TABLE_DEUDAS, v, "$COLUMN_D_ID = ?", arrayOf(d.id))
         db.close()
@@ -168,7 +213,16 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_DEUDAS", null)
         while (cursor.moveToNext()) {
-            lista.add(Deuda(cursor.getInt(0).toString(), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getDouble(4), cursor.getDouble(5)))
+            lista.add(Deuda(
+                cursor.getInt(0).toString(), 
+                cursor.getString(1), 
+                cursor.getString(2), 
+                cursor.getString(3), 
+                cursor.getDouble(4), 
+                cursor.getDouble(5),
+                cursor.getString(6) ?: "",
+                cursor.getString(7) ?: ""
+            ))
         }
         cursor.close()
         return lista

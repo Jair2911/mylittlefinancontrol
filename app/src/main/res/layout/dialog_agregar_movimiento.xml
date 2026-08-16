@@ -53,8 +53,15 @@
                     android:id="@+id/cb_es_pago_deuda"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
+                    android:layout_marginBottom="8dp"
                     android:text="¿Es un pago de deuda / préstamo?" />
+
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_es_gasto_fijo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:text="¿Es un Gasto Fijo?" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_seleccion_deuda"
@@ -67,6 +74,40 @@
 
                     <AutoCompleteTextView
                         android:id="@+id/auto_deudas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Selección de Gasto Fijo -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_gasto_fijo"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Selecciona el Gasto Fijo"
+                    android:visibility="gone">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_gastos_fijos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Selección de Quincena (Solo si es quincenal) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_quincena"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Selecciona la Quincena"
+                    android:visibility="gone">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_quincena"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="none" />
