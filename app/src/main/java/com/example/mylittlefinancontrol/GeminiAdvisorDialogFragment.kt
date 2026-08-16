@@ -8,12 +8,15 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.example.mylittlefinancontrol.databinding.LayoutChatGeminiBinding
 import com.example.mylittlefinancontrol.BuildConfig
+import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
+import java.util.Locale
 
 class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
 
@@ -35,13 +38,17 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
         adapter = ChatAdapter(mensajes)
         binding.rvChat.adapter = adapter
 
-        agregarMensaje("¡Hola! Soy tu asesor DABAFINN. ¿En qué puedo ayudarte hoy?", false)
-
-        val resumen = dbHelper.getResumenFinanciero()
         val systemInstructionText = """
-            Eres un asesor financiero estricto y analítico. Evalúa las ideas financieras del usuario con base en su realidad. 
-            Datos actuales del usuario: [Balance: ${resumen.balanceTotal}], [Gastos Fijos: ${resumen.totalGastosFijos}], [Deudas: ${resumen.totalDeudasPendientes}]. 
-            Si la consulta del usuario lo dejaría sin liquidez, Si es viable, dile bajo qué condiciones. Responde de forma directa, corta y coloquial.
+            Eres DABAFINN, un asesor financiero experto, analítico y directo. Tu objetivo es ayudar al usuario a tener libertad financiera.
+            
+            REGLAS DE ORO:
+            1. Analiza el contexto financiero detallado que se te proporciona abajo.
+            2. Si el usuario quiere gastar en algo innecesario y su balance es bajo o tiene deudas altas, sé estricto y desaconséjalo con argumentos.
+            3. Si el usuario va bien, felicítalo pero sugiere ahorro o inversión.
+            4. Detecta patrones en sus movimientos (ej. muchos gastos hormiga).
+            5. Tus respuestas deben ser en español, claras, concisas y con un tono profesional pero cercano.
+            
+            ${generarContextoFinanciero()}
         """.trimIndent()
 
         val generativeModel = GenerativeModel(
@@ -49,6 +56,8 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
             apiKey = BuildConfig.GEMINI_API_KEY,
             systemInstruction = content { text(systemInstructionText) }
         )
+
+        agregarMensaje("¡Hola! Soy tu asesor DABAFINN. He analizado tus datos y estoy listo para darte consejos. ¿En qué puedo ayudarte?", false)
 
         binding.btnEnviar.setOnClickListener {
             val textoUsuario = binding.etMensaje.text.toString()
@@ -71,6 +80,47 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
                 }
             }
         }
+    }
+
+    private fun generarContextoFinanciero(): String {
+        val resumen = dbHelper.getResumenFinanciero()
+        val gastosFijos = dbHelper.getAllGastosFijos()
+        val deudas = dbHelper.getAllDeudas()
+        val ultimosMovimientos = dbHelper.getAllNotas().take(20)
+        
+        val cal = Calendar.getInstance()
+        val mesAnioActual = String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+        
+        val sb = StringBuilder()
+        sb.append("CONTEXTO FINANCIERO ACTUAL DEL USUARIO:\n")
+        sb.append("- Balance General (Ingresos - Gastos): ${resumen.balanceTotal}\n")
+        sb.append("- Total Gastos Fijos del mes: ${resumen.totalGastosFijos}\n")
+        sb.append("- Total Deudas por pagar: ${resumen.totalDeudasPendientes}\n\n")
+        
+        sb.append("DETALLE GASTOS FIJOS:\n")
+        gastosFijos.forEach { gf ->
+            val estado = if (gf.periodo == "Quincenal") {
+                val q1 = if (gf.ultimoPagoQ1 == mesAnioActual) "Q1 Pagada" else "Q1 Pendiente"
+                val q2 = if (gf.ultimoPagoQ2 == mesAnioActual) "Q2 Pagada" else "Q2 Pendiente"
+                "$q1, $q2"
+            } else {
+                if (gf.ultimoPagoQ1 == mesAnioActual) "Pagado" else "Pendiente"
+            }
+            sb.append("  * ${gf.concepto}: ${gf.monto} (${gf.periodo}) | Estado este mes: $estado\n")
+        }
+        
+        sb.append("\nDETALLE DEUDAS ACTIVAS:\n")
+        deudas.forEach { d ->
+            val restante = d.totalDeuda - d.totalPagado
+            sb.append("  * ${d.concepto} (${d.tipo}): Debe ${restante} de un total de ${d.totalDeuda}. Plazo: ${d.fechaInicio} a ${d.fechaFin}\n")
+        }
+        
+        sb.append("\nÚLTIMOS 20 MOVIMIENTOS REGISTRADOS:\n")
+        ultimosMovimientos.forEach { m ->
+            sb.append("  * ${m.fecha} | ${m.tipo_reg}: ${m.descripcion} por ${m.valor}\n")
+        }
+        
+        return sb.toString()
     }
 
     private fun agregarMensaje(texto: String, esUsuario: Boolean) {
