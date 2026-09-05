@@ -1,5 +1,6 @@
 package com.example.mylittlefinancontrol.Fragmentos
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.res.ColorStateList
@@ -266,23 +267,7 @@ class FragmentAhorros : Fragment() {
     }
 
     private fun cargarAhorros() {
-        val sp = mContext.getSharedPreferences("AhorrosPrefs", Context.MODE_PRIVATE)
-        val yaInicializado = sp.getBoolean("ahorros_inicializados", false)
-
         listaAhorrosTodos = db.getAllAhorros().toMutableList()
-
-        // Solo insertamos metas de ejemplo la primerísima vez que se abre la app
-        if (!yaInicializado && listaAhorrosTodos.isEmpty()) {
-            val meta1 = Ahorro("", "Fondo de Emergencia", "Emergencia", 350000.0, 500000.0, "Dic 2026")
-            val meta2 = Ahorro("", "Ahorro Automóvil", "Vehículo", 120000.0, 400000.0, "Jun 2025")
-            db.insertAhorro(meta1)
-            db.insertAhorro(meta2)
-            sp.edit().putBoolean("ahorros_inicializados", true).apply()
-            listaAhorrosTodos = db.getAllAhorros().toMutableList()
-        } else if (!yaInicializado) {
-            sp.edit().putBoolean("ahorros_inicializados", true).apply()
-        }
-
         aplicarFiltro()
         actualizarResumenVisual()
     }
@@ -324,8 +309,16 @@ class FragmentAhorros : Fragment() {
     }
 
     private fun eliminarAhorro(ahorro: Ahorro) {
-        db.deleteAhorro(ahorro.id)
-        cargarAhorros()
+        AlertDialog.Builder(mContext)
+            .setTitle("Eliminar Meta de Ahorro")
+            .setMessage("¿Estás seguro de que deseas eliminar '${ahorro.titulo}'?")
+            .setPositiveButton("Eliminar") { _, _ ->
+                db.deleteAhorro(ahorro.id)
+                cargarAhorros()
+                Toast.makeText(mContext, "Meta eliminada correctamente", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     override fun onDestroyView() {
