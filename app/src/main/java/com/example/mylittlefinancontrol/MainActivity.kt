@@ -44,12 +44,12 @@ class MainActivity : AppCompatActivity() {
             verificarTutorial()
         }
 
-        // Carga inicial: Movimientos
-        verFragmentoMovimientos()
+        // Carga inicial: Inicio
+        verFragmentoInicio()
 
-        // Clic en la cabecera izquierda -> Ir a Perfil
+        // Clic en la cabecera izquierda -> Ir a Inicio
         binding.llHeaderUsuario.setOnClickListener {
-            verFragmentoPerfil()
+            verFragmentoInicio()
         }
 
         // Clic en el botón Perfil Toolbar -> Ir a Perfil
@@ -68,6 +68,18 @@ class MainActivity : AppCompatActivity() {
         binding.navAhorros.setOnClickListener { verFragmentoAhorros() }
         binding.navDeudas.setOnClickListener { verFragmentoDeudas() }
 
+        // Manejo de retroceso para volver a Inicio
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val fragmentoActual = supportFragmentManager.findFragmentById(binding.fragmentoFL.id)
+                if (fragmentoActual !is FragmentInicio) {
+                    verFragmentoInicio()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     private fun actualizarNombreUsuario() {
@@ -203,7 +215,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun verFragmentoInicio() {
-        verFragmentoMovimientos()
+        actualizarEstadoNavegacion(-1)
+        reemplazarFragmento(FragmentInicio(), "Inicio")
     }
 
     private fun verificarTutorial() {
