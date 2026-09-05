@@ -68,6 +68,11 @@ class FragmentBalance : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarDeudas()
+    }
+
     private fun setupRecyclerView() {
         adapter = DeudasAdapter(emptyList(),
             onEditarClick = { deuda -> mostrarDialogoDeuda(deuda) },

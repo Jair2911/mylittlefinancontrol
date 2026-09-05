@@ -110,22 +110,62 @@ class FragmentMovimiento : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarDeudasLocales()
+        actualizarListaFiltrada()
+    }
+
+    private fun extraerAnioYMes(fechaStr: String): Pair<Int, Int>? {
+        if (fechaStr.isBlank()) return null
+        val clean = fechaStr.trim().split(" ")[0]
+        val delimiters = charArrayOf('-', '/', '.')
+        for (d in delimiters) {
+            if (clean.contains(d)) {
+                val parts = clean.split(d)
+                if (parts.size >= 3) {
+                    val p0 = parts[0].toIntOrNull()
+                    val p1 = parts[1].toIntOrNull()
+                    val p2 = parts[2].toIntOrNull()
+                    if (p0 != null && p1 != null && p2 != null) {
+                        if (p0 > 1000) {
+                            // Formato yyyy-MM-dd
+                            return Pair(p0, p1 - 1)
+                        } else if (p2 > 1000) {
+                            // Formato dd-MM-yyyy
+                            return Pair(p2, p1 - 1)
+                        }
+                    }
+                }
+            }
+        }
+        return null
+    }
+
     private fun setupFiltros() {
         val calendar = Calendar.getInstance()
-        mesSeleccionado = calendar.get(Calendar.MONTH)
-        anioSeleccionado = calendar.get(Calendar.YEAR)
+        val anioActual = calendar.get(Calendar.YEAR)
+        val mesActual = calendar.get(Calendar.MONTH)
 
-        val meses = arrayOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
-        binding.tvMesSeleccionado.text = meses[mesSeleccionado]
+        mesSeleccionado = mesActual
+        anioSeleccionado = anioActual
+
+        val mesesDisplay = arrayOf("Todos los meses", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+        binding.tvMesSeleccionado.text = mesesDisplay[mesSeleccionado + 1]
         binding.tvAnioSeleccionado.text = anioSeleccionado.toString()
 
         // Selector de Mes
         binding.btnSelectorMes.setOnClickListener {
             AlertDialog.Builder(mContext)
-                .setTitle("Seleccionar Mes")
-                .setItems(meses) { _, which ->
-                    mesSeleccionado = which
-                    binding.tvMesSeleccionado.text = meses[which]
+                .setTitle("Seleccionar Periodo")
+                .setItems(mesesDisplay) { _, which ->
+                    if (which == 0) {
+                        mesSeleccionado = -1
+                        binding.tvMesSeleccionado.text = "Todos los meses"
+                    } else {
+                        mesSeleccionado = which - 1
+                        binding.tvMesSeleccionado.text = mesesDisplay[which]
+                    }
                     actualizarListaFiltrada()
                 }
                 .show()
@@ -133,12 +173,17 @@ class FragmentMovimiento : Fragment() {
 
         // Selector de Año
         binding.btnSelectorAnio.setOnClickListener {
-            val anios = Array(5) { (anioSeleccionado - 2 + it).toString() }
+            val aniosDisplay = arrayOf("Todos los años", (anioActual - 2).toString(), (anioActual - 1).toString(), anioActual.toString(), (anioActual + 1).toString(), (anioActual + 2).toString())
             AlertDialog.Builder(mContext)
                 .setTitle("Seleccionar Año")
-                .setItems(anios) { _, which ->
-                    anioSeleccionado = anios[which].toInt()
-                    binding.tvAnioSeleccionado.text = anios[which]
+                .setItems(aniosDisplay) { _, which ->
+                    if (which == 0) {
+                        anioSeleccionado = -1
+                        binding.tvAnioSeleccionado.text = "Todos"
+                    } else {
+                        anioSeleccionado = aniosDisplay[which].toInt()
+                        binding.tvAnioSeleccionado.text = aniosDisplay[which]
+                    }
                     actualizarListaFiltrada()
                 }
                 .show()
@@ -146,7 +191,9 @@ class FragmentMovimiento : Fragment() {
 
         // Exportar Reporte
         binding.btnExportarReporte.setOnClickListener {
-            Toast.makeText(mContext, "Reporte de ${meses[mesSeleccionado]} $anioSeleccionado exportado", Toast.LENGTH_SHORT).show()
+            val mesTxt = if (mesSeleccionado == -1) "Histórico completo" else mesesDisplay[mesSeleccionado + 1]
+            val anioTxt = if (anioSeleccionado == -1) "todos los años" else anioSeleccionado.toString()
+            Toast.makeText(mContext, "Reporte de $mesTxt $anioTxt exportado", Toast.LENGTH_SHORT).show()
         }
 
         // Privacidad
@@ -217,32 +264,35 @@ class FragmentMovimiento : Fragment() {
         val todos = db.getAllNotas()
         val filtrados = todos.filter { mov ->
             try {
-                val partes = mov.fecha.split("-") // yyyy-MM-dd
-                val anio = partes[0].toInt()
-                val mes = partes[1].toInt() - 1
-                val coincideFecha = (anio == anioSeleccionado && mes == mesSeleccionado)
+                val parsed = extraerAnioYMes(mov.fecha)
+                val coincideFecha = when {
+                    mesSeleccionado == -1 && anioSeleccionado == -1 -> true
+                    mesSeleccionado == -1 && anioSeleccionado != -1 -> (parsed == null || parsed.first == anioSeleccionado)
+                    mesSeleccionado != -1 && anioSeleccionado == -1 -> (parsed != null && parsed.second == mesSeleccionado)
+                    else -> (parsed != null && parsed.first == anioSeleccionado && parsed.second == mesSeleccionado)
+                }
 
                 val coincideBusqueda = searchQuery.isEmpty() || mov.descripcion.contains(searchQuery, ignoreCase = true)
 
                 val coincideCategoria = when (categoriaFiltro) {
                     "GASTOS FIJOS" -> mov.tipo_reg.contains("GASTO FIJO", ignoreCase = true) || mov.descripcion.contains("PAGO:", ignoreCase = true)
-                    "SUPERMERCADO" -> mov.descripcion.contains("SUPERMERCADO", ignoreCase = true) || mov.descripcion.contains("DESPENSA", ignoreCase = true) || mov.descripcion.contains("LÍDER", ignoreCase = true)
+                    "SUPERMERCADO" -> mov.descripcion.contains("SUPERMERCADO", ignoreCase = true) || mov.descripcion.contains("DESPENSA", ignoreCase = true) || mov.descripcion.contains("LÍDER", ignoreCase = true) || mov.descripcion.contains("ALIMENT", ignoreCase = true) || mov.descripcion.contains("COMIDA", ignoreCase = true)
                     "INGRESOS" -> mov.tipo_reg.contains("INGRESO", ignoreCase = true) || mov.descripcion.contains("HONORARIOS", ignoreCase = true) || mov.descripcion.contains("SUELDO", ignoreCase = true)
                     "DEUDAS" -> mov.tipo_reg.contains("PAGO DEUDA", ignoreCase = true) || mov.tipo_reg.contains("DEUDA", ignoreCase = true)
                     else -> true
                 }
 
                 coincideFecha && coincideBusqueda && coincideCategoria
-            } catch (e: Exception) { false }
+            } catch (e: Exception) { true }
         }
 
         notasAdaptador.refrescarLista(filtrados)
 
         val totalIngresos = filtrados.filter { it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
         val totalEgresos = filtrados.filter { !it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
-        val balanceMes = totalIngresos - totalEgresos
+        val balancePeriodo = totalIngresos - totalEgresos
 
-        saldoRealTexto = format.format(if (balanceMes >= 0) balanceMes else -balanceMes)
+        saldoRealTexto = format.format(if (balancePeriodo >= 0) balancePeriodo else -balancePeriodo)
         if (!esSaldoOculto) {
             val totalPeriodo = if (totalEgresos > 0) totalEgresos else (if (totalIngresos > 0) totalIngresos else 0.0)
             binding.tvTotalMovMonto.text = format.format(totalPeriodo)

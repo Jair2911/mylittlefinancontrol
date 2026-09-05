@@ -260,16 +260,27 @@ class FragmentAhorros : Fragment() {
         bottomSheetDialog.show()
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarAhorros()
+    }
+
     private fun cargarAhorros() {
+        val sp = mContext.getSharedPreferences("AhorrosPrefs", Context.MODE_PRIVATE)
+        val yaInicializado = sp.getBoolean("ahorros_inicializados", false)
+
         listaAhorrosTodos = db.getAllAhorros().toMutableList()
 
-        // Si la base de datos de ahorros está vacía por primera vez, insertamos las 2 metas por defecto
-        if (listaAhorrosTodos.isEmpty()) {
+        // Solo insertamos metas de ejemplo la primerísima vez que se abre la app
+        if (!yaInicializado && listaAhorrosTodos.isEmpty()) {
             val meta1 = Ahorro("", "Fondo de Emergencia", "Emergencia", 350000.0, 500000.0, "Dic 2026")
             val meta2 = Ahorro("", "Ahorro Automóvil", "Vehículo", 120000.0, 400000.0, "Jun 2025")
             db.insertAhorro(meta1)
             db.insertAhorro(meta2)
+            sp.edit().putBoolean("ahorros_inicializados", true).apply()
             listaAhorrosTodos = db.getAllAhorros().toMutableList()
+        } else if (!yaInicializado) {
+            sp.edit().putBoolean("ahorros_inicializados", true).apply()
         }
 
         aplicarFiltro()

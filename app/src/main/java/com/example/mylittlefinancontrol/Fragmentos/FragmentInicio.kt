@@ -230,6 +230,17 @@ class FragmentInicio : Fragment() {
             } else {
                 binding.rowMetaSecundaria.visibility = View.GONE
             }
+        } else {
+            binding.tvAhorroBadgeActivas.text = "0 activas"
+            binding.tvMeta1Titulo.text = "Sin metas activas"
+            binding.tvMeta1Fecha.text = "Toca para agregar una meta"
+            binding.tvMeta1Porcentaje.text = "0%"
+            binding.pbMeta1.progress = 0
+            if (!esIncognito) {
+                binding.tvMeta1Actual.text = "$ 0"
+                binding.tvMeta1Total.text = "de $ 0"
+            }
+            binding.rowMetaSecundaria.visibility = View.GONE
         }
 
         // Cálculo dinámico de salud financiera

@@ -73,6 +73,11 @@ class FragmentGastosFijos : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarGastosFijos()
+    }
+
     private fun setupRecyclerView() {
         adapter = GastosFijosAdapter(
             emptyList(),
