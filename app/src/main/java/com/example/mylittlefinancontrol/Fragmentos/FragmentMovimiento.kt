@@ -747,10 +747,11 @@ class FragmentMovimiento : Fragment() {
                 }
 
                 val prompt = """
-                    Analiza este recibo. Extrae:
-                    1. 'concepto': Descripción corta de la compra.
-                    2. 'valor_total': El monto total como número puro.
-                    Responde SOLO en JSON: {"concepto": "...", "valor_total": "..."}
+                    Analiza este recibo o comprobante de compra. Extrae:
+                    1. 'concepto': Descripción corta del establecimiento o compra (máximo 4 palabras).
+                    2. 'valor_total': El valor o total a pagar como un número entero sin puntos, comas ni símbolos (ej: 35000).
+                    Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
+                    {"concepto": "...", "valor_total": "..."}
                 """.trimIndent()
 
                 val safetySettings = listOf(
@@ -760,30 +761,62 @@ class FragmentMovimiento : Fragment() {
                     SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
                 )
 
-                val generativeModel = GenerativeModel(
-                    modelName = "gemini-2.5-flash",
-                    apiKey = BuildConfig.GEMINI_API_KEY,
-                    safetySettings = safetySettings
-                )
+                val modelos = listOf("gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro")
+                var rawText: String? = null
+                var ultimoError: Exception? = null
 
-                val response = withContext(Dispatchers.IO) {
-                    generativeModel.generateContent(content {
-                        image(bitmap)
-                        text(prompt)
-                    })
+                for (nombreModelo in modelos) {
+                    try {
+                        val generativeModel = GenerativeModel(
+                            modelName = nombreModelo,
+                            apiKey = BuildConfig.GEMINI_API_KEY,
+                            safetySettings = safetySettings
+                        )
+
+                        val response = withContext(Dispatchers.IO) {
+                            generativeModel.generateContent(content {
+                                image(bitmap)
+                                text(prompt)
+                            })
+                        }
+
+                        if (!response.text.isNullOrBlank()) {
+                            rawText = response.text
+                            Log.d("GeminiVision", "Éxito con modelo: $nombreModelo -> $rawText")
+                            break
+                        }
+                    } catch (e: Exception) {
+                        ultimoError = e
+                        Log.w("GeminiVision", "Fallo con modelo $nombreModelo: ${e.message}")
+                    }
                 }
 
-                val rawText = response.text
                 if (rawText.isNullOrBlank()) {
-                    Toast.makeText(mContext, "La IA no pudo procesar esta imagen", Toast.LENGTH_LONG).show()
+                    val msg = ultimoError?.localizedMessage ?: "La IA no pudo procesar esta imagen"
+                    Log.e("GeminiVision", "Error general IA: $msg", ultimoError)
+                    Toast.makeText(mContext, "Error IA: $msg", Toast.LENGTH_LONG).show()
                     return@launch
                 }
 
-                val cleanJson = rawText.substringAfter("{").substringBeforeLast("}").let { "{ $it }" }
-                val jsonResponse = JSONObject(cleanJson)
-                
-                binding.etDescripcion.setText(jsonResponse.optString("concepto"))
-                binding.etValor.setText(jsonResponse.optString("valor_total"))
+                val jsonStart = rawText.indexOf("{")
+                val jsonEnd = rawText.lastIndexOf("}")
+                if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
+                    val cleanJson = rawText.substring(jsonStart, jsonEnd + 1)
+                    val jsonResponse = JSONObject(cleanJson)
+                    
+                    val concepto = jsonResponse.optString("concepto")
+                    val valorTotal = jsonResponse.optString("valor_total").replace(Regex("[^0-9]"), "")
+                    
+                    if (concepto.isNotBlank()) {
+                        binding.etDescripcion.setText(concepto.uppercase())
+                    }
+                    if (valorTotal.isNotBlank()) {
+                        binding.etValor.setText(valorTotal)
+                    }
+                    Toast.makeText(mContext, "Datos escaneados con éxito", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(mContext, "No se pudo interpretar el texto del recibo", Toast.LENGTH_SHORT).show()
+                }
                 
             } catch (e: Exception) {
                 Log.e("GeminiVision", "Error en IA: ${e.message}", e)

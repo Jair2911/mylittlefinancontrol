@@ -51,11 +51,8 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
             ${generarContextoFinanciero()}
         """.trimIndent()
 
-        val generativeModel = GenerativeModel(
-            modelName = "gemini-2.5-flash",
-            apiKey = BuildConfig.GEMINI_API_KEY,
-            systemInstruction = content { text(systemInstructionText) }
-        )
+        val systemInstructionContent = content { text(systemInstructionText) }
+        val modelos = listOf("gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro")
 
         agregarMensaje("¡Hola! Soy tu asesor DABAFINN. He analizado tus datos y estoy listo para darte consejos. ¿En qué puedo ayudarte?", false)
 
@@ -68,11 +65,34 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
 
                 lifecycleScope.launch {
                     try {
-                        val response = withContext(Dispatchers.IO) {
-                            generativeModel.generateContent(textoUsuario)
+                        var respuestaTexto: String? = null
+                        var ultimoError: Exception? = null
+
+                        for (nombreModelo in modelos) {
+                            try {
+                                val generativeModel = GenerativeModel(
+                                    modelName = nombreModelo,
+                                    apiKey = BuildConfig.GEMINI_API_KEY,
+                                    systemInstruction = systemInstructionContent
+                                )
+                                val response = withContext(Dispatchers.IO) {
+                                    generativeModel.generateContent(textoUsuario)
+                                }
+                                if (!response.text.isNullOrBlank()) {
+                                    respuestaTexto = response.text
+                                    break
+                                }
+                            } catch (e: Exception) {
+                                ultimoError = e
+                            }
                         }
+
                         binding.pbLoading.visibility = View.GONE
-                        agregarMensaje(response.text ?: "No se pudo obtener respuesta", false)
+                        if (!respuestaTexto.isNullOrBlank()) {
+                            agregarMensaje(respuestaTexto, false)
+                        } else {
+                            agregarMensaje("Error: ${ultimoError?.localizedMessage ?: "No se pudo obtener respuesta"}", false)
+                        }
                     } catch (e: Exception) {
                         binding.pbLoading.visibility = View.GONE
                         agregarMensaje("Error: ${e.message}", false)
