@@ -53,6 +53,9 @@ class FragmentAhorros : Fragment() {
         return binding.root
     }
 
+    private var filtroEstadoAhorros: String = "TODOS"
+    private var criterioOrdenAhorros: String = "DEFAULT"
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         db = NotasDatabaseHelper(mContext)
@@ -75,8 +78,40 @@ class FragmentAhorros : Fragment() {
         }
 
         binding.btnFilterAhorros.setOnClickListener {
-            Toast.makeText(mContext, "Filtrando metas...", Toast.LENGTH_SHORT).show()
+            mostrarDialogoFiltroAhorros()
         }
+    }
+
+    private fun mostrarDialogoFiltroAhorros() {
+        val opciones = arrayOf(
+            "Todas las metas (Por defecto)",
+            "En progreso (< 100%)",
+            "Metas cumplidas (100%)",
+            "Ordenar: Mayor % de avance",
+            "Ordenar: Menor % de avance",
+            "Ordenar: Mayor meta de ahorro ($$$)",
+            "Ordenar: Menor meta de ahorro ($)",
+            "Ordenar: Alfabéticamente (A-Z)"
+        )
+
+        AlertDialog.Builder(mContext)
+            .setTitle("Filtrar y Ordenar Metas")
+            .setItems(opciones) { _, which ->
+                when (which) {
+                    0 -> { filtroEstadoAhorros = "TODOS"; criterioOrdenAhorros = "DEFAULT" }
+                    1 -> filtroEstadoAhorros = "EN_PROGRESO"
+                    2 -> filtroEstadoAhorros = "COMPLETADAS"
+                    3 -> criterioOrdenAhorros = "MAYOR_PROGRESO"
+                    4 -> criterioOrdenAhorros = "MENOR_PROGRESO"
+                    5 -> criterioOrdenAhorros = "MAYOR_MONTO"
+                    6 -> criterioOrdenAhorros = "MENOR_MONTO"
+                    7 -> criterioOrdenAhorros = "ALFABETICO"
+                }
+                aplicarFiltro()
+                Toast.makeText(mContext, "Filtro aplicado: ${opciones[which]}", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun setupRecyclerView() {
@@ -110,7 +145,7 @@ class FragmentAhorros : Fragment() {
     }
 
     private fun aplicarFiltro() {
-        val filtrados = when (categoriaFiltroSeleccionada) {
+        var filtrados = when (categoriaFiltroSeleccionada) {
             "Todos" -> listaAhorrosTodos
             "Emergencia" -> listaAhorrosTodos.filter { it.categoria.contains("emerg", true) || it.categoria.contains("salud", true) }
             "Vehículo" -> listaAhorrosTodos.filter { it.categoria.contains("veh", true) || it.categoria.contains("auto", true) || it.categoria.contains("carro", true) }
@@ -124,6 +159,22 @@ class FragmentAhorros : Fragment() {
             }
             else -> listaAhorrosTodos
         }
+
+        filtrados = when (filtroEstadoAhorros) {
+            "EN_PROGRESO" -> filtrados.filter { it.montoActual < it.montoObjetivo }
+            "COMPLETADAS" -> filtrados.filter { it.montoActual >= it.montoObjetivo }
+            else -> filtrados
+        }
+
+        filtrados = when (criterioOrdenAhorros) {
+            "MAYOR_PROGRESO" -> filtrados.sortedByDescending { if (it.montoObjetivo > 0) it.montoActual / it.montoObjetivo else 0.0 }
+            "MENOR_PROGRESO" -> filtrados.sortedBy { if (it.montoObjetivo > 0) it.montoActual / it.montoObjetivo else 0.0 }
+            "MAYOR_MONTO" -> filtrados.sortedByDescending { it.montoObjetivo }
+            "MENOR_MONTO" -> filtrados.sortedBy { it.montoObjetivo }
+            "ALFABETICO" -> filtrados.sortedBy { it.titulo }
+            else -> filtrados
+        }
+
         adapter.actualizarLista(filtrados)
         binding.llEmptyStateAhorros.visibility = if (filtrados.isEmpty()) View.VISIBLE else View.GONE
     }

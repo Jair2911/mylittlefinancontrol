@@ -96,6 +96,7 @@ class FragmentMovimiento : Fragment() {
     private var searchQuery: String = ""
     private var esSaldoOculto: Boolean = false
     private var saldoRealTexto: String = "$ 0,00"
+    private var criterioOrden: String = "RECIENTES"
 
     private var cantidadAMostrar: Int = 10
     private val PASO_PAGINACION: Int = 10
@@ -112,6 +113,10 @@ class FragmentMovimiento : Fragment() {
 
         binding.FABAgregarNota.setOnClickListener {
             mostrarDialogoMovimiento(null)
+        }
+
+        binding.ivFiltroAvanzado.setOnClickListener {
+            mostrarDialogoFiltroAvanzado()
         }
     }
 
@@ -402,7 +407,15 @@ class FragmentMovimiento : Fragment() {
 
         val filtrados = baseFechaBusqueda.filter { evaluarCoincideCategoria(it, categoriaFiltro) }
 
-        listaTotalFiltrada = filtrados
+        val ordenados = when (criterioOrden) {
+            "ANTIGUOS" -> filtrados.reversed()
+            "MAYOR_MONTO" -> filtrados.sortedByDescending { it.valor }
+            "MENOR_MONTO" -> filtrados.sortedBy { it.valor }
+            "ALFABETICO" -> filtrados.sortedBy { it.descripcion }
+            else -> filtrados
+        }
+
+        listaTotalFiltrada = ordenados
         val sublista = listaTotalFiltrada.take(cantidadAMostrar)
         notasAdaptador.refrescarLista(sublista)
         actualizarPaginacionUI(sublista)
@@ -424,6 +437,40 @@ class FragmentMovimiento : Fragment() {
 
         binding.tvTotalIngresosMonto.text = "+${format.format(totalIngresos)}"
         binding.tvTotalEgresosMonto.text = "-${format.format(totalEgresos)}"
+    }
+
+    private fun mostrarDialogoFiltroAvanzado() {
+        val opciones = arrayOf(
+            "Más recientes primero (Por defecto)",
+            "Más antiguos primero",
+            "Mayor monto a menor ($$$)",
+            "Menor monto a mayor ($)",
+            "Orden alfabético (A-Z)"
+        )
+        val posSeleccionada = when (criterioOrden) {
+            "ANTIGUOS" -> 1
+            "MAYOR_MONTO" -> 2
+            "MENOR_MONTO" -> 3
+            "ALFABETICO" -> 4
+            else -> 0
+        }
+
+        AlertDialog.Builder(mContext)
+            .setTitle("Ordenar y Filtrar Movimientos")
+            .setSingleChoiceItems(opciones, posSeleccionada) { dialog, which ->
+                criterioOrden = when (which) {
+                    1 -> "ANTIGUOS"
+                    2 -> "MAYOR_MONTO"
+                    3 -> "MENOR_MONTO"
+                    4 -> "ALFABETICO"
+                    else -> "RECIENTES"
+                }
+                actualizarListaFiltrada()
+                Toast.makeText(mContext, "Orden aplicado: ${opciones[which]}", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun cargarDeudasLocales() {

@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -47,6 +48,9 @@ class FragmentGastosFijos : Fragment() {
         return binding.root
     }
 
+    private var filtroEstado: String = "TODOS"
+    private var criterioOrdenGf: String = "DEFAULT"
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         db = NotasDatabaseHelper(mContext)
@@ -65,12 +69,63 @@ class FragmentGastosFijos : Fragment() {
         }
 
         binding.btnCalendarGf.setOnClickListener {
-            Toast.makeText(mContext, "Calendario de compromisos del mes", Toast.LENGTH_SHORT).show()
+            mostrarResumenCompromisosMes()
         }
 
         binding.btnFilterGf.setOnClickListener {
-            Toast.makeText(mContext, "Filtrando compromisos...", Toast.LENGTH_SHORT).show()
+            mostrarDialogoFiltroGastosFijos()
         }
+    }
+
+    private fun mostrarResumenCompromisosMes() {
+        val cal = Calendar.getInstance()
+        val mesAnioActual = String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+        val nombresMeses = arrayOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
+        val nombreMes = nombresMeses[cal.get(Calendar.MONTH)]
+
+        val pagados = listaGastosTodos.count { g ->
+            if (g.periodo == "Quincenal") g.ultimoPagoQ1 == mesAnioActual && g.ultimoPagoQ2 == mesAnioActual else g.ultimoPagoQ1 == mesAnioActual
+        }
+        val pendientes = listaGastosTodos.size - pagados
+        val totalMonto = listaGastosTodos.sumOf { it.monto }
+
+        AlertDialog.Builder(mContext)
+            .setTitle("Compromisos de $nombreMes ${cal.get(Calendar.YEAR)}")
+            .setMessage("• Total compromisos: ${listaGastosTodos.size}\n• Pagados este mes: $pagados\n• Pendientes: $pendientes\n• Presupuesto fijo total: ${java.text.NumberFormat.getCurrencyInstance(Locale("es", "CO")).format(totalMonto)}")
+            .setPositiveButton("Entendido", null)
+            .show()
+    }
+
+    private fun mostrarDialogoFiltroGastosFijos() {
+        val opciones = arrayOf(
+            "Todos los compromisos (Por defecto)",
+            "Solo pendientes de pago",
+            "Solo pagados este mes",
+            "Solo frecuencia mensual",
+            "Solo frecuencia quincenal",
+            "Ordenar: Mayor a menor monto ($$$)",
+            "Ordenar: Menor a mayor monto ($)",
+            "Ordenar: Alfabéticamente (A-Z)"
+        )
+
+        AlertDialog.Builder(mContext)
+            .setTitle("Filtrar y Ordenar Gastos Fijos")
+            .setItems(opciones) { _, which ->
+                when (which) {
+                    0 -> { filtroEstado = "TODOS"; criterioOrdenGf = "DEFAULT" }
+                    1 -> filtroEstado = "PENDIENTES"
+                    2 -> filtroEstado = "PAGADOS"
+                    3 -> filtroEstado = "MENSUAL"
+                    4 -> filtroEstado = "QUINCENAL"
+                    5 -> criterioOrdenGf = "MAYOR_MONTO"
+                    6 -> criterioOrdenGf = "MENOR_MONTO"
+                    7 -> criterioOrdenGf = "ALFABETICO"
+                }
+                aplicarFiltro()
+                Toast.makeText(mContext, "Filtro aplicado: ${opciones[which]}", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     override fun onResume() {
@@ -109,7 +164,7 @@ class FragmentGastosFijos : Fragment() {
     }
 
     private fun aplicarFiltro() {
-        val filtrados = when (categoriaFiltroSeleccionada) {
+        var filtrados = when (categoriaFiltroSeleccionada) {
             "Todos" -> listaGastosTodos
             "Servicios" -> listaGastosTodos.filter { it.categoria.contains("serv", true) || it.categoria.contains("luz", true) || it.categoria.contains("agua", true) }
             "Vivienda" -> listaGastosTodos.filter { it.categoria.contains("viv", true) || it.categoria.contains("arriend", true) || it.categoria.contains("casa", true) }
@@ -125,6 +180,33 @@ class FragmentGastosFijos : Fragment() {
             }
             else -> listaGastosTodos
         }
+
+        val cal = Calendar.getInstance()
+        val mesAnioActual = String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+
+        fun estaPagadoTotal(g: GastoFijo): Boolean {
+            return if (g.periodo == "Quincenal") {
+                g.ultimoPagoQ1 == mesAnioActual && g.ultimoPagoQ2 == mesAnioActual
+            } else {
+                g.ultimoPagoQ1 == mesAnioActual
+            }
+        }
+
+        filtrados = when (filtroEstado) {
+            "PENDIENTES" -> filtrados.filter { !estaPagadoTotal(it) }
+            "PAGADOS" -> filtrados.filter { estaPagadoTotal(it) }
+            "MENSUAL" -> filtrados.filter { it.periodo.equals("Mensual", ignoreCase = true) }
+            "QUINCENAL" -> filtrados.filter { it.periodo.equals("Quincenal", ignoreCase = true) }
+            else -> filtrados
+        }
+
+        filtrados = when (criterioOrdenGf) {
+            "MAYOR_MONTO" -> filtrados.sortedByDescending { it.monto }
+            "MENOR_MONTO" -> filtrados.sortedBy { it.monto }
+            "ALFABETICO" -> filtrados.sortedBy { it.concepto }
+            else -> filtrados
+        }
+
         adapter.actualizarLista(filtrados)
     }
 
