@@ -47,10 +47,11 @@ class MainActivity : AppCompatActivity() {
         // Carga inicial: Inicio
         verFragmentoInicio()
 
-        // Clic en la cabecera izquierda -> Ir a Inicio
-        binding.llHeaderUsuario.setOnClickListener {
-            verFragmentoInicio()
-        }
+        // Clic en el avatar circular o cabecera izquierda -> Ir a Inicio
+        binding.llHeaderUsuario.setOnClickListener { verFragmentoInicio() }
+        binding.flAvatarHeader.setOnClickListener { verFragmentoInicio() }
+        binding.ivAvatarIcono.setOnClickListener { verFragmentoInicio() }
+        binding.appName.setOnClickListener { verFragmentoInicio() }
 
         // Clic en el botón Perfil Toolbar -> Ir a Perfil
         binding.btnPerfilToolbar.setOnClickListener {

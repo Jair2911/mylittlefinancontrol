@@ -33,8 +33,11 @@
 
             <!-- Avatar circular con iniciales del usuario -->
             <FrameLayout
+                android:id="@+id/fl_avatar_header"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
+                android:clickable="true"
+                android:focusable="true"
                 android:background="@drawable/circle_primary_bg"
                 android:backgroundTint="@color/primary_emerald">
 
@@ -42,6 +45,8 @@
                     android:id="@+id/iv_avatar_icono"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
                     android:text="JR"
                     android:textColor="@android:color/white"
