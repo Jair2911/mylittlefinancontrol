@@ -320,28 +320,55 @@ class FragmentPerfil : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarInformacion()
+        actualizarEstadoBackup()
+    }
+
     private fun cargarInformacion() {
+        val user = firebaseAuth.currentUser
+        val userEmail = user?.email ?: "correo@ejemplo.com"
+        val userName = user?.displayName?.ifBlank { null } ?: userEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+        val provider = if (user?.providerData?.any { it.providerId.contains("google", true) } == true) "Google" else "Email"
+
+        binding.tvNombres.text = userName
+        binding.tvEmail.text = userEmail
+        binding.tvProveedor.text = provider
+        binding.tvMienbroDesde.text = "Miembro activo"
+
+        val inicialesFallback = userName
+            .split(" ")
+            .filter { it.isNotBlank() }
+            .map { it.first().uppercase() }
+            .take(2)
+            .joinToString("")
+        binding.tvAvatarIniciales.text = if (inicialesFallback.isNotEmpty()) inicialesFallback else "JR"
+
+        val uid = firebaseAuth.uid ?: return
         val ref = FirebaseDatabase.getInstance().getReference("usuarios")
-        ref.child("${firebaseAuth.uid}")
+        ref.child(uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val nombres = "${snapshot.child("nombres").value}"
-                    val email = "${snapshot.child("email").value}"
-                    val proveedor = "${snapshot.child("proveedor").value}"
-                    var tiempoR = "${snapshot.child("tiempoR").value}"
+                    val nombres = snapshot.child("nombres").value?.toString()
+                    val email = snapshot.child("email").value?.toString()
+                    val prov = snapshot.child("proveedor").value?.toString()
+                    var tiempoR = snapshot.child("tiempoR").value?.toString() ?: "0"
 
-                    if (tiempoR == "null") {
-                        tiempoR = "0"
-                    }
+                    if (tiempoR == "null") tiempoR = "0"
+                    val tiempoLong = tiempoR.toLongOrNull() ?: 0L
+                    val fecha = if (tiempoLong > 0) Constantes.formatoFecha(tiempoLong) else "Reciente"
 
-                    val fecha = Constantes.formatoFecha(tiempoR.toLong())
+                    val nombreFinal = if (!nombres.isNullOrBlank() && nombres != "null") nombres else userName
+                    val emailFinal = if (!email.isNullOrBlank() && email != "null") email else userEmail
+                    val provFinal = if (!prov.isNullOrBlank() && prov != "null") prov else provider
 
-                    binding.tvNombres.text = if (nombres.isNotEmpty() && nombres != "null") nombres else "Usuario"
-                    binding.tvEmail.text = if (email.isNotEmpty() && email != "null") email else "correo@ejemplo.com"
-                    binding.tvProveedor.text = if (proveedor.isNotEmpty() && proveedor != "null") proveedor else "Google"
+                    binding.tvNombres.text = nombreFinal
+                    binding.tvEmail.text = emailFinal
+                    binding.tvProveedor.text = provFinal
                     binding.tvMienbroDesde.text = "Miembro desde: $fecha"
 
-                    val iniciales = (if (nombres.isNotEmpty() && nombres != "null") nombres else "Usuario")
+                    val iniciales = nombreFinal
                         .split(" ")
                         .filter { it.isNotBlank() }
                         .map { it.first().uppercase() }
