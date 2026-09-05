@@ -146,8 +146,42 @@ class NotasAdaptador(
         }
     }
 
+    private fun normalizarFechaClave(fechaRaw: String): String {
+        if (fechaRaw.isBlank()) return "Sin Fecha"
+        val timestamp = fechaRaw.trim().toLongOrNull()
+        if (timestamp != null && timestamp > 100000000000L) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            return sdf.format(Date(timestamp))
+        }
+        val clean = fechaRaw.trim().split(" ")[0]
+        val delimiters = charArrayOf('-', '/', '.')
+        for (d in delimiters) {
+            if (clean.contains(d)) {
+                val parts = clean.split(d)
+                if (parts.size >= 3) {
+                    val p0 = parts[0].toIntOrNull()
+                    val p1 = parts[1].toIntOrNull()
+                    val p2 = parts[2].toIntOrNull()
+                    if (p0 != null && p1 != null && p2 != null) {
+                        if (p0 > 1000) {
+                            return String.format(Locale.US, "%04d-%02d-%02d", p0, p1, p2)
+                        } else if (p2 > 1000) {
+                            return String.format(Locale.US, "%04d-%02d-%02d", p2, p1, p0)
+                        }
+                    }
+                }
+            }
+        }
+        return clean
+    }
+
     private fun obtenerHoraFormateada(fechaCompleta: String): String {
         return try {
+            val ts = fechaCompleta.trim().toLongOrNull()
+            if (ts != null && ts > 100000000000L) {
+                val sdf = SimpleDateFormat("HH:mm 'hrs'", Locale("es", "ES"))
+                return sdf.format(Date(ts))
+            }
             if (fechaCompleta.contains(" ")) {
                 val partes = fechaCompleta.split(" ")
                 val horaPartes = partes[1].split(":")
@@ -176,10 +210,10 @@ class NotasAdaptador(
 
         val sdfHeader = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
 
-        // Agrupar por fecha 'yyyy-MM-dd'
+        // Agrupar por clave de fecha normalizada 'yyyy-MM-dd'
         val agrupados = LinkedHashMap<String, MutableList<Movimiento>>()
         for (mov in movimientos) {
-            val keyFecha = if (mov.fecha.contains(" ")) mov.fecha.substringBefore(" ") else mov.fecha
+            val keyFecha = normalizarFechaClave(mov.fecha)
             agrupados.getOrPut(keyFecha) { mutableListOf() }.add(mov)
         }
 

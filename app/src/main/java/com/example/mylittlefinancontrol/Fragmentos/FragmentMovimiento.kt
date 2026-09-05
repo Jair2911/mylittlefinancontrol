@@ -118,6 +118,12 @@ class FragmentMovimiento : Fragment() {
 
     private fun extraerAnioYMes(fechaStr: String): Pair<Int, Int>? {
         if (fechaStr.isBlank()) return null
+        val ts = fechaStr.trim().toLongOrNull()
+        if (ts != null && ts > 100000000000L) {
+            val cal = Calendar.getInstance()
+            cal.timeInMillis = ts
+            return Pair(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH))
+        }
         val clean = fechaStr.trim().split(" ")[0]
         val delimiters = charArrayOf('-', '/', '.')
         for (d in delimiters) {
@@ -145,14 +151,13 @@ class FragmentMovimiento : Fragment() {
     private fun setupFiltros() {
         val calendar = Calendar.getInstance()
         val anioActual = calendar.get(Calendar.YEAR)
-        val mesActual = calendar.get(Calendar.MONTH)
 
-        mesSeleccionado = mesActual
-        anioSeleccionado = anioActual
+        mesSeleccionado = -1
+        anioSeleccionado = -1
 
         val mesesDisplay = arrayOf("Todos los meses", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
-        binding.tvMesSeleccionado.text = mesesDisplay[mesSeleccionado + 1]
-        binding.tvAnioSeleccionado.text = anioSeleccionado.toString()
+        binding.tvMesSeleccionado.text = "Todos los meses"
+        binding.tvAnioSeleccionado.text = "Todos"
 
         // Selector de Mes
         binding.btnSelectorMes.setOnClickListener {

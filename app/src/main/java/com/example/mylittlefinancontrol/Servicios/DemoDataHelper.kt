@@ -53,16 +53,24 @@ object DemoDataHelper {
         db.insertAhorro(Ahorro("", "Renovación Computador", "Tecnología", 400000.0, 1500000.0, "Ene 2027", "router", "Laptop para trabajo"))
 
         // ==========================================
-        // 4. MOVIMIENTOS HISTÓRICOS Y ACTUALES (8 Registros)
+        // 4. MOVIMIENTOS HISTÓRICOS Y ACTUALES (16 Registros Diversos)
         // ==========================================
         db.insertNota(Movimiento(0, "PAGO NÓMINA QUINCENA", 2800000, "INGRESO", fechaOffsetDias(0, 8, 30)))
         db.insertNota(Movimiento(0, "SUPERMERCADO ÉXITO", 245000, "GASTO", fechaOffsetDias(0, 14, 15)))
-        db.insertNota(Movimiento(0, "PAGO: ARRIENDO APARTAMENTO", 850000, "GASTO FIJO", fechaOffsetDias(-1, 10, 0)))
-        db.insertNota(Movimiento(0, "PAGO: INTERNET FIBRA ÓPTICA", 115000, "GASTO FIJO", fechaOffsetDias(-2, 11, 20)))
-        db.insertNota(Movimiento(0, "HONORARIOS PROYECTO FREELANCE", 650000, "INGRESO", fechaOffsetDias(-3, 16, 45)))
-        db.insertNota(Movimiento(0, "COMIDA RESTAURANTE ITALIANO", 78000, "GASTO", fechaOffsetDias(-4, 20, 10)))
-        db.insertNota(Movimiento(0, "PAGO DEUDA: TARJETA VISA", 250000, "PAGO DEUDA", fechaOffsetDias(-5, 9, 15)))
-        db.insertNota(Movimiento(0, "GASOLINA Y TRANSPORTE", 65000, "GASTO", fechaOffsetDias(-6, 17, 30)))
+        db.insertNota(Movimiento(0, "CAFÉ Y MERIENDA JUAN VALDEZ", 18500, "GASTO", fechaOffsetDias(0, 17, 40)))
+        db.insertNota(Movimiento(0, "PAGO: ARRIENDO APARTAMENTO", 850000, "GASTO FIJO", fechaOffsetDias(-1, 10, 0), 1, 0))
+        db.insertNota(Movimiento(0, "SUPERMERCADO CARULLA EXPRESS", 68000, "GASTO", fechaOffsetDias(-1, 15, 30)))
+        db.insertNota(Movimiento(0, "PAGO: INTERNET FIBRA ÓPTICA", 115000, "GASTO FIJO", fechaOffsetDias(-2, 11, 20), 2, 0))
+        db.insertNota(Movimiento(0, "HONORARIOS PROYECTO FREELANCE", 650000, "INGRESO", fechaOffsetDias(-2, 16, 45)))
+        db.insertNota(Movimiento(0, "COMIDA RESTAURANTE ITALIANO", 78000, "GASTO", fechaOffsetDias(-3, 20, 10)))
+        db.insertNota(Movimiento(0, "PAGO DEUDA: TARJETA VISA", 250000, "PAGO DEUDA", fechaOffsetDias(-3, 9, 15)))
+        db.insertNota(Movimiento(0, "GASOLINA Y TRANSPORTE ESTACIÓN", 65000, "GASTO", fechaOffsetDias(-4, 17, 30)))
+        db.insertNota(Movimiento(0, "PAGO: SERVICIO ENERGÍA Y AGUA", 160000, "GASTO FIJO", fechaOffsetDias(-4, 12, 0), 3, 1))
+        db.insertNota(Movimiento(0, "COMPRA FARMACIA Y SALUD", 42000, "GASTO", fechaOffsetDias(-5, 18, 20)))
+        db.insertNota(Movimiento(0, "PAGO DEUDA: CRÉDITO VEHICULAR", 350000, "PAGO DEUDA", fechaOffsetDias(-6, 10, 30)))
+        db.insertNota(Movimiento(0, "VENTA ARTÍCULOS Y RETORNO", 120000, "INGRESO", fechaOffsetDias(-7, 14, 0)))
+        db.insertNota(Movimiento(0, "PAGO: SUSCRIPCIÓN NETFLIX & SPOTIFY", 48000, "GASTO FIJO", fechaOffsetDias(-8, 9, 0), 5, 0))
+        db.insertNota(Movimiento(0, "SUPERMERCADO D1 DESPENSA", 95000, "GASTO", fechaOffsetDias(-9, 16, 15)))
     }
 
     fun limpiarTodosLosDatos(context: Context, db: NotasDatabaseHelper) {

@@ -145,8 +145,8 @@ class FragmentInicio : Fragment() {
             } catch (_: Exception) {}
         }
         
-        val ultimosMovimientos = if (todosLosMovimientos.size > 5) {
-            todosLosMovimientos.take(5)
+        val ultimosMovimientos = if (todosLosMovimientos.size > 25) {
+            todosLosMovimientos.take(25)
         } else {
             todosLosMovimientos
         }
