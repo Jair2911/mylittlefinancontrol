@@ -145,11 +145,7 @@ class FragmentInicio : Fragment() {
             } catch (_: Exception) {}
         }
         
-        val ultimosMovimientos = if (todosLosMovimientos.size > 25) {
-            todosLosMovimientos.take(25)
-        } else {
-            todosLosMovimientos
-        }
+        val ultimosMovimientos = todosLosMovimientos.take(5)
         movAdapter.actualizarLista(ultimosMovimientos)
 
         actualizarInterfaz()

@@ -97,12 +97,17 @@ class FragmentMovimiento : Fragment() {
     private var esSaldoOculto: Boolean = false
     private var saldoRealTexto: String = "$ 0,00"
 
+    private var cantidadAMostrar: Int = 5
+    private val PASO_PAGINACION: Int = 5
+    private var listaTotalFiltrada: List<Movimiento> = emptyList()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         db = NotasDatabaseHelper(mContext)
 
         setupFiltros()
         setupRecyclerView()
+        setupPaginacionScroll()
         cargarDeudasLocales()
 
         binding.FABAgregarNota.setOnClickListener {
@@ -110,10 +115,45 @@ class FragmentMovimiento : Fragment() {
         }
     }
 
+    private fun setupPaginacionScroll() {
+        binding.nsvMovimientos.setOnScrollChangeListener(androidx.core.widget.NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
+            val totalScrollable = v.getChildAt(0).measuredHeight - v.measuredHeight
+            if (scrollY >= totalScrollable - 250 && cantidadAMostrar < listaTotalFiltrada.size) {
+                cargarSiguientesMovimientos()
+            }
+        })
+
+        binding.btnCargarMas.setOnClickListener {
+            cargarSiguientesMovimientos()
+        }
+    }
+
+    private fun cargarSiguientesMovimientos() {
+        if (cantidadAMostrar < listaTotalFiltrada.size) {
+            cantidadAMostrar += PASO_PAGINACION
+            val sublista = listaTotalFiltrada.take(cantidadAMostrar)
+            notasAdaptador.refrescarLista(sublista)
+            actualizarPaginacionUI(sublista)
+        }
+    }
+
+    private fun actualizarPaginacionUI(sublista: List<Movimiento>) {
+        if (sublista.size < listaTotalFiltrada.size) {
+            val restantes = listaTotalFiltrada.size - sublista.size
+            val proximoPaso = if (restantes > PASO_PAGINACION) PASO_PAGINACION else restantes
+            binding.tvBtnCargarMas.text = "Cargar $proximoPaso anteriores (quedan $restantes)"
+            binding.llCargarMasMovimientos.visibility = View.VISIBLE
+            binding.llFinalListaMovimientos.visibility = View.GONE
+        } else {
+            binding.llCargarMasMovimientos.visibility = View.GONE
+            binding.llFinalListaMovimientos.visibility = if (listaTotalFiltrada.isNotEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         cargarDeudasLocales()
-        actualizarListaFiltrada()
+        actualizarListaFiltrada(resetearPaginacion = false)
     }
 
     private fun extraerAnioYMes(fechaStr: String): Pair<Int, Int>? {
@@ -264,7 +304,10 @@ class FragmentMovimiento : Fragment() {
         actualizarListaFiltrada()
     }
 
-    private fun actualizarListaFiltrada() {
+    private fun actualizarListaFiltrada(resetearPaginacion: Boolean = true) {
+        if (resetearPaginacion) {
+            cantidadAMostrar = PASO_PAGINACION
+        }
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         val todos = db.getAllNotas()
         val filtrados = todos.filter { mov ->
@@ -291,7 +334,10 @@ class FragmentMovimiento : Fragment() {
             } catch (e: Exception) { true }
         }
 
-        notasAdaptador.refrescarLista(filtrados)
+        listaTotalFiltrada = filtrados
+        val sublista = listaTotalFiltrada.take(cantidadAMostrar)
+        notasAdaptador.refrescarLista(sublista)
+        actualizarPaginacionUI(sublista)
 
         val totalIngresos = filtrados.filter { it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
         val totalEgresos = filtrados.filter { !it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
@@ -303,7 +349,6 @@ class FragmentMovimiento : Fragment() {
             binding.tvTotalMovMonto.text = format.format(totalPeriodo)
         }
 
-        binding.tvConteoRegistros.text = "${filtrados.size} Registros"
         binding.tvTotalIngresosMonto.text = "+${format.format(totalIngresos)}"
         binding.tvTotalEgresosMonto.text = "-${format.format(totalEgresos)}"
     }

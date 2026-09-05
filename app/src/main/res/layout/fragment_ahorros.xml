@@ -7,10 +7,11 @@
     android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentAhorros">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
+        android:fillViewport="true"
         android:paddingBottom="100dp"
         android:scrollbars="none">
 
@@ -383,7 +384,7 @@
             </LinearLayout>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- FAB para agregar nueva meta de ahorro -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

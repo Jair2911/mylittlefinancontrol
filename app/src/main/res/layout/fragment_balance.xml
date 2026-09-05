@@ -7,11 +7,12 @@
     android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentBalance">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/sv_deudas_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
+        android:fillViewport="true"
         android:overScrollMode="never"
         android:paddingBottom="100dp"
         android:scrollbars="none">
@@ -419,7 +420,7 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- FAB para Registrar Deuda (+) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

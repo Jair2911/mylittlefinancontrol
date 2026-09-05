@@ -7,10 +7,12 @@
     android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentMovimiento">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nsv_movimientos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
+        android:fillViewport="true"
         android:paddingBottom="100dp"
         android:scrollbars="none">
 
@@ -479,11 +481,53 @@
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_movimiento" />
 
-            <!-- 4. Indicador de Final de Lista -->
+            <!-- Botón Cargar 5 Más (Paginación acumulativa) -->
             <LinearLayout
+                android:id="@+id/ll_cargar_mas_movimientos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="14dp"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/btn_cargar_mas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_card"
+                    android:clickable="true"
+                    android:elevation="2dp"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="20dp">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_autorenew"
+                        app:tint="@color/primary_emerald" />
+
+                    <TextView
+                        android:id="@+id/tv_btn_cargar_mas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Cargar 5 anteriores"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 4. Indicador de Final de Lista -->
+            <LinearLayout
+                android:id="@+id/ll_final_lista_movimientos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="20dp"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -503,10 +547,11 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tv_final_lista_titulo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Has revisado todos los movimientos del mes"
+                    android:text="Has revisado todos los movimientos del periodo"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -515,13 +560,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Para ver registros pasados cambia el selector superior"
+                    android:text="Todos los registros cargados exitosamente"
                     android:textColor="@color/text_muted"
                     android:textSize="11sp" />
             </LinearLayout>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- FAB para agregar movimiento -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

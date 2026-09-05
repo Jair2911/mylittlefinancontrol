@@ -7,11 +7,12 @@
     android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentGastosFijos">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/sv_gastos_fijos_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
+        android:fillViewport="true"
         android:overScrollMode="never"
         android:paddingBottom="100dp">
 
@@ -533,7 +534,7 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Botón Flotante de Acción (+) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
