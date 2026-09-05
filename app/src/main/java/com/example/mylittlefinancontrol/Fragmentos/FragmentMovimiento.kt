@@ -97,8 +97,8 @@ class FragmentMovimiento : Fragment() {
     private var esSaldoOculto: Boolean = false
     private var saldoRealTexto: String = "$ 0,00"
 
-    private var cantidadAMostrar: Int = 5
-    private val PASO_PAGINACION: Int = 5
+    private var cantidadAMostrar: Int = 10
+    private val PASO_PAGINACION: Int = 10
     private var listaTotalFiltrada: List<Movimiento> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -116,13 +116,6 @@ class FragmentMovimiento : Fragment() {
     }
 
     private fun setupPaginacionScroll() {
-        binding.nsvMovimientos.setOnScrollChangeListener(androidx.core.widget.NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
-            val totalScrollable = v.getChildAt(0).measuredHeight - v.measuredHeight
-            if (scrollY >= totalScrollable - 250 && cantidadAMostrar < listaTotalFiltrada.size) {
-                cargarSiguientesMovimientos()
-            }
-        })
-
         binding.btnCargarMas.setOnClickListener {
             cargarSiguientesMovimientos()
         }
