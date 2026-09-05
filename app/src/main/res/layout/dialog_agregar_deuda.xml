@@ -1,199 +1,752 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1. RAÍZ: Tarjeta flotante con bordes redondeados y altura adaptativa (wrap_content) -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="@android:color/white"
-    app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutline">
+    android:layout_gravity="bottom"
+    app:cardBackgroundColor="@color/surface_card"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="16dp"
+    app:strokeColor="@color/outline_variant"
+    app:strokeWidth="1dp">
 
-    <!-- 2. CONTENEDOR DE APILAMIENTO: Monta la imagen detrás y el formulario al frente -->
-    <RelativeLayout
+    <ScrollView
+        android:id="@+id/scrollViewContenido"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:overScrollMode="never"
+        android:scrollbars="none">
 
-        <!-- 3. IMAGEN DE FONDO: Se ajusta a la altura exacta del ScrollView sin estirarse -->
-        <ImageView
-            android:id="@+id/imagenFondo"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_alignTop="@id/scrollViewContenido"
-            android:layout_alignBottom="@id/scrollViewContenido"
-            android:src="@drawable/bg_1"
-            android:scaleType="centerCrop" />
-
-        <!-- 4. CONTENIDO: ScrollView transparente para permitir el desplazamiento en pantallas pequeñas -->
-        <ScrollView
-            android:id="@+id/scrollViewContenido"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent">
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="24dp">
+
+            <!-- Drag Handle Indicator -->
+            <View
+                android:layout_width="48dp"
+                android:layout_height="5dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/badge_round_pill"
+                android:backgroundTint="@color/outline_variant" />
+
+            <!-- Header Modal: Icono + Título + Subtítulo + Botón Cerrar -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@+id/btn_cerrar"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_container_low">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_credit_card"
+                            app:tint="@color/primary_emerald" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_titulo_dialogo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nueva Deuda o Préstamo"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Controla tus obligaciones y calendario de pago"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btn_cerrar"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Cerrar"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_muted" />
+            </RelativeLayout>
+
+            <!-- 1. Tipo de Compromiso (Chips Interactivos) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:letterSpacing="0.06"
+                android:text="TIPO DE COMPROMISO"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <!-- Grid de 4 Chips de Tipos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Chip Tarjeta de Crédito (Activo por defecto) -->
+                    <LinearLayout
+                        android:id="@+id/chip_tipo_tarjeta"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/primary_emerald"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:src="@drawable/ic_credit_card"
+                            app:tint="@android:color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Tarjeta de Crédito"
+                            android:textColor="@android:color/white"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Chip Préstamo Bancario -->
+                    <LinearLayout
+                        android:id="@+id/chip_tipo_bancario"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="0dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:src="@drawable/ic_account_balance_wallet"
+                            app:tint="@color/text_secondary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Préstamo Bancario"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <!-- Chip Préstamo Personal -->
+                    <LinearLayout
+                        android:id="@+id/chip_tipo_personal"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="0dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:src="@drawable/ic_person"
+                            app:tint="@color/text_secondary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Préstamo Personal"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Chip Crédito Automotriz -->
+                    <LinearLayout
+                        android:id="@+id/chip_tipo_auto"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="0dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:src="@drawable/ic_directions_car"
+                            app:tint="@color/text_secondary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="Crédito Automotriz"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Hidden Fallback para compatibilidad -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_tipo_deuda"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+
+                <AutoCompleteTextView
+                    android:id="@+id/auto_tipo_deuda"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tarjeta de Crédito" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- 2. Tarjeta Monto Total Principal (Hero Input) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Monto Total de la Deuda *"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_container"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="CLP"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:text="$"
+                            android:textColor="@color/text_muted"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/et_total_deuda"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/transparent"
+                            android:hint="0,00"
+                            android:inputType="numberDecimal"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_muted"
+                            android:textSize="26sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. Concepto o Entidad Acreedora -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="Concepto o Entidad Acreedora *"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:boxBackgroundColor="@color/surface_card"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="@color/outline_variant"
+                app:endIconDrawable="@drawable/ic_credit_card"
+                app:endIconTint="@color/text_muted"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_concepto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="ej. Banco Santander, Tarjeta Visa Dorada"
+                    android:inputType="textCapSentences"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- 4. Abono Inicial / Pie (Opcional) con Cálculo Dinámico -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/primary_fixed"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Abono Inicial / Pie (Opcional)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_saldo_restante_calculado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_container"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="Saldo Restante: $ 0"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <!-- Input Abono Inicial -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$"
+                            android:textColor="@color/text_muted"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/et_total_pagado"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:background="@android:color/transparent"
+                            android:hint="0"
+                            android:inputType="numberDecimal"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_muted"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 5. Grid Fechas (Inicio y Fin) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <!-- Fecha Inicio -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Fecha de Inicio"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/ll_fecha_inicio_click"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <EditText
+                            android:id="@+id/et_fecha_inicio"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:hint="2024-05-01"
+                            android:inputType="none"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_calendar_today"
+                            app:tint="@color/text_muted" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Fecha Término -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Fecha Término"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/ll_fecha_fin_click"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <EditText
+                            android:id="@+id/et_fecha_fin"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:hint="2025-05-01"
+                            android:inputType="none"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_calendar_today"
+                            app:tint="@color/text_muted" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 6. Número de Cuotas (Botones Rápidos) -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Número de Cuotas"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_cuota_estimada"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="Cuota est.: $ 0 / mes"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11sp" />
+            </RelativeLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="24dp">
+                android:layout_marginBottom="14dp"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tv_titulo_dialogo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:text="@string/txt_agregar_deuda"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="20sp"
+                    android:id="@+id/btn_cuota_6x"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="6x"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
-                <!-- Tipo de Deuda -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/txt_tipo_deuda">
+                <TextView
+                    android:id="@+id/btn_cuota_12x"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_container_low"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="12x"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                    <AutoCompleteTextView
-                        android:id="@+id/auto_tipo_deuda"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
+                <TextView
+                    android:id="@+id/btn_cuota_24x"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="24x"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                <!-- Concepto -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/et_concepto">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_concepto"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapSentences" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Descripción -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/item_descripcion">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_descripcion"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="top"
-                        android:inputType="textMultiLine"
-                        android:lines="3" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Total Deuda -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/et_total_deuda">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_total_deuda"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Pagado Inicial -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/et_total_pagado">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_total_pagado"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Fechas -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="24dp">
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:hint="Fecha Inicio">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_fecha_inicio"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="false"
-                            android:clickable="true"
-                            android:inputType="none" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Fecha Fin">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_fecha_fin"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="false"
-                            android:clickable="true"
-                            android:inputType="none" />
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:orientation="horizontal">
-
-                    <!-- Botón Cancelar estandarizado con contorno de color -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_cancelar"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/btn_cancelar"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="?attr/colorError"
-                        android:textColor="?attr/colorOnPrimary"
-                        android:backgroundTint="?attr/colorError"/>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_guardar"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_guardar"
-                        app:backgroundTint="?attr/colorPrimary" />
-                </LinearLayout>
+                <EditText
+                    android:id="@+id/et_cuotas_otro"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:hint="Otro"
+                    android:inputType="number"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_muted"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
             </LinearLayout>
-        </ScrollView>
-    </RelativeLayout>
+
+            <!-- 7. Descripción o Nota (Opcional) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:text="Descripción o Nota (Opcional)"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="18dp"
+                app:boxBackgroundColor="@color/surface_card"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="@color/outline_variant"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_descripcion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ej. Cuotas sin interés en compras escolares..."
+                    android:inputType="textMultiLine"
+                    android:lines="2"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- 8. Footer de Botones de Acción -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Botón Cancelar -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_cancelar"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:text="Cancelar"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/surface_container"
+                    app:cornerRadius="16dp" />
+
+                <!-- Botón Registrar Deuda -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_guardar"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="2"
+                    android:text="Registrar Deuda"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/primary_emerald"
+                    app:cornerRadius="16dp"
+                    app:elevation="4dp"
+                    app:icon="@drawable/ic_check"
+                    app:iconGravity="textStart"
+                    app:iconTint="@android:color/white" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
 </com.google.android.material.card.MaterialCardView>

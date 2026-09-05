@@ -1,82 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@color/surface_bg"
     android:fitsSystemWindows="true"
+    android:scrollbars="none"
     tools:context=".ActualizarMovimientoActivity">
 
-    <TextView
-        android:id="@+id/txtAgregarNota"
-        android:text="@string/txtAgregarNota"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="15dp"
-        android:textSize="20sp"
-        android:padding="10dp"/>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/TILdescripcion"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/txtAgregarNota"
-        android:padding="10dp">
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="36dp">
 
-        <EditText
-            android:id="@+id/etDescripcion"
-            android:maxLines="1"
-            android:textSize="20sp"
-            android:hint="@string/etDescripcion"
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/TILValor"
-        android:layout_below="@+id/TILdescripcion"
-        android:padding="10dp">
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/circle_primary_bg"
+                android:backgroundTint="@color/primary_fixed">
 
-        <EditText
-            android:id="@+id/etValor"
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_edit"
+                    app:tint="@color/primary_emerald" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtAgregarNota"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Editar Movimiento"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Modifica los detalles del registro"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Descripción -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/TILdescripcion"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/etDescripcion"
+            app:boxBackgroundColor="@color/surface_card"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="@color/outline_variant">
+
+            <EditText
+                android:id="@+id/etDescripcion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Valor -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/TILValor"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:hint="@string/etValor"
-            android:textSize="20sp"
+            app:boxBackgroundColor="@color/surface_card"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="@color/outline_variant">
+
+            <EditText
+                android:id="@+id/etValor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Tipo de Registro -->
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/TILValor"
-        android:padding="10dp">
-
-        <EditText
-            android:id="@+id/etTipoReg"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
             android:hint="@string/etTipoReg"
-            android:textSize="20sp"
+            app:boxBackgroundColor="@color/surface_card"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxStrokeColor="@color/outline_variant">
+
+            <EditText
+                android:id="@+id/etTipoReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Botón Actualizar -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ivActualizarMovimiento"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="52dp"
+            android:text="Actualizar Movimiento"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/primary_emerald"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_check"
+            app:iconGravity="textStart"
+            app:iconTint="@android:color/white" />
 
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <ImageView
-        android:id="@+id/ivActualizarMovimiento"
-        android:src="@drawable/ic_check"
-        android:layout_alignParentBottom="true"
-        android:layout_centerInParent="true"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="20dp"
-        android:layout_width="70dp"
-        android:layout_height="70dp"/>
-
-</RelativeLayout>
+    </LinearLayout>
+</ScrollView>

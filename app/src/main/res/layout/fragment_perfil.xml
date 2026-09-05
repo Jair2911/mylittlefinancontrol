@@ -1,155 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/surface_bg"
+    tools:context=".Fragmentos.FragmentPerfil">
 
-    <ImageView
-        android:id="@+id/imagenFondo"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:src="@drawable/bg_1"
-        android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <!-- Screen Header: Volver + Mi Perfil + Ayuda -->
+    <RelativeLayout
+        android:id="@+id/rl_header_perfil"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentTop="true"
+        android:paddingHorizontal="16dp">
 
-    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+        <FrameLayout
+            android:id="@+id/btn_volver_perfil"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/badge_round_pill"
+            android:backgroundTint="@color/surface_card"
+            android:clickable="true"
+            android:elevation="1dp"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_back"
+                app:tint="@color/text_primary" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="12dp"
+            android:layout_toEndOf="@id/btn_volver_perfil"
+            android:text="Mi Perfil"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/btn_ayuda_perfil"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/badge_round_pill"
+            android:backgroundTint="@color/surface_card"
+            android:clickable="true"
+            android:elevation="1dp"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_help"
+                app:tint="@color/text_secondary" />
+        </FrameLayout>
+    </RelativeLayout>
+
+    <!-- Contenido Scrollable -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".Fragmentos.FragmentPerfil">
+        android:layout_below="@id/rl_header_perfil"
+        android:clipToPadding="false"
+        android:paddingBottom="40dp"
+        android:scrollbars="none">
 
-        <RelativeLayout
-            android:id="@+id/rel_end"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="40dp"
-            android:paddingBottom="20dp">
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="4dp">
 
-            <!-- Nombres -->
-            <TextView
-                android:id="@+id/txt_nombre"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:text="@string/txt_nombre"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_nombres"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:text="@string/tv_nombres" />
-
-            <!-- email -->
-            <TextView
-                android:id="@+id/txt_email"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_nombres"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="20dp"
-                android:text="@string/txt_email"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_email"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_nombres"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginTop="20dp"
-                android:text="@string/tv_email" />
-
-            <!-- proveedor -->
-            <TextView
-                android:id="@+id/txt_proveedor"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_email"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="20dp"
-                android:text="@string/txt_proveedor"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_proveedor"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_email"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginTop="20dp"
-                android:text="@string/tv_proveedor" />
-
-            <!-- miembro desde -->
-            <TextView
-                android:id="@+id/txt_mienbro_Desde"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/txt_proveedor"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="20dp"
-                android:text="@string/txt_mienbro_Desde"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tv_mienbro_Desde"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_proveedor"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="20dp"
-                android:textColor="?attr/colorOnSurface"
-                android:layout_marginTop="20dp"
-                android:text="@string/tv_mienbro_Desde" />
-
-            <!-- Tema Oscuro Switch -->
-            <TextView
-                android:id="@+id/txt_tema_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_mienbro_Desde"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="20dp"
-                android:text="@string/txt_tema_oscuro"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/sw_tema"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tv_mienbro_Desde"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="20dp"
-                android:layout_marginTop="10dp" />
-
-            <!-- Sección de Respaldo y Sincronización -->
+            <!-- 1. Tarjeta de Identidad de Usuario -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_backup"
+                android:id="@+id/card_identidad"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/sw_tema"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="24dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutline"
+                android:layout_marginBottom="14dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -158,108 +101,459 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Copia de Seguridad (Google Drive)"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
-                    <TextView
-                        android:id="@+id/tv_google_account"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Cuenta: No vinculada"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="14sp" />
+                        <!-- Avatar con Gradiente y Badge Online -->
+                        <FrameLayout
+                            android:id="@+id/fl_avatar_container"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true">
 
-                    <TextView
-                        android:id="@+id/tv_last_backup"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Última copia: Nunca"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="12sp" />
+                            <TextView
+                                android:id="@+id/tv_avatar_iniciales"
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:background="@drawable/bg_avatar_gradient"
+                                android:gravity="center"
+                                android:text="DD"
+                                android:textColor="@android:color/white"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
 
+                            <ImageView
+                                android:id="@+id/iv_avatar"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:visibility="gone" />
+
+                            <View
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:layout_gravity="bottom|end"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/primary_emerald" />
+                        </FrameLayout>
+
+                        <!-- Datos de Usuario -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="14dp"
+                            android:layout_toEndOf="@id/fl_avatar_container"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_nombres"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:text="DABA DandT"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tv_proveedor"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:background="@drawable/badge_round_pill"
+                                    android:backgroundTint="@color/surface_container_high"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="2dp"
+                                    android:text="Google"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tv_email"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="d.a.b.a.t.e.c.h.n.i.c.a.l@gmail.com"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tv_mienbro_Desde"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Miembro desde: 16 ago 2026"
+                                android:textColor="@color/text_muted"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="12dp"
+                        android:background="@color/surface_container" />
+
+                    <!-- Fila Modo Oscuro -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:id="@+id/fl_icon_dark"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_container">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_nightlight"
+                                app:tint="@color/text_secondary" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="10dp"
+                            android:layout_toEndOf="@id/fl_icon_dark"
+                            android:layout_toStartOf="@+id/sw_tema"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Modo Oscuro"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Apariencia visual de la app"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/sw_tema"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            app:thumbTint="@color/primary_emerald"
+                            app:trackTint="@color/primary_fixed" />
+                    </RelativeLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. Tarjeta de Copia de Seguridad Google Drive -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_backup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="18dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Header Sección Backup -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <FrameLayout
+                            android:id="@+id/fl_icon_cloud"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_container_low">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cloud"
+                                app:tint="@color/primary_emerald" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="10dp"
+                            android:layout_toEndOf="@id/fl_icon_cloud"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Copia de Seguridad"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <View
+                                    android:layout_width="6dp"
+                                    android:layout_height="6dp"
+                                    android:background="@drawable/circle_primary_bg"
+                                    android:backgroundTint="@color/primary_emerald" />
+
+                                <TextView
+                                    android:id="@+id/tv_google_account"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:text="Google Drive Conectado"
+                                    android:textColor="@color/primary_emerald"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Versión Pill -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:text="v2.4"
+                            android:textColor="@color/text_muted"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <!-- Info Box: Última Copia & Tamaño -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_bg"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_google_auth"
-                            style="@style/Widget.Material3.Button.TextButton"
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Vincular" />
+                            android:orientation="vertical">
 
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.06"
+                                android:text="ÚLTIMA COPIA"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_last_backup"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Hoy, 14:20 hrs"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.06"
+                                android:text="TAMAÑO"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="2.4 MB"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Botones de Acción Backup (Grid 2 columnas) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <!-- Respaldar Ahora -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btn_backup_now"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:text="Respaldar"
-                            android:enabled="false" />
+                            android:text="Respaldar ahora"
+                            android:textColor="@android:color/white"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/primary_emerald"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/ic_upload"
+                            app:iconGravity="textStart"
+                            app:iconSize="14dp"
+                            app:iconTint="@android:color/white" />
+
+                        <!-- Restaurar Datos -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_restore"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="Restaurar datos"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/ic_download"
+                            app:iconGravity="textStart"
+                            app:iconSize="14dp"
+                            app:iconTint="@color/text_secondary"
+                            app:strokeColor="@color/outline_variant" />
                     </LinearLayout>
 
+                    <!-- Botón Opcional Vincular Google si no está conectado -->
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_restore"
+                        android:id="@+id/btn_google_auth"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="6dp"
+                        android:text="Vincular Cuenta de Google"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:visibility="gone"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="@color/outline_variant" />
+
+                    <!-- Selector de Frecuencia de Respaldo -->
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Restaurar desde la nube"
-                        android:enabled="false" />
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="6dp"
+                        android:text="Frecuencia de respaldo automático"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:hint="Frecuencia de respaldo automático">
+                        app:boxBackgroundColor="@color/surface_card"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxStrokeColor="@color/outline_variant"
+                        app:hintEnabled="false">
 
                         <AutoCompleteTextView
                             android:id="@+id/auto_frecuencia_backup"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="none" />
+                            android:hint="Diario (Recomendado)"
+                            android:inputType="none"
+                            android:text="Diario (Recomendado)"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 3. Botones de Acción Global -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnActualizar"
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/card_backup"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="40dp"
-                android:text="@string/btnActualizar"
-                android:textAllCaps="true"
-                android:textSize="14sp"
-                app:backgroundTint="?attr/colorPrimary"
-                app:cornerRadius="8dp" />
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="Actualizar Datos"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/primary_emerald"
+                app:cornerRadius="16dp"
+                app:elevation="4dp"
+                app:icon="@drawable/ic_check"
+                app:iconGravity="textStart"
+                app:iconTint="@android:color/white" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
-                android:layout_width="200dp"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/btnActualizar"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="10dp"
-                android:text="@string/btn_logout"
-                android:textAllCaps="true"
-                android:textSize="14sp"
-                app:backgroundTint="?attr/colorPrimary"
-                app:cornerRadius="8dp" />
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="8dp"
+                android:text="Cerrar Sesión"
+                android:textColor="@color/error_text"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:icon="@drawable/ic_sign_out"
+                app:iconGravity="textStart"
+                app:iconTint="@color/error_text" />
 
-        </RelativeLayout>
+        </LinearLayout>
     </ScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

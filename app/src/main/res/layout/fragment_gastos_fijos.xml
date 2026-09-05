@@ -4,80 +4,549 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentGastosFijos">
 
-    <ImageView
-        android:id="@+id/imagenFondo"
+    <ScrollView
+        android:id="@+id/sv_gastos_fijos_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/bg_1"
-        android:scaleType="centerCrop" />
-
-
-    <!-- Tarjeta de Total Acumulado -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cv_total"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:cardBackgroundColor="?attr/colorPrimaryContainer"
-        app:strokeWidth="1dp"
-        android:layout_marginVertical="10dp"
-        android:layout_marginHorizontal="10dp"
-        android:padding="10dp"
-        app:strokeColor="?attr/colorOutline">
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="100dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="10dp"
-            android:gravity="center">
+            android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- 1. Top Context Bar: Sub-status & Quick Actions -->
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Total Mensual"
-                android:textSize="12sp"
-                android:letterSpacing="0.1"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:layout_marginBottom="12dp">
 
-            <TextView
-                android:id="@+id/tv_total_monto"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Indicador punto verde -->
+                    <View
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/primary_emerald" />
+
+                    <TextView
+                        android:id="@+id/tv_sub_status_gf"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="3 compromisos recurrentes"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/btn_calendar_gf"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/surface_card"
+                        android:contentDescription="Ver calendario"
+                        android:elevation="1dp"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_calendar_month"
+                        app:tint="@color/text_variant" />
+
+                    <ImageButton
+                        android:id="@+id/btn_filter_gf"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/surface_card"
+                        android:contentDescription="Filtrar compromisos"
+                        android:elevation="1dp"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_tune"
+                        app:tint="@color/text_variant" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- 2. Hero Summary Card: Gastos Fijos del Mes -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cv_total"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="$0.00"
-                android:textSize="32sp"
-                android:textColor="?attr/colorPrimary"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp"/>
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_toStartOf="@+id/ll_badge_mes_activo"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.08"
+                                android:text="TOTAL MENSUAL COMPROMETIDO"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_total_monto"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="$ 225.000,00"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="28sp"
+                                    android:textStyle="bold" />
+
+                                <ImageButton
+                                    android:id="@+id/btn_privacy_toggle_gf"
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:layout_marginStart="6dp"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:contentDescription="Ocultar monto"
+                                    android:padding="6dp"
+                                    android:src="@drawable/ic_visibility"
+                                    app:tint="@color/text_secondary" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/ll_badge_mes_activo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_alignParentTop="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/secondary_container"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp">
+
+                            <ImageView
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_event_repeat"
+                                app:tint="@color/on_secondary_container" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="MES ACTIVO"
+                                android:textColor="@color/on_secondary_container"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
+                    <!-- Progress Meter & Split Metrics -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/rounded_corners_background"
+                        android:backgroundTint="@color/surface_container_low"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Progreso de liquidación"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tv_progreso_porcentaje"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:text="55% completado"
+                                android:textColor="@color/primary_emerald"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <!-- Barra de progreso segmentada -->
+                        <ProgressBar
+                            android:id="@+id/pb_liquidacion_gf"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="10dp"
+                            android:layout_marginTop="8dp"
+                            android:max="100"
+                            android:progress="55"
+                            android:progressDrawable="@drawable/pb_savings_plan" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <!-- Pagado -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <View
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/circle_primary_bg"
+                                    android:backgroundTint="@color/primary_emerald" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="PAGADO"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_monto_pagado"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="$ 125.000,00"
+                                        android:textColor="@color/primary_emerald"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Pendiente -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <View
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/circle_primary_bg"
+                                    android:backgroundTint="@color/text_secondary" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="PENDIENTE"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_monto_pendiente"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="$ 100.000,00"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Next Due Date Badge Banner -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/rounded_corners_background"
+                        android:backgroundTint="@color/surface_container_high"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_alarm"
+                                app:tint="@color/primary_emerald" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Próximo vencimiento programado"
+                                android:textColor="@color/text_variant"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_proximo_vencimiento_detalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:text="Día 15 · En 4 días"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. Filter Pills (Categories) -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/cg_categorias_gf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_todos"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Todos (3)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_servicios"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Servicios (1)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_vivienda"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Vivienda (1)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_telecom"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Telecom (1)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_suscripciones"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Streaming (0)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_educacion"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Educación (0)"
+                        app:chipCornerRadius="999dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_otros"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Otros (0)"
+                        app:chipCornerRadius="999dp" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- 4. Section Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:paddingHorizontal="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="Detalle de Compromisos"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="Orden: Vencimiento"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </RelativeLayout>
+
+            <!-- 5. Fixed Expenses List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_gastos_fijos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_gasto_fijo" />
+
+            <!-- 6. Educational Micro-Card ("Previsión inteligente") -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_prevision"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@android:color/transparent"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/surface_container_highest">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_lightbulb"
+                            app:tint="@color/primary_emerald" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Previsión inteligente"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_prevision_subtexto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Tus gastos fijos representan el 42% del presupuesto proyectado para este mes."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </ScrollView>
 
-    <!-- Lista de Gastos -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_gastos_fijos"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/cv_total"
-        android:layout_marginHorizontal="6dp"
-        tools:listitem="@layout/item_gasto_fijo"/>
-
-    <!-- Botón Agregar -->
+    <!-- Botón Flotante de Acción (+) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_agregar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_margin="16dp"
+        android:layout_margin="20dp"
+        android:contentDescription="Agregar Gasto Fijo"
         android:src="@drawable/ic_add"
-        app:backgroundTint="?attr/colorPrimary"
-        app:tint="?attr/colorOnPrimary"
+        app:backgroundTint="@color/primary_emerald"
         app:elevation="4dp"
-        android:contentDescription="@string/txt_agregar_gasto_fijo" />
+        app:tint="@android:color/white" />
 
 </RelativeLayout>

@@ -4,10 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardBackgroundColor="?attr/colorSurface"
-    app:cardCornerRadius="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/surface_card"
+    app:cardCornerRadius="14dp"
     app:cardElevation="0dp"
-    app:strokeColor="?attr/colorSurfaceVariant"
+    app:strokeColor="@color/outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -17,20 +19,29 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
-        <ImageView
-            android:id="@+id/iv_tipo_icono"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/rounded_corners_background"
-            android:backgroundTint="?attr/colorPrimaryContainer"
-            android:padding="6dp"
-            android:src="@drawable/ic_movimientos"
-            app:tint="?attr/colorPrimary" />
+        <!-- Icono circular según categoría -->
+        <FrameLayout
+            android:id="@+id/fl_icono_contenedor"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/circle_primary_bg"
+            android:backgroundTint="@color/surface_container_high">
 
+            <ImageView
+                android:id="@+id/iv_tipo_icono"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_receipt_long"
+                app:tint="@color/text_secondary" />
+        </FrameLayout>
+
+        <!-- Información central: Descripción + Badge + Fecha -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -40,48 +51,49 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Descripción"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
+                android:text="Pago: Test"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_categoria_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_container_high"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="1dp"
+                    android:text="Fijo"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tv_fecha"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2024-05-20"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginStart="6dp"
+                    android:text="Hoy, 14:13"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tv_etiqueta_fijo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/rounded_corners_background"
-                    android:backgroundTint="?attr/colorTertiary"
-                    android:paddingHorizontal="4dp"
-                    android:paddingVertical="1dp"
-                    android:text="FIJO"
-                    android:textColor="@android:color/white"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Monto -->
         <TextView
             android:id="@+id/tv_monto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="$0.00"
-            android:textColor="?attr/colorPrimary"
+            android:text="-$ 100.000,00"
+            android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:textStyle="bold" />
 

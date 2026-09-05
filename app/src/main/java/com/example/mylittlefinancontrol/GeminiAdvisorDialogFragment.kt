@@ -63,7 +63,7 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
             val textoUsuario = binding.etMensaje.text.toString()
             if (textoUsuario.isNotBlank()) {
                 agregarMensaje(textoUsuario, true)
-                binding.etMensaje.text.clear()
+                binding.etMensaje.text?.clear()
                 binding.pbLoading.visibility = View.VISIBLE
 
                 lifecycleScope.launch {

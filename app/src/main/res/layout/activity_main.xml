@@ -6,90 +6,281 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/surface_bg"
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
+    <!-- 1. Header Toolbar Moderno Estilo Fintech -->
     <RelativeLayout
         android:id="@+id/toolbarRL"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:background="?attr/colorPrimary">
+        android:layout_height="64dp"
+        android:background="@color/surface_bg"
+        android:elevation="1dp"
+        android:paddingHorizontal="16dp">
 
-        <ImageButton
-            android:id="@+id/btnPerfilToolbar"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/ic_perfil"
-            android:background="@android:color/transparent"
-            android:layout_marginStart="10dp"
-            android:layout_centerVertical="true"
-            app:tint="?attr/colorPrimaryContainer" />
-
-        <TextView
+        <!-- Perfil Usuario Izquierda (Avatar Circular Verde + Saludo) -->
+        <LinearLayout
+            android:id="@+id/ll_header_usuario"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:id="@+id/app_name"
-            android:textSize="20sp"
-            android:text="@string/app_name"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimaryContainer"/>
-
-        <ImageButton
-            android:id="@+id/btnGeminiAdvisor"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_toStartOf="@id/ic_sign_out"
-            android:src="@drawable/ic_lightbulb"
-            android:background="@android:color/transparent"
+            android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:contentDescription="Asesor Gemini"
-            app:tint="?attr/colorPrimaryContainer"/>
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/ic_sign_out"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginEnd="15dp"
+            <!-- Avatar circular con icono de usuario -->
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/circle_primary_bg"
+                android:backgroundTint="@color/primary_emerald">
+
+                <ImageView
+                    android:id="@+id/iv_avatar_icono"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_person"
+                    app:tint="@android:color/white" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_header_subtitulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="BIENVENIDO"
+                    android:textColor="@color/text_variant"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/app_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Jair"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Botones Derecha: Notificaciones + Perfil -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:src="@drawable/ic_sign_out"
-            android:background="@android:color/transparent"
             android:layout_centerVertical="true"
-            android:contentDescription="Cerrar Sesión"
-            app:tint="?attr/colorPrimaryContainer"/>
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?attr/colorPrimary"
-            android:layout_alignParentBottom="true"/>
+            <ImageButton
+                android:id="@+id/btn_notificaciones"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Notificaciones"
+                android:padding="8dp"
+                android:src="@drawable/ic_notification"
+                app:tint="@color/text_secondary" />
+
+            <ImageButton
+                android:id="@+id/btnPerfilToolbar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Perfil de usuario"
+                android:padding="8dp"
+                android:src="@drawable/ic_perfil"
+                app:tint="@color/text_secondary" />
+        </LinearLayout>
 
     </RelativeLayout>
 
+    <!-- 2. Contenedor Principal de Fragmentos -->
     <FrameLayout
+        android:id="@+id/fragmentoFL"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/toolbarRL"
-        android:layout_above="@+id/view"
-        android:id="@+id/fragmentoFL"/>
+        android:layout_above="@id/bottom_nav_container"
+        android:layout_below="@id/toolbarRL" />
 
-    <View
-        android:id="@+id/view"
-        android:background="?attr/colorPrimary"
-        android:layout_above="@+id/botonNV"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"/>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
+    <!-- 4. Barra de Navegación Inferior Moderna con 5 Secciones -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/botonNV"
+        android:layout_height="64dp"
         android:layout_alignParentBottom="true"
-        app:menu="@menu/menu_bottom"
-        app:itemIconTint="?attr/colorPrimaryContainer"
-        app:itemTextColor="?attr/colorPrimaryContainer"
-        android:background="?attr/colorPrimary"
-        app:itemActiveIndicatorStyle="@style/Widget.Material3.BottomNavigationView.ActiveIndicator"
-        app:labelVisibilityMode="labeled"/>
+        app:cardBackgroundColor="@color/surface_card"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
+        app:strokeColor="@color/outline_variant"
+        app:strokeWidth="0.5dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <!-- Tab 1: Inicio -->
+            <LinearLayout
+                android:id="@+id/nav_inicio"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_nav_inicio"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_account_balance_wallet"
+                    app:tint="@color/primary_emerald" />
+
+                <TextView
+                    android:id="@+id/tv_nav_inicio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Inicio"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Tab 2: Movimientos -->
+            <LinearLayout
+                android:id="@+id/nav_movimientos"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_nav_movimientos"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_receipt_long"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/tv_nav_movimientos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Movimientos"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Tab 3: Gastos Fijos -->
+            <LinearLayout
+                android:id="@+id/nav_gastos_fijos"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_nav_gastos_fijos"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_pie_chart"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/tv_nav_gastos_fijos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Gastos Fijos"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Tab 4: Ahorros -->
+            <LinearLayout
+                android:id="@+id/nav_ahorros"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_nav_ahorros"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_savings"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/tv_nav_ahorros"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Ahorros"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Tab 5: Deudas -->
+            <LinearLayout
+                android:id="@+id/nav_deudas"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_nav_deudas"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_credit_card"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:id="@+id/tv_nav_deudas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Deudas"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </RelativeLayout>

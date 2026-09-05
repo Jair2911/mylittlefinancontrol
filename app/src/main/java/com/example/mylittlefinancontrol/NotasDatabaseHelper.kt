@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.mylittlefinancontrol.Modelos.Ahorro
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 
@@ -13,7 +14,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 7
+        private const val DATABASE_VERSION = 8
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -43,12 +44,23 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_D_PAGADO = "totalPagado"
         private const val COLUMN_D_FECHA_INI = "fecha_inicio"
         private const val COLUMN_D_FECHA_FIN = "fecha_fin"
+
+        private const val TABLE_AHORROS = "ahorros"
+        private const val COLUMN_A_ID = "id"
+        private const val COLUMN_A_TITULO = "titulo"
+        private const val COLUMN_A_CATEGORIA = "categoria"
+        private const val COLUMN_A_MONTO_ACTUAL = "monto_actual"
+        private const val COLUMN_A_MONTO_OBJETIVO = "monto_objetivo"
+        private const val COLUMN_A_FECHA_META = "fecha_meta"
+        private const val COLUMN_A_ICONO = "icono"
+        private const val COLUMN_A_DESC = "descripcion"
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER)")
         db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT)")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
@@ -61,6 +73,9 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_FECHA_INI TEXT")
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_FECHA_FIN TEXT")
+        }
+        if (oldVersion < 8) {
+            db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
         }
     }
 
@@ -231,6 +246,63 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     fun deleteDeuda(id: String) {
         val db = writableDatabase
         db.delete(TABLE_DEUDAS, "$COLUMN_D_ID = ?", arrayOf(id))
+        db.close()
+    }
+
+    // --- MÉTODOS AHORROS ---
+    fun insertAhorro(a: Ahorro) {
+        val db = writableDatabase
+        val v = ContentValues().apply {
+            put(COLUMN_A_TITULO, a.titulo)
+            put(COLUMN_A_CATEGORIA, a.categoria)
+            put(COLUMN_A_MONTO_ACTUAL, a.montoActual)
+            put(COLUMN_A_MONTO_OBJETIVO, a.montoObjetivo)
+            put(COLUMN_A_FECHA_META, a.fechaMeta)
+            put(COLUMN_A_ICONO, a.icono)
+            put(COLUMN_A_DESC, a.descripcion)
+        }
+        db.insert(TABLE_AHORROS, null, v)
+        db.close()
+    }
+
+    fun updateAhorro(a: Ahorro) {
+        val db = writableDatabase
+        val v = ContentValues().apply {
+            put(COLUMN_A_TITULO, a.titulo)
+            put(COLUMN_A_CATEGORIA, a.categoria)
+            put(COLUMN_A_MONTO_ACTUAL, a.montoActual)
+            put(COLUMN_A_MONTO_OBJETIVO, a.montoObjetivo)
+            put(COLUMN_A_FECHA_META, a.fechaMeta)
+            put(COLUMN_A_ICONO, a.icono)
+            put(COLUMN_A_DESC, a.descripcion)
+        }
+        db.update(TABLE_AHORROS, v, "$COLUMN_A_ID = ?", arrayOf(a.id))
+        db.close()
+    }
+
+    fun getAllAhorros(): List<Ahorro> {
+        val lista = mutableListOf<Ahorro>()
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_AHORROS ORDER BY $COLUMN_A_ID DESC", null)
+        while (cursor.moveToNext()) {
+            lista.add(Ahorro(
+                cursor.getInt(0).toString(),
+                cursor.getString(1) ?: "",
+                cursor.getString(2) ?: "Emergencia",
+                cursor.getDouble(3),
+                cursor.getDouble(4),
+                cursor.getString(5) ?: "",
+                cursor.getString(6) ?: "savings",
+                cursor.getString(7) ?: ""
+            ))
+        }
+        cursor.close()
+        return lista
+    }
+
+    fun deleteAhorro(id: String) {
+        val db = writableDatabase
+        db.delete(TABLE_AHORROS, "$COLUMN_A_ID = ?", arrayOf(id))
         db.close()
     }
 

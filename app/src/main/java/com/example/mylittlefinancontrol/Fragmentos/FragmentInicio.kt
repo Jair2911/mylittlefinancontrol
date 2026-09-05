@@ -5,17 +5,23 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.mylittlefinancontrol.Adaptadores.MovimientoInicioAdapter
+import com.example.mylittlefinancontrol.GeminiAdvisorDialogFragment
 import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
-import com.example.mylittlefinancontrol.Adaptadores.MovimientoInicioAdapter
+import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.FragmentInicioBinding
-import androidx.recyclerview.widget.LinearLayoutManager
 import java.text.NumberFormat
 import java.util.*
+import kotlin.math.abs
 
 class FragmentInicio : Fragment() {
-    private lateinit var binding: FragmentInicioBinding
+    private var _binding: FragmentInicioBinding? = null
+    private val binding get() = _binding!!
+
     private lateinit var mContext: Context
     private lateinit var db: NotasDatabaseHelper
     private lateinit var movAdapter: MovimientoInicioAdapter
@@ -26,6 +32,8 @@ class FragmentInicio : Fragment() {
     private var gastosMes = 0.0
     private var ingresosTotales = 0.0
     private var gastosTotales = 0.0
+    
+    private var esIncognito: Boolean = false
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -33,7 +41,7 @@ class FragmentInicio : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentInicioBinding.inflate(inflater, container, false)
+        _binding = FragmentInicioBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -46,24 +54,27 @@ class FragmentInicio : Fragment() {
         setupClickListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        cargarDatosLocales()
+    }
+
     private fun setupRecyclerView() {
         movAdapter = MovimientoInicioAdapter(emptyList())
         binding.rvUltimosMovimientos.apply {
             layoutManager = LinearLayoutManager(mContext)
             adapter = movAdapter
+            isNestedScrollingEnabled = false
         }
     }
 
     private fun cargarDatosLocales() {
-        // 1. Obtener Gastos Fijos localmente
         val listaGF = db.getAllGastosFijos()
         totalGastosFijos = listaGF.sumOf { it.monto }
 
-        // 2. Obtener Deudas localmente
         val listaD = db.getAllDeudas()
         totalDeudasRestante = listaD.sumOf { it.totalDeuda - it.totalPagado }
 
-        // 3. Calcular Movimientos del Mes (SQLite)
         calcularMovimientosDelMes()
     }
 
@@ -75,6 +86,30 @@ class FragmentInicio : Fragment() {
         binding.cardGastos.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
         binding.cardGastosFijos.setOnClickListener { mainActivity?.verFragmentoGastosFijos() }
         binding.cardDeudas.setOnClickListener { mainActivity?.verFragmentoDeudas() }
+
+        binding.btnVerTodosMovimientos.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
+        
+        binding.cardSaludFinanciera.setOnClickListener {
+            GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
+        }
+
+        binding.btnIncognitoToggle.setOnClickListener {
+            esIncognito = !esIncognito
+            actualizarInterfaz()
+        }
+
+        // Acciones rápidas (Gasto, Ingreso, Transferir, Analítica)
+        binding.btnQuickGasto.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
+        binding.btnQuickIngreso.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
+        binding.btnQuickTransferir.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
+        binding.btnQuickAnalitica.setOnClickListener {
+            GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
+        }
+
+        // Plan de Ahorro
+        binding.btnNuevaMetaAhorro.setOnClickListener { mainActivity?.verFragmentoAhorros() }
+        binding.cardPlanAhorro.setOnClickListener { mainActivity?.verFragmentoAhorros() }
+        binding.rowMetaSecundaria.setOnClickListener { mainActivity?.verFragmentoAhorros() }
     }
 
     private fun calcularMovimientosDelMes() {
@@ -89,14 +124,12 @@ class FragmentInicio : Fragment() {
         gastosTotales = 0.0
 
         for (mov in todosLosMovimientos) {
-            // Cálculos Históricos (Sin filtro de fecha)
             if (mov.tipo_reg.contains("INGRESO", true)) {
                 ingresosTotales += mov.valor
             } else {
                 gastosTotales += mov.valor
             }
 
-            // Cálculos del Mes Actual
             try {
                 val partes = mov.fecha.split("-")
                 val anio = partes[0].toInt()
@@ -109,10 +142,9 @@ class FragmentInicio : Fragment() {
                         gastosMes += mov.valor
                     }
                 }
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
         }
         
-        // Actualizar lista de últimos 5 movimientos
         val ultimosMovimientos = if (todosLosMovimientos.size > 5) {
             todosLosMovimientos.take(5)
         } else {
@@ -124,25 +156,93 @@ class FragmentInicio : Fragment() {
     }
 
     private fun actualizarInterfaz() {
-        if (!isAdded) return
+        if (!isAdded || _binding == null) return
         
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        
-        binding.tvIngresosMes.text = format.format(ingresosMes)
-        binding.tvGastosMes.text = format.format(gastosMes)
-        binding.tvTotalGastosFijos.text = format.format(totalGastosFijos)
-        binding.tvTotalDeudas.text = format.format(totalDeudasRestante)
-
-        // Balance Total = Ingresos Totales - Gastos Totales
-        // Nota: Los Gastos Fijos son conceptuales, aquí usamos los registros reales de la DB
         val balanceTotal = ingresosTotales - gastosTotales
-        binding.tvBalanceGeneral.text = format.format(balanceTotal)
-        
-        val colorBalance = if (balanceTotal < 0) 
-            com.example.mylittlefinancontrol.R.color.rojo_alerta
-        else 
-            com.example.mylittlefinancontrol.R.color.verde_oscuro
+
+        if (esIncognito) {
+            binding.tvBalanceGeneral.text = "••••••••"
+            binding.tvIngresosMes.text = "••••••"
+            binding.tvGastosMes.text = "••••••"
+            binding.tvTotalGastosFijos.text = "••••••"
+            binding.tvTotalDeudas.text = "••••••"
+            binding.tvMeta1Actual.text = "••••••"
+            binding.tvMeta1Total.text = "de ••••••"
+            binding.tvMeta2Subtitulo.text = "••••••"
+            binding.btnIncognitoToggle.setImageResource(R.drawable.ic_visibility_off)
+        } else {
+            val signo = if (balanceTotal < 0) "-$ " else if (balanceTotal > 0) "+$ " else "$ "
+            val valorFormateado = format.format(abs(balanceTotal)).replace("$", "").trim()
+            binding.tvBalanceGeneral.text = "$signo$valorFormateado"
             
-        binding.tvBalanceGeneral.setTextColor(mContext.getColor(colorBalance))
+            binding.tvIngresosMes.text = format.format(ingresosMes)
+            binding.tvGastosMes.text = format.format(gastosMes)
+            binding.tvTotalGastosFijos.text = format.format(totalGastosFijos)
+            binding.tvTotalDeudas.text = format.format(totalDeudasRestante)
+            binding.btnIncognitoToggle.setImageResource(R.drawable.ic_visibility)
+        }
+
+        val colorBalance = if (balanceTotal < 0) 
+            R.color.text_primary 
+        else 
+            R.color.primary_emerald
+            
+        binding.tvBalanceGeneral.setTextColor(ContextCompat.getColor(mContext, colorBalance))
+
+        // Subtextos de las tarjetas Bento
+        binding.tvSubtextIngresos.text = if (ingresosMes > 0) "1 depósito activo" else "Sin depósitos aún"
+        
+        val cantGastosMes = db.getAllNotas().count { !it.tipo_reg.contains("INGRESO", true) }
+        binding.tvSubtextGastos.text = if (cantGastosMes == 1) "1 registro activo" else "$cantGastosMes registros activos"
+
+        val countGF = db.getAllGastosFijos().size
+        binding.tvSubtextGastosFijos.text = "$countGF recurrentes"
+
+        val countDeudas = db.getAllDeudas().size
+        binding.tvSubtextDeudas.text = if (countDeudas > 0) "$countDeudas activas" else "Bajo control"
+
+        // Actualización dinámica de metas de ahorro en Inicio
+        val listaAhorros = db.getAllAhorros()
+        if (listaAhorros.isNotEmpty()) {
+            binding.tvAhorroBadgeActivas.text = "${listaAhorros.size} activas"
+            val meta1 = listaAhorros[0]
+            binding.tvMeta1Titulo.text = meta1.titulo
+            binding.tvMeta1Fecha.text = if (meta1.fechaMeta.isNotEmpty()) "Meta: ${meta1.fechaMeta}" else "Sin fecha límite"
+            val pct1 = if (meta1.montoObjetivo > 0) ((meta1.montoActual / meta1.montoObjetivo) * 100).toInt().coerceIn(0, 100) else 0
+            binding.tvMeta1Porcentaje.text = "$pct1%"
+            binding.pbMeta1.progress = pct1
+
+            if (!esIncognito) {
+                binding.tvMeta1Actual.text = format.format(meta1.montoActual)
+                binding.tvMeta1Total.text = "de ${format.format(meta1.montoObjetivo)}"
+            }
+
+            if (listaAhorros.size > 1) {
+                binding.rowMetaSecundaria.visibility = View.VISIBLE
+                val meta2 = listaAhorros[1]
+                binding.tvMeta2Titulo.text = meta2.titulo
+                val pct2 = if (meta2.montoObjetivo > 0) ((meta2.montoActual / meta2.montoObjetivo) * 100).toInt().coerceIn(0, 100) else 0
+                binding.tvMeta2Porcentaje.text = "$pct2%"
+                if (!esIncognito) {
+                    binding.tvMeta2Subtitulo.text = "${format.format(meta2.montoActual)} de ${format.format(meta2.montoObjetivo)}"
+                }
+            } else {
+                binding.rowMetaSecundaria.visibility = View.GONE
+            }
+        }
+
+        // Cálculo dinámico de salud financiera
+        val pctFijos = if (ingresosMes > 0) {
+            ((totalGastosFijos / ingresosMes) * 100).toInt().coerceIn(10, 95)
+        } else {
+            60
+        }
+        binding.tvSaludSubtitulo.text = "Tus compromisos fijos representan el $pctFijos%"
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

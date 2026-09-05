@@ -3,25 +3,61 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="?attr/colorSurface">
+    android:padding="20dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Asesor Financiero"
-        android:textSize="18sp"
-        android:textStyle="bold"
+    <!-- Drag Handle para Bottom Sheet -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
-        android:textColor="?attr/colorPrimary"/>
+        android:background="@drawable/rounded_corners_background"
+        android:backgroundTint="?attr/colorOutline" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Asistente DABAFINN IA"
+                android:textColor="?attr/colorPrimary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Análisis y recomendaciones inteligentes"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_lightbulb"
+            app:tint="?attr/colorPrimary" />
+    </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChat"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginBottom="8dp"
+        android:layout_height="320dp"
+        android:layout_marginBottom="12dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
     <ProgressBar
@@ -29,31 +65,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <EditText
-            android:id="@+id/etMensaje"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:hint="Haz una pregunta financiera..."
-            android:background="@null"
-            android:padding="12dp"
-            android:maxLines="3"/>
+            android:hint="Haz una consulta a DABAFINN...">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMensaje"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:maxLines="3" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <ImageButton
             android:id="@+id/btnEnviar"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:background="@drawable/rounded_corners_background"
+            android:backgroundTint="?attr/colorPrimary"
+            android:contentDescription="Enviar mensaje"
+            android:padding="12dp"
             android:src="@android:drawable/ic_menu_send"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="?attr/colorPrimary"/>
+            app:tint="@android:color/white" />
     </LinearLayout>
 
 </LinearLayout>

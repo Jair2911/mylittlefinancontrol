@@ -4,157 +4,459 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Fragmentos.FragmentGastosFijos">
-
-    <ImageView
-        android:id="@+id/imagenFondo"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/bg_1"
-        android:scaleType="centerCrop" />
+    android:background="@color/surface_bg"
+    tools:context=".Fragmentos.FragmentInicio">
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".Fragmentos.FragmentInicio">
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="100dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="10dp">
+            android:padding="16dp">
 
-            <!-- Tarjeta Balance General -->
+            <!-- 1. Hero Balance Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_balance_general"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="24dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutline"
+                app:strokeColor="@color/outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="18dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:letterSpacing="0.1"
-                        android:text="Balance Total (Histórico)"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                    <!-- Header Balance: Icon + Title + Toggle Eye Button -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_balance"
+                                app:tint="@color/text_variant" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:letterSpacing="0.06"
+                                android:text="BALANCE TOTAL (HISTÓRICO)"
+                                android:textColor="@color/text_variant"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageButton
+                            android:id="@+id/btn_incognito_toggle"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Alternar visibilidad del balance"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_visibility"
+                            app:tint="@color/text_secondary" />
+                    </RelativeLayout>
+
+                    <!-- Amount -->
                     <TextView
                         android:id="@+id/tv_balance_general"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="$0.00"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="36sp"
+                        android:layout_marginTop="6dp"
+                        android:text="-$ 151.034,00"
+                        android:textColor="@color/text_primary"
+                        android:textSize="32sp"
                         android:textStyle="bold" />
+
+                    <!-- Variation Subtext & Badge -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/ll_badge_variacion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/expense_red_bg"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp">
+
+                            <ImageView
+                                android:id="@+id/iv_variacion_icono"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_trending_down"
+                                app:tint="@color/on_expense_red" />
+
+                            <TextView
+                                android:id="@+id/tv_badge_variacion"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="-2.4% este mes"
+                                android:textColor="@color/on_expense_red"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_cierre_proyectado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Cierre proyectado sereno"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Quick Action Pill Group (4 botones con fondo suave) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <!-- Action 1: Gasto -->
+                        <LinearLayout
+                            android:id="@+id/btn_quick_gasto"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/rounded_corners_background"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/expense_red_bg">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_remove"
+                                    app:tint="@color/on_expense_red" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Gasto"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Action 2: Ingreso -->
+                        <LinearLayout
+                            android:id="@+id/btn_quick_ingreso"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/rounded_corners_background"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/primary_fixed">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_add"
+                                    app:tint="@color/on_primary_fixed" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Ingreso"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Action 3: Transferir -->
+                        <LinearLayout
+                            android:id="@+id/btn_quick_transferir"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/rounded_corners_background"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/secondary_container">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_sync_alt"
+                                    app:tint="@color/on_secondary_container" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Transferir"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Action 4: Analítica -->
+                        <LinearLayout
+                            android:id="@+id/btn_quick_analitica"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/rounded_corners_background"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="8dp">
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/surface_container_high">
+
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_insights"
+                                    app:tint="@color/text_variant" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Analítica"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 2. Financial Snapshot 2x2 Bento Grid -->
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:alignmentMode="alignMargins"
                 android:columnCount="2"
-                android:columnOrderPreserved="false">
+                android:columnOrderPreserved="false"
+                android:useDefaultMargins="false">
 
-                <!-- Ingresos del Mes -->
+                <!-- Card 1: Ingresos Mes -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_ingresos"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    android:layout_margin="4dp"
-                    app:cardBackgroundColor="?attr/colorSurface"
-                    app:strokeColor="?attr/colorPrimary"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="INGRESOS MES"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="INGRESOS MES"
+                                android:textColor="@color/text_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <FrameLayout
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/primary_fixed">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_arrow_downward"
+                                    app:tint="@color/on_primary_fixed" />
+                            </FrameLayout>
+                        </RelativeLayout>
 
                         <TextView
                             android:id="@+id/tv_ingresos_mes"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="$0.00"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="16sp"
+                            android:layout_marginTop="8dp"
+                            android:text="$ 0,00"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_subtext_ingresos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Sin depósitos aún"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Gastos del Mes -->
+                <!-- Card 2: Gastos Mes -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_gastos"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:clickable="true"
-                    app:strokeColor="?attr/colorPrimary"
-                    android:focusable="true"
                     android:layout_margin="4dp"
-                    app:cardBackgroundColor="?attr/colorSurface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="GASTOS MES"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="GASTOS MES"
+                                android:textColor="@color/text_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <FrameLayout
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/expense_red_bg">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_local_fire_department"
+                                    app:tint="@color/on_expense_red" />
+                            </FrameLayout>
+                        </RelativeLayout>
 
                         <TextView
                             android:id="@+id/tv_gastos_mes"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="$0.00"
-                            android:textSize="16sp"
-                            android:textColor="?attr/colorError"
+                            android:layout_marginTop="8dp"
+                            android:text="$ 100.000,00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_subtext_gastos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="1 registro activo"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Gastos Fijos -->
+                <!-- Card 3: Gastos Fijos -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_gastos_fijos"
                     android:layout_width="0dp"
@@ -162,53 +464,281 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:clickable="true"
-                    app:strokeColor="?attr/colorPrimary"
                     android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="14dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="GASTOS FIJOS"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="GASTOS FIJOS"
+                                android:textColor="@color/text_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <FrameLayout
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/surface_container_high">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_autorenew"
+                                    app:tint="@color/text_secondary" />
+                            </FrameLayout>
+                        </RelativeLayout>
 
                         <TextView
                             android:id="@+id/tv_total_gastos_fijos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:textColor="?attr/colorPrimary"
-                            android:text="$0.00"
-                            android:textSize="16sp"
+                            android:layout_marginTop="8dp"
+                            android:text="$ 200.000,00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
                             android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_subtext_gastos_fijos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="2 recurrentes"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Deudas Totales -->
+                <!-- Card 4: Deudas Totales -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_deudas"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
-                    app:strokeColor="?attr/colorPrimary"
                     android:clickable="true"
                     android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
-                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardBackgroundColor="@color/surface_card"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="DEUDAS TOTALES"
+                                android:textColor="@color/text_variant"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <FrameLayout
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/secondary_container">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_shield"
+                                    app:tint="@color/on_secondary_container" />
+                            </FrameLayout>
+                        </RelativeLayout>
+
+                        <TextView
+                            android:id="@+id/tv_total_deudas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="$ 100.000,00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_subtext_deudas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Bajo control"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </GridLayout>
+
+            <!-- 3. Visual Highlight Banner ("Salud Financiera") -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_salud_financiera"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@android:color/transparent"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/primary_emerald">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_spa"
+                            app:tint="@android:color/white" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_salud_titulo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Salud Financiera Estable"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_salud_subtitulo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Tus compromisos fijos representan el 60%"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_secondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 4. Sección Plan de Ahorro -->
+            <LinearLayout
+                android:id="@+id/seccion_plan_ahorro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical">
+
+                <!-- Cabecera Plan de Ahorro -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:paddingHorizontal="4dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Plan de Ahorro"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_ahorro_badge_activas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/primary_fixed"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="2 activas"
+                            android:textColor="@color/on_primary_fixed"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/btn_nueva_meta_ahorro"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Nueva meta +"
+                        android:textColor="@color/primary_emerald"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
+
+                <!-- Tarjeta Principal de Ahorros -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_plan_ahorro"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -216,47 +746,258 @@
                         android:orientation="vertical"
                         android:padding="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <!-- Meta Primaria: Fondo de Emergencia -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="DEUDAS TOTALES"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tv_total_deudas"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="$0.00"
-                            android:textSize="16sp"
-                            android:textColor="?attr/colorError"
-                            android:textStyle="bold" />
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentStart="true"
+                                    android:layout_centerVertical="true"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <FrameLayout
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:background="@drawable/circle_primary_bg"
+                                        android:backgroundTint="@color/surface_container_low">
+
+                                        <ImageView
+                                            android:layout_width="22dp"
+                                            android:layout_height="22dp"
+                                            android:layout_gravity="center"
+                                            android:src="@drawable/ic_savings"
+                                            app:tint="@color/primary_emerald" />
+                                    </FrameLayout>
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="12dp"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/tv_meta1_titulo"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Fondo de Emergencia"
+                                            android:textColor="@color/text_primary"
+                                            android:textSize="15sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tv_meta1_fecha"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Meta: Dic 2026"
+                                            android:textColor="@color/text_secondary"
+                                            android:textSize="12sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tv_meta1_porcentaje"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentEnd="true"
+                                    android:layout_centerVertical="true"
+                                    android:text="70%"
+                                    android:textColor="@color/primary_emerald"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </RelativeLayout>
+
+                            <!-- Barra de progreso meta primaria -->
+                            <ProgressBar
+                                android:id="@+id/pb_meta1"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:layout_width="match_parent"
+                                android:layout_height="10dp"
+                                android:layout_marginTop="10dp"
+                                android:max="100"
+                                android:progress="70"
+                                android:progressDrawable="@drawable/pb_savings_plan" />
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp">
+
+                                <TextView
+                                    android:id="@+id/tv_meta1_actual"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentStart="true"
+                                    android:text="$ 350.000,00"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tv_meta1_total"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_alignParentEnd="true"
+                                    android:text="de $ 500.000,00"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </RelativeLayout>
+                        </LinearLayout>
+
+                        <!-- Separador sutil -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="14dp"
+                            android:background="@color/surface_container_high" />
+
+                        <!-- Meta Secundaria: Ahorro Auto -->
+                        <RelativeLayout
+                            android:id="@+id/row_meta_secundaria"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentStart="true"
+                                android:layout_centerVertical="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <FrameLayout
+                                    android:layout_width="34dp"
+                                    android:layout_height="34dp"
+                                    android:background="@drawable/circle_primary_bg"
+                                    android:backgroundTint="@color/secondary_container">
+
+                                    <ImageView
+                                        android:layout_width="18dp"
+                                        android:layout_height="18dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_directions_car"
+                                        app:tint="@color/on_secondary_container" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tv_meta2_titulo"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Ahorro Auto"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_meta2_subtitulo"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="$ 120.000 de $ 400.000"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_meta2_porcentaje"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/badge_round_pill"
+                                    android:backgroundTint="@color/surface_container"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="3dp"
+                                    android:text="30%"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <ImageView
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_marginStart="4dp"
+                                    android:src="@drawable/ic_chevron_right"
+                                    app:tint="@color/text_secondary" />
+                            </LinearLayout>
+                        </RelativeLayout>
+
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
-            </GridLayout>
-
-            <!-- Últimos Movimientos (Sección inferior) -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- 5. Sección Últimos Movimientos -->
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="24dp"
-                android:letterSpacing="0.1"
-                android:text="ÚLTIMOS MOVIMIENTOS"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"
+                android:paddingHorizontal="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="Últimos Movimientos"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/btn_ver_todos_movimientos"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ver todos"
+                        android:textColor="@color/primary_emerald"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="2dp"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/primary_emerald" />
+                </LinearLayout>
+            </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_ultimos_movimientos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:nestedScrollingEnabled="false"
-                tools:itemCount="3"
+                tools:itemCount="5"
                 tools:listitem="@layout/item_movimiento_inicio" />
 
         </LinearLayout>

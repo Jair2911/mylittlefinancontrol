@@ -1,188 +1,783 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1. RAÍZ: Tarjeta flotante que le da forma de diálogo con bordes redondos y wrap_content -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="@android:color/white"
-    app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutline">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="16dp"
+    app:cardBackgroundColor="@color/surface_card"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="16dp"
+    app:strokeColor="@color/outline_variant"
+    app:strokeWidth="1dp">
 
-    <!-- 2. CONTENEDOR DE APILAMIENTO: Para apilar el fondo HD y tu formulario -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- 3. IMAGEN DE FONDO: Se ata a la altura del ScrollView para no estirar la pantalla -->
-        <ImageView
-            android:id="@+id/imagenFondo"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_alignTop="@id/scrollViewContenido"
-            android:layout_alignBottom="@id/scrollViewContenido"
-            android:src="@drawable/bg_1"
-            android:scaleType="centerCrop" />
-
-        <!-- 4. CONTENIDO: ScrollView con wrap_content para solo ocupar lo que mida el formulario -->
         <ScrollView
             android:id="@+id/scrollViewContenido"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent">
+            android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:paddingHorizontal="20dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="20dp">
 
-                <TextView
-                    android:id="@+id/tv_titulo_dialogo"
+                <!-- Drag Handle Indicator -->
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="5dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/outline_variant" />
+
+                <!-- Header Modal: Título + Subtítulo + Botón Escanear Recibo -->
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:text="@string/txtAgregarNota"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="20sp"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@+id/iv_escanear_recibo"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tv_titulo_dialogo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Agregar Movimiento"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Ingresa los detalles de la transacción"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Botón Escanear Recibo / Ticket -->
+                    <LinearLayout
+                        android:id="@+id/iv_escanear_recibo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_container_low"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_camera"
+                            app:tint="@color/primary_emerald" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Escanear"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <!-- 1. Segmented Tabs: Tipo de Registro -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:letterSpacing="0.06"
+                    android:text="TIPO DE REGISTRO"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/cb_es_pago_deuda"
+                <LinearLayout
+                    android:id="@+id/ll_tipo_registro_container"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="¿Es un pago de deuda / préstamo?" />
+                    android:layout_height="42dp"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/badge_round_pill"
+                    android:backgroundTint="@color/surface_container"
+                    android:orientation="horizontal"
+                    android:padding="3dp">
 
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/cb_es_gasto_fijo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:text="¿Es un Gasto Fijo?" />
+                    <TextView
+                        android:id="@+id/btn_tipo_gasto"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="Gasto"
+                        android:textColor="@color/expense_red"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/til_seleccion_deuda"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Selecciona la deuda"
-                    android:visibility="gone">
+                    <TextView
+                        android:id="@+id/btn_tipo_ingreso"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="Ingreso"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
-                    <AutoCompleteTextView
-                        android:id="@+id/auto_deudas"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
+                    <TextView
+                        android:id="@+id/btn_tipo_transferencia"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="Transferencia"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-                <!-- Selección de Gasto Fijo -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/til_seleccion_gasto_fijo"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Selecciona el Gasto Fijo"
-                    android:visibility="gone">
-
-                    <AutoCompleteTextView
-                        android:id="@+id/auto_gastos_fijos"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Selección de Quincena (Solo si es quincenal) -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/til_seleccion_quincena"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Selecciona la Quincena"
-                    android:visibility="gone">
-
-                    <AutoCompleteTextView
-                        android:id="@+id/auto_quincena"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
-
+                <!-- Hidden / Auto complete fallback for legacy compat -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_tipo_reg"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/etTipoReg">
+                    android:visibility="gone">
 
                     <AutoCompleteTextView
                         android:id="@+id/auto_tipo_mov"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="none" />
+                        android:text="Gasto" />
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 2. Tarjeta Valor del Movimiento (Hero Input) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="@color/surface_bg"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Valor del Movimiento"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:text="$"
+                                android:textColor="@color/text_muted"
+                                android:textSize="28sp"
+                                android:textStyle="bold" />
+
+                            <EditText
+                                android:id="@+id/etValor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@android:color/transparent"
+                                android:hint="0.00"
+                                android:inputType="numberDecimal"
+                                android:textColor="@color/text_primary"
+                                android:textColorHint="@color/text_muted"
+                                android:textSize="28sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. Toggle 1: ¿Es un pago de deuda o préstamo? -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <FrameLayout
+                            android:id="@+id/fl_icon_deuda"
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/secondary_container">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_credit_card"
+                                app:tint="@color/text_secondary" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="10dp"
+                            android:layout_toEndOf="@id/fl_icon_deuda"
+                            android:layout_toStartOf="@+id/cb_es_pago_deuda"
+                            android:text="¿Es un pago de deuda o préstamo?"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/cb_es_pago_deuda"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            app:thumbTint="@color/primary_emerald"
+                            app:trackTint="@color/primary_fixed" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Dropdown Selección de Deuda (Visible si Toggle 1 activo) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_deuda"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Selecciona la deuda"
+                    android:visibility="gone"
+                    app:boxBackgroundColor="@color/surface_bg"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="@color/outline_variant">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_deudas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 4. Toggle 2: ¿Es un Gasto Fijo mensual? -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/outline_variant"
+                    app:strokeWidth="1dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="12dp">
+
+                        <FrameLayout
+                            android:id="@+id/fl_icon_fijo"
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/debt_amber_bg">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_autorenew"
+                                app:tint="@color/debt_amber" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="10dp"
+                            android:layout_toEndOf="@id/fl_icon_fijo"
+                            android:layout_toStartOf="@+id/cb_es_gasto_fijo"
+                            android:text="¿Es un Gasto Fijo mensual?"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/cb_es_gasto_fijo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            app:thumbTint="@color/primary_emerald"
+                            app:trackTint="@color/primary_fixed" />
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Dropdown Selección de Gasto Fijo -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_gasto_fijo"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Selecciona el Gasto Fijo"
+                    android:visibility="gone"
+                    app:boxBackgroundColor="@color/surface_bg"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="@color/outline_variant">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_gastos_fijos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Dropdown Selección de Quincena -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seleccion_quincena"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Selecciona la Quincena"
+                    android:visibility="gone"
+                    app:boxBackgroundColor="@color/surface_bg"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="@color/outline_variant">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/auto_quincena"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="none"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 5. Campo Descripción o Concepto -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:text="Descripción o Concepto"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="@string/etDescripcion">
+                    android:layout_marginBottom="14dp"
+                    app:boxBackgroundColor="@color/surface_card"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="@color/outline_variant"
+                    app:hintEnabled="false"
+                    app:startIconDrawable="@drawable/ic_edit"
+                    app:startIconTint="@color/text_muted">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDescripcion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textCapSentences" />
+                        android:hint="Ej. Compra semanal de despensa"
+                        android:inputType="textCapSentences"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                <!-- 6. Chips de Categoría Rápida -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:text="Categoría"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    android:hint="@string/etValor">
+                    android:layout_marginBottom="14dp"
+                    android:scrollbars="none">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etValor"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:orientation="horizontal">
 
+                        <!-- Chip Supermercado (Activo) -->
+                        <LinearLayout
+                            android:id="@+id/chip_supermercado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_container_low"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_shopping_cart"
+                                app:tint="@color/primary_emerald" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Supermercado"
+                                android:textColor="@color/primary_emerald"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Chip Servicios -->
+                        <LinearLayout
+                            android:id="@+id/chip_servicios"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_bolt"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Servicios"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Chip Comida -->
+                        <LinearLayout
+                            android:id="@+id/chip_comida"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_restaurant"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Comida"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Chip Transporte -->
+                        <LinearLayout
+                            android:id="@+id/chip_transporte"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_directions_car"
+                                app:tint="@color/text_secondary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Transporte"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- 7. Fecha y Método de Pago (Grid 2 columnas) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="end"
+                    android:layout_marginBottom="18dp"
                     android:orientation="horizontal">
 
+                    <!-- Columna Fecha -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:text="Fecha"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_calendar_today"
+                                app:tint="@color/text_muted" />
+
+                            <TextView
+                                android:id="@+id/tv_fecha_movimiento"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="Hoy, 14:30 hrs"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Columna Método de Pago -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
+                            android:text="Método de Pago"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_bg"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp">
+
+                            <View
+                                android:layout_width="7dp"
+                                android:layout_height="7dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/primary_emerald" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="Débito •••• 4021"
+                                android:textColor="@color/text_primary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_expand_more"
+                                app:tint="@color/text_muted" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 8. Botones de Acción Footer -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Botón Cancelar -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_cancelar"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/btn_cancelar"
-                        app:strokeWidth="1dp"
-                        app:strokeColor="?attr/colorError"
-                        android:textColor="?attr/colorOnPrimary"
-                        android:backgroundTint="?attr/colorError"/>
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+                        android:text="Cancelar"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/surface_container"
+                        app:cornerRadius="16dp" />
 
+                    <!-- Botón Guardar Movimiento -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_guardar"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/btn_guardar"
-                        android:textColor="?attr/colorOnPrimary"
-                        app:backgroundTint="?attr/colorPrimary" />
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="2"
+                        android:text="Guardar Movimiento"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:backgroundTint="@color/primary_emerald"
+                        app:cornerRadius="16dp"
+                        app:elevation="4dp"
+                        app:icon="@drawable/ic_check"
+                        app:iconGravity="textStart"
+                        app:iconTint="@android:color/white" />
                 </LinearLayout>
+
             </LinearLayout>
         </ScrollView>
+
+        <!-- Capa de Carga IA Gemini -->
+        <LinearLayout
+            android:id="@+id/ll_loading_ai"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_alignTop="@id/scrollViewContenido"
+            android:layout_alignBottom="@id/scrollViewContenido"
+            android:background="#E6FFFFFF"
+            android:clickable="true"
+            android:elevation="10dp"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminateTint="@color/primary_emerald" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Analizando recibo con IA..."
+                android:textColor="@color/primary_emerald"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </RelativeLayout>
 </com.google.android.material.card.MaterialCardView>

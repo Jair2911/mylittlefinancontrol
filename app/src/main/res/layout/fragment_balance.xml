@@ -4,79 +4,438 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
+    android:background="@color/surface_bg"
     tools:context=".Fragmentos.FragmentBalance">
 
-    <!-- 1. CAPA DEL FONDO: Imagen HD fija en la base que escala en perfecta resolución -->
-    <ImageView
-        android:id="@+id/imagenFondo"
+    <ScrollView
+        android:id="@+id/sv_deudas_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/bg_1"
-        android:scaleType="centerCrop" />
-
-    <!-- Tarjeta de Total Deudas -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cv_total_deudas"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:cardBackgroundColor="?attr/colorErrorContainer"
-        app:strokeWidth="2dp"
-        app:strokeColor="?attr/colorError">
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="100dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="10dp"
-            android:gravity="center">
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- 1. Hero Summary Card: Total Deuda Restante -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cv_total_deudas"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Total Deuda Restante"
-                android:textSize="12sp"
-                android:letterSpacing="0.1"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:layout_marginBottom="14dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/outline_variant"
+                app:strokeWidth="1dp">
 
-            <TextView
-                android:id="@+id/tv_total_deudas_monto"
-                android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <!-- Header: Título + Ojo Privacidad + Badge Pendientes -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:letterSpacing="0.06"
+                                android:text="TOTAL DEUDA RESTANTE"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <ImageButton
+                                android:id="@+id/btn_toggle_privacidad_deudas"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_marginStart="6dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="Ocultar saldo"
+                                android:padding="4dp"
+                                android:src="@drawable/ic_visibility"
+                                app:tint="@color/text_secondary" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/ll_badge_pendientes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/debt_amber_bg"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp">
+
+                            <View
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/debt_amber" />
+
+                            <TextView
+                                android:id="@+id/tv_badge_deudas"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="2 pendientes"
+                                android:textColor="@color/debt_amber"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
+                    <!-- Monto Restante Destacado -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="4dp"
+                            android:text="$"
+                            android:textColor="@color/text_muted"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_total_deudas_monto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="550.000,00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="30sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_sub_status_deudas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Total comprometido sumando tarjetas y préstamos"
+                        android:textColor="@color/text_muted"
+                        android:textSize="11.5sp" />
+
+                    <!-- Amortización Pagada y Barra de Progreso -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="@color/surface_container_high" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Amortización pagada"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_amortizacion_pagada"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:text="35% ($ 300.000 pagado)"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <ProgressBar
+                        android:id="@+id/pb_amortizacion_total"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="10dp"
+                        android:layout_marginTop="8dp"
+                        android:max="100"
+                        android:progress="35"
+                        android:progressDrawable="@drawable/pb_savings_plan" />
+
+                    <!-- Leyenda Inferior: Abonado vs Pendiente -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <!-- Abonado -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/primary_emerald" />
+
+                            <TextView
+                                android:id="@+id/tv_resumen_abonado"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Abonado: $ 300.000"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11.5sp" />
+                        </LinearLayout>
+
+                        <!-- Pendiente -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="end|center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:background="@drawable/circle_primary_bg"
+                                android:backgroundTint="@color/expense_red" />
+
+                            <TextView
+                                android:id="@+id/tv_resumen_pendiente"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Pendiente: $ 550.000"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11.5sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. Chips de Categoría Rápida Horizontal -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="$0.00"
-                android:textSize="32sp"
-                android:textColor="?attr/colorError"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp"/>
+                android:layout_marginBottom="14dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/chip_todas_deudas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/primary_emerald"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingHorizontal="16dp"
+                        android:text="Todas (2)"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/chip_tarjetas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingHorizontal="14dp"
+                        android:text="Tarjetas de crédito (1)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/chip_prestamos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingHorizontal="14dp"
+                        android:text="Préstamos (1)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/chip_personales"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:background="@drawable/badge_round_pill"
+                        android:backgroundTint="@color/surface_card"
+                        android:clickable="true"
+                        android:elevation="1dp"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingHorizontal="14dp"
+                        android:text="Personales (0)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <!-- 3. Encabezado de Sección: Mis Compromisos Financieros -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:paddingHorizontal="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="Mis Compromisos Financieros"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_ordenar_deudas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="Ordenar por fecha"
+                    android:textColor="@color/text_muted"
+                    android:textSize="11.5sp" />
+            </RelativeLayout>
+
+            <!-- 4. Lista de Deudas -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_deudas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_deuda" />
+
+            <!-- 5. Tarjeta de Consejo Financiero (Bola de Nieve) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/surface_container_low"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/primary_fixed"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <FrameLayout
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/circle_primary_bg"
+                        android:backgroundTint="@color/primary_emerald">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_lightbulb"
+                            app:tint="@android:color/white" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Estrategia Bola de Nieve:"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Abonar a la deuda con menor saldo restante acelerará tu libertad financiera más rápido."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </ScrollView>
 
-    <!-- Lista de Deudas (Fondo transparente para ver la imagen de atrás al hacer scroll) -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_deudas"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/cv_total_deudas"
-        android:background="@android:color/transparent"
-        android:clipToPadding="false"
-        android:paddingBottom="80dp"
-        tools:listitem="@layout/item_deuda" />
-
-    <!-- Botón Agregar Deuda -->
+    <!-- FAB para Registrar Deuda (+) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_agregar_deuda"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_margin="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Registrar nueva deuda"
         android:src="@drawable/ic_add"
-        app:backgroundTint="?attr/colorPrimary"
-        app:tint="?attr/colorOnPrimary"
-        android:contentDescription="@string/txt_agregar_deuda" />
+        app:backgroundTint="@color/primary_emerald"
+        app:elevation="6dp"
+        app:fabCustomSize="56dp"
+        app:maxImageSize="28dp"
+        app:tint="@android:color/white" />
 
 </RelativeLayout>

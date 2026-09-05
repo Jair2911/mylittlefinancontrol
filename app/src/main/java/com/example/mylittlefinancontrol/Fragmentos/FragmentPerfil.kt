@@ -64,6 +64,14 @@ class FragmentPerfil : Fragment() {
         configurarTema()
         setupBackupUI()
 
+        binding.btnVolverPerfil.setOnClickListener {
+            (activity as? com.example.mylittlefinancontrol.MainActivity)?.verFragmentoInicio() ?: activity?.onBackPressedDispatcher?.onBackPressed()
+        }
+
+        binding.btnAyudaPerfil.setOnClickListener {
+            Toast.makeText(mContext, "MyLittleFinanControl v2.4 - Centro de Ayuda", Toast.LENGTH_SHORT).show()
+        }
+
         binding.btnLogout.setOnClickListener {
             firebaseAuth.signOut()
             startActivity(Intent(mContext, OpcionesLoginActivity::class.java))
@@ -265,15 +273,27 @@ class FragmentPerfil : Fragment() {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        val request = PeriodicWorkRequestBuilder<BackupWorker>(interval.first, interval.second)
+        // 1. Programar tarea periódica
+        val periodicRequest = PeriodicWorkRequestBuilder<BackupWorker>(interval.first, interval.second)
             .setConstraints(constraints)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
             "AutoBackup",
             ExistingPeriodicWorkPolicy.REPLACE,
-            request
+            periodicRequest
         )
+
+        // 2. Ejecutar un respaldo inmediato si hay cuenta vinculada
+        if (backupPrefs.getString("GoogleAccount", null) != null) {
+            val immediateRequest = OneTimeWorkRequestBuilder<BackupWorker>()
+                .setConstraints(constraints)
+                .addTag("ImmediateBackup")
+                .build()
+            
+            workManager.enqueue(immediateRequest)
+            Toast.makeText(mContext, "Sincronización inicial en curso...", Toast.LENGTH_SHORT).show()
+        }
         
         Toast.makeText(mContext, "Respaldo automático: $frecuencia", Toast.LENGTH_SHORT).show()
     }
@@ -316,10 +336,18 @@ class FragmentPerfil : Fragment() {
 
                     val fecha = Constantes.formatoFecha(tiempoR.toLong())
 
-                    binding.tvNombres.text = nombres
-                    binding.tvEmail.text = email
-                    binding.tvProveedor.text = proveedor
-                    binding.tvMienbroDesde.text = fecha
+                    binding.tvNombres.text = if (nombres.isNotEmpty() && nombres != "null") nombres else "Usuario"
+                    binding.tvEmail.text = if (email.isNotEmpty() && email != "null") email else "correo@ejemplo.com"
+                    binding.tvProveedor.text = if (proveedor.isNotEmpty() && proveedor != "null") proveedor else "Google"
+                    binding.tvMienbroDesde.text = "Miembro desde: $fecha"
+
+                    val iniciales = (if (nombres.isNotEmpty() && nombres != "null") nombres else "Usuario")
+                        .split(" ")
+                        .filter { it.isNotBlank() }
+                        .map { it.first().uppercase() }
+                        .take(2)
+                        .joinToString("")
+                    binding.tvAvatarIniciales.text = if (iniciales.isNotEmpty()) iniciales else "JR"
                 }
 
                 override fun onCancelled(error: DatabaseError) {}
