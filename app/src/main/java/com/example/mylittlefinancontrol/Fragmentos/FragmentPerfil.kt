@@ -63,6 +63,7 @@ class FragmentPerfil : Fragment() {
         cargarInformacion()
         configurarTema()
         setupBackupUI()
+        setupDemoDataUI()
 
         binding.btnVolverPerfil.setOnClickListener {
             (activity as? com.example.mylittlefinancontrol.MainActivity)?.verFragmentoInicio() ?: activity?.onBackPressedDispatcher?.onBackPressed()
@@ -80,6 +81,34 @@ class FragmentPerfil : Fragment() {
 
         binding.btnActualizar.setOnClickListener {
             startActivity(Intent(mContext, EditarInformacion::class.java))
+        }
+    }
+
+    private fun setupDemoDataUI() {
+        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper(mContext)
+
+        binding.btnCargarDemo.setOnClickListener {
+            AlertDialog.Builder(mContext)
+                .setTitle("Cargar Datos de Demostración")
+                .setMessage("¿Deseas poblar todos los módulos con datos de prueba realistas (Movimientos, Gastos Fijos, Deudas y Metas de Ahorro)?")
+                .setPositiveButton("Cargar Datos") { _, _ ->
+                    DemoDataHelper.cargarDatosPrueba(mContext, db)
+                    Toast.makeText(mContext, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
+        binding.btnLimpiarDemo.setOnClickListener {
+            AlertDialog.Builder(mContext)
+                .setTitle("Limpiar Base de Datos")
+                .setMessage("¿Estás seguro de vaciar todos los registros para comenzar con una base de datos limpia?")
+                .setPositiveButton("Limpiar Todo") { _, _ ->
+                    DemoDataHelper.limpiarTodosLosDatos(mContext, db)
+                    Toast.makeText(mContext, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
         }
     }
 

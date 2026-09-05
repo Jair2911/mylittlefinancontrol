@@ -343,4 +343,13 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
         return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(balance, totalGF, totalDeudas)
     }
+
+    fun clearAllData() {
+        val db = writableDatabase
+        db.delete(TABLE_MOVIMIENTO, null, null)
+        db.delete(TABLE_GASTOS_FIJOS, null, null)
+        db.delete(TABLE_DEUDAS, null, null)
+        db.delete(TABLE_AHORROS, null, null)
+        db.close()
+    }
 }
