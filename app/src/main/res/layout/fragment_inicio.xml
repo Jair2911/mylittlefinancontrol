@@ -282,14 +282,14 @@
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
                                 android:background="@drawable/circle_primary_bg"
-                                android:backgroundTint="@color/surface_container_high">
+                                android:backgroundTint="@color/primary_emerald">
 
                                 <ImageView
                                     android:layout_width="20dp"
                                     android:layout_height="20dp"
                                     android:layout_gravity="center"
                                     android:src="@drawable/ic_insights"
-                                    app:tint="@color/text_variant" />
+                                    app:tint="@android:color/white" />
                             </FrameLayout>
 
                             <TextView
@@ -494,7 +494,7 @@
                                 android:layout_height="26dp"
                                 android:layout_alignParentEnd="true"
                                 android:background="@drawable/circle_primary_bg"
-                                android:backgroundTint="@color/surface_container_high">
+                                android:backgroundTint="@color/primary_fixed">
 
                                 <ImageView
                                     android:layout_width="16dp"

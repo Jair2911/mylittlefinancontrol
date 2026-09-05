@@ -65,7 +65,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:letterSpacing="0.08"
-                    android:text="BIENVENIDO"
+                    android:text="BIENVENIDO A DABAFINN"
                     android:textColor="@color/text_variant"
                     android:textSize="10sp"
                     android:textStyle="bold" />
@@ -110,7 +110,7 @@
                 android:backgroundTint="@color/primary_emerald"
                 android:contentDescription="Perfil de usuario"
                 android:padding="10dp"
-                android:src="@drawable/ic_perfil"
+                android:src="@drawable/ic_person"
                 app:tint="@android:color/white" />
         </LinearLayout>
 
@@ -160,7 +160,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_receipt_long"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/primary_emerald" />
 
                 <TextView
                     android:id="@+id/tv_nav_movimientos"
@@ -168,7 +168,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Movimientos"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/primary_emerald"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -189,7 +189,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_pie_chart"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/primary_emerald" />
 
                 <TextView
                     android:id="@+id/tv_nav_gastos_fijos"
@@ -197,7 +197,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Gastos Fijos"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/primary_emerald"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -218,7 +218,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_savings"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/primary_emerald" />
 
                 <TextView
                     android:id="@+id/tv_nav_ahorros"
@@ -226,7 +226,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Ahorros"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/primary_emerald"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -247,7 +247,7 @@
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_credit_card"
-                    app:tint="@color/text_secondary" />
+                    app:tint="@color/primary_emerald" />
 
                 <TextView
                     android:id="@+id/tv_nav_deudas"
@@ -255,7 +255,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Deudas"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/primary_emerald"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </LinearLayout>
