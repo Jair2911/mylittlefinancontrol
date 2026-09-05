@@ -31,20 +31,22 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- Avatar circular con icono de usuario -->
+            <!-- Avatar circular con iniciales del usuario -->
             <FrameLayout
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="@drawable/circle_primary_bg"
                 android:backgroundTint="@color/primary_emerald">
 
-                <ImageView
+                <TextView
                     android:id="@+id/iv_avatar_icono"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_person"
-                    app:tint="@android:color/white" />
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="JR"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
             </FrameLayout>
 
             <LinearLayout
@@ -87,9 +89,10 @@
                 android:id="@+id/btn_notificaciones"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/circle_primary_bg"
+                android:backgroundTint="@color/surface_container"
                 android:contentDescription="Notificaciones"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:src="@drawable/ic_notification"
                 app:tint="@color/text_secondary" />
 
@@ -97,10 +100,11 @@
                 android:id="@+id/btnPerfilToolbar"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/circle_primary_bg"
+                android:backgroundTint="@color/surface_container"
                 android:contentDescription="Perfil de usuario"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:src="@drawable/ic_perfil"
                 app:tint="@color/text_secondary" />
         </LinearLayout>
@@ -122,7 +126,7 @@
         android:layout_width="match_parent"
         android:layout_height="64dp"
         android:layout_alignParentBottom="true"
-        app:cardBackgroundColor="@color/surface_card"
+        app:cardBackgroundColor="@color/surface_bg"
         app:cardCornerRadius="0dp"
         app:cardElevation="8dp"
         app:strokeColor="@color/outline_variant"
@@ -135,36 +139,7 @@
             android:orientation="horizontal"
             android:paddingHorizontal="4dp">
 
-            <!-- Tab 1: Inicio -->
-            <LinearLayout
-                android:id="@+id/nav_inicio"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <ImageView
-                    android:id="@+id/iv_nav_inicio"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_account_balance_wallet"
-                    app:tint="@color/primary_emerald" />
-
-                <TextView
-                    android:id="@+id/tv_nav_inicio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Inicio"
-                    android:textColor="@color/primary_emerald"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Tab 2: Movimientos -->
+            <!-- Tab 1: Movimientos -->
             <LinearLayout
                 android:id="@+id/nav_movimientos"
                 android:layout_width="0dp"

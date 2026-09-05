@@ -44,12 +44,12 @@ class MainActivity : AppCompatActivity() {
             verificarTutorial()
         }
 
-        // Carga inicial: Inicio
-        verFragmentoInicio()
+        // Carga inicial: Movimientos
+        verFragmentoMovimientos()
 
-        // Clic en la cabecera izquierda -> Ir a Inicio
+        // Clic en la cabecera izquierda -> Ir a Perfil
         binding.llHeaderUsuario.setOnClickListener {
-            verFragmentoInicio()
+            verFragmentoPerfil()
         }
 
         // Clic en el botón Perfil Toolbar -> Ir a Perfil
@@ -62,8 +62,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "No tienes notificaciones pendientes", Toast.LENGTH_SHORT).show()
         }
 
-        // Navegación Inferior (Bottom Navigation)
-        binding.navInicio.setOnClickListener { verFragmentoInicio() }
+        // Navegación Inferior (Bottom Navigation con 4 Secciones)
         binding.navMovimientos.setOnClickListener { verFragmentoMovimientos() }
         binding.navGastosFijos.setOnClickListener { verFragmentoGastosFijos() }
         binding.navAhorros.setOnClickListener { verFragmentoAhorros() }
@@ -73,8 +72,36 @@ class MainActivity : AppCompatActivity() {
 
     private fun actualizarNombreUsuario() {
         val user = firebaseAuth.currentUser
-        val nombre = user?.displayName ?: user?.email?.substringBefore("@") ?: "Jair"
-        binding.appName.text = nombre
+        val userEmail = user?.email ?: "correo@ejemplo.com"
+        val userName = user?.displayName?.ifBlank { null } ?: userEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+        binding.appName.text = userName
+
+        val inicialesFallback = userName
+            .split(" ")
+            .filter { it.isNotBlank() }
+            .map { it.first().uppercase() }
+            .take(2)
+            .joinToString("")
+        binding.ivAvatarIcono.text = if (inicialesFallback.isNotEmpty()) inicialesFallback else "JR"
+
+        val uid = firebaseAuth.uid ?: return
+        val ref = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("usuarios")
+        ref.child(uid).addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                val nombres = snapshot.child("nombres").value?.toString()
+                val nombreFinal = if (!nombres.isNullOrBlank() && nombres != "null") nombres else userName
+                binding.appName.text = nombreFinal
+                val iniciales = nombreFinal
+                    .split(" ")
+                    .filter { it.isNotBlank() }
+                    .map { it.first().uppercase() }
+                    .take(2)
+                    .joinToString("")
+                binding.ivAvatarIcono.text = if (iniciales.isNotEmpty()) iniciales else "JR"
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        })
     }
 
     private fun aplicarTemaGuardado() {
@@ -138,11 +165,10 @@ class MainActivity : AppCompatActivity() {
             tv.setTextColor(color)
         }
 
-        aplicarColorTab(binding.ivNavInicio, binding.tvNavInicio, tabActivo == 0)
-        aplicarColorTab(binding.ivNavMovimientos, binding.tvNavMovimientos, tabActivo == 1)
-        aplicarColorTab(binding.ivNavGastosFijos, binding.tvNavGastosFijos, tabActivo == 2)
-        aplicarColorTab(binding.ivNavAhorros, binding.tvNavAhorros, tabActivo == 3)
-        aplicarColorTab(binding.ivNavDeudas, binding.tvNavDeudas, tabActivo == 4)
+        aplicarColorTab(binding.ivNavMovimientos, binding.tvNavMovimientos, tabActivo == 0)
+        aplicarColorTab(binding.ivNavGastosFijos, binding.tvNavGastosFijos, tabActivo == 1)
+        aplicarColorTab(binding.ivNavAhorros, binding.tvNavAhorros, tabActivo == 2)
+        aplicarColorTab(binding.ivNavDeudas, binding.tvNavDeudas, tabActivo == 3)
     }
 
     private fun reemplazarFragmento(fragment: Fragment, titulo: String) {
@@ -157,28 +183,27 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun verFragmentoMovimientos() {
-        actualizarEstadoNavegacion(1)
+        actualizarEstadoNavegacion(0)
         reemplazarFragmento(FragmentMovimiento(), "Movimientos")
     }
 
-    fun verFragmentoAhorros() {
-        actualizarEstadoNavegacion(3)
-        reemplazarFragmento(FragmentAhorros(), "Ahorros")
+    fun verFragmentoGastosFijos() {
+        actualizarEstadoNavegacion(1)
+        reemplazarFragmento(FragmentGastosFijos(), "Gastos Fijos")
     }
 
-    fun verFragmentoGastosFijos() {
+    fun verFragmentoAhorros() {
         actualizarEstadoNavegacion(2)
-        reemplazarFragmento(FragmentGastosFijos(), "Gastos Fijos")
+        reemplazarFragmento(FragmentAhorros(), "Ahorros")
     }
     
     fun verFragmentoDeudas() {
-        actualizarEstadoNavegacion(4)
+        actualizarEstadoNavegacion(3)
         reemplazarFragmento(FragmentBalance(), "Deudas")
     }
 
     fun verFragmentoInicio() {
-        actualizarEstadoNavegacion(0)
-        reemplazarFragmento(FragmentInicio(), "Inicio")
+        verFragmentoMovimientos()
     }
 
     private fun verificarTutorial() {
@@ -203,77 +228,64 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun iniciarTourGuiado() {
+        verFragmentoMovimientos()
         tutorialHelper.waitForViewAndShow(
-            R.id.card_balance_general,
-            "Resumen Global",
-            "Aquí tienes tu balance total histórico de todos tus registros.",
+            R.id.cv_resumen_mov,
+            "Gestión de Movimientos",
+            "Aquí puedes ver el historial de tus transacciones y filtrar por fecha.",
             true
         ) {
             tutorialHelper.waitForViewAndShow(
-                R.id.card_ingresos,
-                "Flujo del Mes",
-                "Consulta rápidamente tus ingresos y gastos del mes actual.",
-                true
+                R.id.FABAgregarNota,
+                "¿Cómo Agregar Datos?",
+                "Toca este botón (+) para registrar un nuevo ingreso o gasto rápidamente.",
+                false
             ) {
+                verFragmentoGastosFijos()
                 tutorialHelper.waitForViewAndShow(
-                    R.id.rv_ultimos_movimientos,
-                    "Consulta desde Inicio",
-                    "Desliza hacia abajo para ver tus registros más recientes sin cambiar de pantalla.",
+                    R.id.cv_total,
+                    "Gastos Recurrentes",
+                    "Administra tus suscripciones y pagos mensuales fijos.",
                     true
                 ) {
-                    verFragmentoMovimientos()
+                    verFragmentoAhorros()
                     tutorialHelper.waitForViewAndShow(
-                        R.id.cv_resumen_mov,
-                        "Gestión de Movimientos",
-                        "Aquí puedes ver el historial de tus transacciones y filtrar por fecha.",
+                        R.id.cv_total_ahorros,
+                        "Metas de Ahorro",
+                        "Define tus objetivos y ahorra progresivamente.",
                         true
                     ) {
+                        verFragmentoDeudas()
                         tutorialHelper.waitForViewAndShow(
-                            R.id.FABAgregarNota,
-                            "¿Cómo Agregar Datos?",
-                            "Toca este botón (+) para registrar un nuevo ingreso o gasto rápidamente.",
-                            false
+                            R.id.cv_total_deudas,
+                            "Control de Deudas",
+                            "Mantén el control de lo que debes y tus pagos realizados.",
+                            true
                         ) {
-                            verFragmentoGastosFijos()
+                            verFragmentoPerfil()
                             tutorialHelper.waitForViewAndShow(
-                                R.id.cv_total,
-                                "Gastos Recurrentes",
-                                "Administra tus suscripciones y pagos mensuales fijos.",
-                                true
+                                R.id.sw_tema,
+                                "Personalización",
+                                "Activa el modo oscuro para una experiencia visual más cómoda."
                             ) {
-                                verFragmentoDeudas()
                                 tutorialHelper.waitForViewAndShow(
-                                    R.id.cv_total_deudas,
-                                    "Control de Deudas",
-                                    "Mantén el control de lo que debes y tus pagos realizados.",
+                                    R.id.btn_google_auth,
+                                    "Protege tus Datos",
+                                    "Víncula tu cuenta de Google Drive para que nunca pierdas tu información.",
                                     true
                                 ) {
-                                    verFragmentoPerfil()
                                     tutorialHelper.waitForViewAndShow(
-                                        R.id.sw_tema,
-                                        "Personalización",
-                                        "Activa el modo oscuro para una experiencia visual más cómoda."
+                                        R.id.btn_backup_now,
+                                        "Sincronización en la Nube",
+                                        "Realiza copias de seguridad manuales aquí o configura respaldos automáticos.",
+                                        true
                                     ) {
-                                        tutorialHelper.waitForViewAndShow(
-                                            R.id.btn_google_auth,
-                                            "Protege tus Datos",
-                                            "Víncula tu cuenta de Google Drive para que nunca pierdas tu información.",
-                                            true
+                                        tutorialHelper.showStep(
+                                            binding.btnPerfilToolbar,
+                                            "¡Todo Listo!",
+                                            "Ya conoces las herramientas principales para controlar tus finanzas."
                                         ) {
-                                            tutorialHelper.waitForViewAndShow(
-                                                R.id.btn_backup_now,
-                                                "Sincronización en la Nube",
-                                                "Realiza copias de seguridad manuales aquí o configura respaldos automáticos.",
-                                                true
-                                            ) {
-                                                tutorialHelper.showStep(
-                                                    binding.btnPerfilToolbar,
-                                                    "¡Todo Listo!",
-                                                    "Ya conoces las herramientas principales para controlar tus finanzas."
-                                                ) {
-                                                    finalizarTour()
-                                                }
-                                            }
+                                            finalizarTour()
                                         }
                                     }
                                 }
