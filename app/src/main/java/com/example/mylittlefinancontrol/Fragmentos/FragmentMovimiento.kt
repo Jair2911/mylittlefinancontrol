@@ -281,6 +281,13 @@ class FragmentMovimiento : Fragment() {
             pintarChip(binding.chipFiltroSupermercado, categoria == "SUPERMERCADO")
             pintarChip(binding.chipFiltroIngresos, categoria == "INGRESOS")
             pintarChip(binding.chipFiltroDeudas, categoria == "DEUDAS")
+            pintarChip(binding.chipFiltroServicios, categoria == "SERVICIOS")
+            pintarChip(binding.chipFiltroComida, categoria == "COMIDA")
+            pintarChip(binding.chipFiltroTransporte, categoria == "TRANSPORTE")
+            pintarChip(binding.chipFiltroSalud, categoria == "SALUD")
+            pintarChip(binding.chipFiltroStreaming, categoria == "STREAMING")
+            pintarChip(binding.chipFiltroEducacion, categoria == "EDUCACION")
+            pintarChip(binding.chipFiltroOtros, categoria == "OTROS")
 
             actualizarListaFiltrada()
         }
@@ -290,6 +297,13 @@ class FragmentMovimiento : Fragment() {
         binding.chipFiltroSupermercado.setOnClickListener { actualizarChipsUI("SUPERMERCADO") }
         binding.chipFiltroIngresos.setOnClickListener { actualizarChipsUI("INGRESOS") }
         binding.chipFiltroDeudas.setOnClickListener { actualizarChipsUI("DEUDAS") }
+        binding.chipFiltroServicios.setOnClickListener { actualizarChipsUI("SERVICIOS") }
+        binding.chipFiltroComida.setOnClickListener { actualizarChipsUI("COMIDA") }
+        binding.chipFiltroTransporte.setOnClickListener { actualizarChipsUI("TRANSPORTE") }
+        binding.chipFiltroSalud.setOnClickListener { actualizarChipsUI("SALUD") }
+        binding.chipFiltroStreaming.setOnClickListener { actualizarChipsUI("STREAMING") }
+        binding.chipFiltroEducacion.setOnClickListener { actualizarChipsUI("EDUCACION") }
+        binding.chipFiltroOtros.setOnClickListener { actualizarChipsUI("OTROS") }
     }
 
     private fun setupRecyclerView() {
@@ -304,13 +318,41 @@ class FragmentMovimiento : Fragment() {
         actualizarListaFiltrada()
     }
 
+    private fun evaluarCoincideCategoria(mov: Movimiento, categoria: String): Boolean {
+        val tipoUpper = mov.tipo_reg.uppercase()
+        val descUpper = mov.descripcion.uppercase()
+        return when (categoria) {
+            "TODOS" -> true
+            "GASTOS FIJOS" -> tipoUpper.contains("GASTO FIJO") || descUpper.contains("PAGO:") || descUpper.contains("ARRIENDO") || descUpper.contains("FIBRA")
+            "SUPERMERCADO" -> descUpper.contains("SUPERMERCADO") || descUpper.contains("DESPENSA") || descUpper.contains("LÍDER") || descUpper.contains("ALIMENT") || descUpper.contains("ÉXITO") || descUpper.contains("CARULLA") || descUpper.contains("D1")
+            "INGRESOS" -> tipoUpper.contains("INGRESO") || descUpper.contains("HONORARIOS") || descUpper.contains("SUELDO") || descUpper.contains("NÓMINA") || descUpper.contains("VENTA")
+            "DEUDAS" -> tipoUpper.contains("PAGO DEUDA") || tipoUpper.contains("DEUDA") || descUpper.contains("TARJETA VISA") || descUpper.contains("CRÉDITO") || descUpper.contains("PRÉSTAMO")
+            "SERVICIOS" -> descUpper.contains("SERVICIO") || descUpper.contains("ENERGÍA") || descUpper.contains("AGUA") || descUpper.contains("LUZ") || descUpper.contains("INTERNET") || descUpper.contains("FIBRA") || descUpper.contains("MÓVIL") || descUpper.contains("GAS")
+            "COMIDA" -> descUpper.contains("RESTAURANTE") || descUpper.contains("CAFÉ") || descUpper.contains("MERIENDA") || descUpper.contains("COMIDA") || descUpper.contains("JUAN VALDEZ") || descUpper.contains("ALMUERZO") || descUpper.contains("CENA") || descUpper.contains("PIZZA")
+            "TRANSPORTE" -> descUpper.contains("TRANSPORTE") || descUpper.contains("GASOLINA") || descUpper.contains("UBER") || descUpper.contains("TAXI") || descUpper.contains("ESTACIÓN") || descUpper.contains("AUTO") || descUpper.contains("BUS")
+            "SALUD" -> descUpper.contains("FARMACIA") || descUpper.contains("SALUD") || descUpper.contains("MÉDICO") || descUpper.contains("DROGUERÍA") || descUpper.contains("HOSPITAL") || descUpper.contains("CONSULTA")
+            "STREAMING" -> descUpper.contains("NETFLIX") || descUpper.contains("SPOTIFY") || descUpper.contains("STREAMING") || descUpper.contains("DISNEY") || descUpper.contains("PRIME") || descUpper.contains("CINE") || descUpper.contains("SUSCRIP")
+            "EDUCACION" -> descUpper.contains("ESPECIALIZACIÓN") || descUpper.contains("CURSO") || descUpper.contains("EDUCACIÓN") || descUpper.contains("UNIVERSIDAD") || descUpper.contains("COLEGIO") || descUpper.contains("MATRÍCULA")
+            "OTROS" -> !tipoUpper.contains("INGRESO") && !tipoUpper.contains("GASTO FIJO") && !tipoUpper.contains("PAGO DEUDA") &&
+                    !descUpper.contains("SUPERMERCADO") && !descUpper.contains("DESPENSA") && !descUpper.contains("ÉXITO") && !descUpper.contains("CARULLA") && !descUpper.contains("D1") &&
+                    !descUpper.contains("SERVICIO") && !descUpper.contains("ENERGÍA") && !descUpper.contains("AGUA") && !descUpper.contains("LUZ") && !descUpper.contains("INTERNET") && !descUpper.contains("FIBRA") && !descUpper.contains("MÓVIL") &&
+                    !descUpper.contains("RESTAURANTE") && !descUpper.contains("CAFÉ") && !descUpper.contains("MERIENDA") && !descUpper.contains("JUAN VALDEZ") &&
+                    !descUpper.contains("TRANSPORTE") && !descUpper.contains("GASOLINA") && !descUpper.contains("UBER") && !descUpper.contains("TAXI") &&
+                    !descUpper.contains("FARMACIA") && !descUpper.contains("SALUD") &&
+                    !descUpper.contains("NETFLIX") && !descUpper.contains("SPOTIFY") && !descUpper.contains("STREAMING") &&
+                    !descUpper.contains("ESPECIALIZACIÓN") && !descUpper.contains("CURSO") && !descUpper.contains("EDUCACIÓN")
+            else -> true
+        }
+    }
+
     private fun actualizarListaFiltrada(resetearPaginacion: Boolean = true) {
         if (resetearPaginacion) {
             cantidadAMostrar = PASO_PAGINACION
         }
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         val todos = db.getAllNotas()
-        val filtrados = todos.filter { mov ->
+
+        val baseFechaBusqueda = todos.filter { mov ->
             try {
                 val parsed = extraerAnioYMes(mov.fecha)
                 val coincideFecha = when {
@@ -319,20 +361,44 @@ class FragmentMovimiento : Fragment() {
                     mesSeleccionado != -1 && anioSeleccionado == -1 -> (parsed != null && parsed.second == mesSeleccionado)
                     else -> (parsed != null && parsed.first == anioSeleccionado && parsed.second == mesSeleccionado)
                 }
-
                 val coincideBusqueda = searchQuery.isEmpty() || mov.descripcion.contains(searchQuery, ignoreCase = true)
-
-                val coincideCategoria = when (categoriaFiltro) {
-                    "GASTOS FIJOS" -> mov.tipo_reg.contains("GASTO FIJO", ignoreCase = true) || mov.descripcion.contains("PAGO:", ignoreCase = true)
-                    "SUPERMERCADO" -> mov.descripcion.contains("SUPERMERCADO", ignoreCase = true) || mov.descripcion.contains("DESPENSA", ignoreCase = true) || mov.descripcion.contains("LÍDER", ignoreCase = true) || mov.descripcion.contains("ALIMENT", ignoreCase = true) || mov.descripcion.contains("COMIDA", ignoreCase = true)
-                    "INGRESOS" -> mov.tipo_reg.contains("INGRESO", ignoreCase = true) || mov.descripcion.contains("HONORARIOS", ignoreCase = true) || mov.descripcion.contains("SUELDO", ignoreCase = true)
-                    "DEUDAS" -> mov.tipo_reg.contains("PAGO DEUDA", ignoreCase = true) || mov.tipo_reg.contains("DEUDA", ignoreCase = true)
-                    else -> true
-                }
-
-                coincideFecha && coincideBusqueda && coincideCategoria
+                coincideFecha && coincideBusqueda
             } catch (e: Exception) { true }
         }
+
+        // Conteo dinámico en tiempo real en los chips
+        fun conteo(cat: String) = baseFechaBusqueda.count { evaluarCoincideCategoria(it, cat) }
+        binding.chipFiltroTodos.text = "Todos (${baseFechaBusqueda.size})"
+        binding.chipFiltroGastosFijos.text = "Gastos Fijos (${conteo("GASTOS FIJOS")})"
+        binding.chipFiltroSupermercado.text = "Supermercado (${conteo("SUPERMERCADO")})"
+        binding.chipFiltroIngresos.text = "Ingresos (${conteo("INGRESOS")})"
+        binding.chipFiltroDeudas.text = "Deudas (${conteo("DEUDAS")})"
+        binding.chipFiltroServicios.text = "Servicios (${conteo("SERVICIOS")})"
+        binding.chipFiltroComida.text = "Comida (${conteo("COMIDA")})"
+        binding.chipFiltroTransporte.text = "Transporte (${conteo("TRANSPORTE")})"
+        binding.chipFiltroSalud.text = "Salud (${conteo("SALUD")})"
+        binding.chipFiltroStreaming.text = "Streaming (${conteo("STREAMING")})"
+        binding.chipFiltroEducacion.text = "Educación (${conteo("EDUCACION")})"
+        binding.chipFiltroOtros.text = "Otros (${conteo("OTROS")})"
+
+        // Título dinámico de la tarjeta superior
+        binding.tvTituloBalanceMov.text = when (categoriaFiltro) {
+            "TODOS" -> "TOTAL DE MOVIMIENTOS"
+            "GASTOS FIJOS" -> "TOTAL GASTOS FIJOS"
+            "SUPERMERCADO" -> "TOTAL SUPERMERCADO"
+            "INGRESOS" -> "TOTAL INGRESOS"
+            "DEUDAS" -> "TOTAL PAGOS DEUDAS"
+            "SERVICIOS" -> "TOTAL SERVICIOS"
+            "COMIDA" -> "TOTAL COMIDA Y RESTAURANTES"
+            "TRANSPORTE" -> "TOTAL TRANSPORTE"
+            "SALUD" -> "TOTAL SALUD Y FARMACIA"
+            "STREAMING" -> "TOTAL STREAMING"
+            "EDUCACION" -> "TOTAL EDUCACIÓN"
+            "OTROS" -> "TOTAL OTROS GASTOS"
+            else -> "TOTAL DE MOVIMIENTOS"
+        }
+
+        val filtrados = baseFechaBusqueda.filter { evaluarCoincideCategoria(it, categoriaFiltro) }
 
         listaTotalFiltrada = filtrados
         val sublista = listaTotalFiltrada.take(cantidadAMostrar)
@@ -343,10 +409,15 @@ class FragmentMovimiento : Fragment() {
         val totalEgresos = filtrados.filter { !it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
         val balancePeriodo = totalIngresos - totalEgresos
 
-        saldoRealTexto = format.format(if (balancePeriodo >= 0) balancePeriodo else -balancePeriodo)
+        val montoAMostrar = when (categoriaFiltro) {
+            "INGRESOS" -> totalIngresos
+            "TODOS" -> if (totalEgresos > 0) totalEgresos else totalIngresos
+            else -> totalEgresos
+        }
+
+        saldoRealTexto = format.format(montoAMostrar)
         if (!esSaldoOculto) {
-            val totalPeriodo = if (totalEgresos > 0) totalEgresos else (if (totalIngresos > 0) totalIngresos else 0.0)
-            binding.tvTotalMovMonto.text = format.format(totalPeriodo)
+            binding.tvTotalMovMonto.text = saldoRealTexto
         }
 
         binding.tvTotalIngresosMonto.text = "+${format.format(totalIngresos)}"

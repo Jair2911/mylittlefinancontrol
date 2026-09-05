@@ -151,6 +151,7 @@
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/tv_titulo_balance_mov"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -379,6 +380,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:overScrollMode="never"
                     android:scrollbars="none">
 
                     <LinearLayout
@@ -458,6 +460,7 @@
                             android:id="@+id/chip_filtro_deudas"
                             android:layout_width="wrap_content"
                             android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
                             android:background="@drawable/badge_round_pill"
                             android:backgroundTint="@color/surface_card"
                             android:clickable="true"
@@ -466,6 +469,124 @@
                             android:gravity="center"
                             android:paddingHorizontal="14dp"
                             android:text="Deudas"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_servicios"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Servicios"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_comida"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Comida"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_transporte"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Transporte"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_salud"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Salud"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_streaming"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Streaming"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_educacion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Educación"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/chip_filtro_otros"
+                            android:layout_width="wrap_content"
+                            android:layout_height="34dp"
+                            android:background="@drawable/badge_round_pill"
+                            android:backgroundTint="@color/surface_card"
+                            android:clickable="true"
+                            android:elevation="1dp"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:paddingHorizontal="14dp"
+                            android:text="Otros"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:textStyle="bold" />
