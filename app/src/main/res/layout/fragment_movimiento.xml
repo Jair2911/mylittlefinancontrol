@@ -182,7 +182,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
-                                android:text="8 Registros"
+                                android:text="0 Registros"
                                 android:textColor="@color/primary_emerald"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />

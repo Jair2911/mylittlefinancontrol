@@ -131,6 +131,15 @@ class FragmentMovimiento : Fragment() {
     }
 
     private fun actualizarPaginacionUI(sublista: List<Movimiento>) {
+        val cantTotal = listaTotalFiltrada.size
+        val cantMostrada = sublista.size
+        binding.tvConteoRegistros.text = when {
+            cantTotal == 0 -> "0 Registros"
+            cantMostrada < cantTotal -> "$cantMostrada de $cantTotal Registros"
+            cantTotal == 1 -> "1 Registro"
+            else -> "$cantTotal Registros"
+        }
+
         if (sublista.size < listaTotalFiltrada.size) {
             val restantes = listaTotalFiltrada.size - sublista.size
             val proximoPaso = if (restantes > PASO_PAGINACION) PASO_PAGINACION else restantes
