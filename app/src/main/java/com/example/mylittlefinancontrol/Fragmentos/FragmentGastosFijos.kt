@@ -472,7 +472,8 @@ class FragmentGastosFijos : Fragment() {
         class MesEstadoItem(
             val numeroMes: Int, // 1 a 12
             val nombreMes: String,
-            val estaPagado: Boolean,
+            val cuotasPagadas: Int, // 0, 1 o 2
+            val totalCuotas: Int,   // 1 o 2
             val fechaPagoTexto: String
         )
 
@@ -488,33 +489,46 @@ class FragmentGastosFijos : Fragment() {
                 idCoincide && fechaEfectiva.startsWith(mesClave)
             }
 
-            var pagado = movsEncontrados.isNotEmpty()
-            if (!pagado) {
-                pagado = if (esQuincenal) {
-                    gasto.ultimoPagoQ1.startsWith(mesClave) && gasto.ultimoPagoQ2.startsWith(mesClave)
-                } else {
-                    gasto.ultimoPagoQ1.startsWith(mesClave)
+            var q1Pagada = movsEncontrados.any { it.quincenaPagada == 1 } || gasto.ultimoPagoQ1.startsWith(mesClave)
+            var q2Pagada = movsEncontrados.any { it.quincenaPagada == 2 } || gasto.ultimoPagoQ2.startsWith(mesClave)
+
+            if (!esQuincenal) {
+                if (movsEncontrados.isNotEmpty()) {
+                    q1Pagada = true
                 }
             }
 
-            val detalle = if (pagado) {
-                val mov = movsEncontrados.firstOrNull()
-                if (mov != null && mov.fecha.isNotBlank()) {
-                    "Pagado el ${mov.fecha.split(" ")[0]} (${format.format(montoMensualTotal)})"
-                } else {
-                    "Pagado en $mesClave (${format.format(montoMensualTotal)})"
-                }
+            val totalCuotasMes = if (esQuincenal) 2 else 1
+            var cuotasPagadasMes = 0
+            if (esQuincenal) {
+                if (q1Pagada) cuotasPagadasMes++
+                if (q2Pagada) cuotasPagadasMes++
             } else {
-                if (m <= (mesActual + 1)) "⏱️ Pendiente (${format.format(montoMensualTotal)})" else "Próximo pago (${format.format(montoMensualTotal)})"
+                if (q1Pagada) cuotasPagadasMes = 1
             }
 
-            listaMeses.add(MesEstadoItem(m, "${nombresMeses[m - 1]} $anioActual", pagado, detalle))
+            val detalle = when {
+                cuotasPagadasMes == totalCuotasMes -> {
+                    val mov = movsEncontrados.firstOrNull()
+                    if (mov != null && mov.fecha.isNotBlank()) {
+                        "Pagado el ${mov.fecha.split(" ")[0]} (${format.format(montoMensualTotal)})"
+                    } else {
+                        "Pagado en $mesClave (${format.format(montoMensualTotal)})"
+                    }
+                }
+                cuotasPagadasMes > 0 -> "🟡 Parcial ($cuotasPagadasMes/$totalCuotasMes pagada) · Resta ${format.format(gasto.monto)}"
+                else -> {
+                    if (m <= (mesActual + 1)) "⏱️ Pendiente (${format.format(montoMensualTotal)})" else "Próximo pago (${format.format(montoMensualTotal)})"
+                }
+            }
+
+            listaMeses.add(MesEstadoItem(m, "${nombresMeses[m - 1]} $anioActual", cuotasPagadasMes, totalCuotasMes, detalle))
         }
 
         // Resumen general
         val mesesTranscurridos = (mesActual + 1)
-        val mesesPagadosHastaHoy = listaMeses.take(mesesTranscurridos).count { it.estaPagado }
-        val mesesPendientes = mesesTranscurridos - mesesPagadosHastaHoy
+        val mesesCompletos = listaMeses.take(mesesTranscurridos).count { it.cuotasPagadas == it.totalCuotas }
+        val mesesPendientes = mesesTranscurridos - mesesCompletos
 
         if (mesesPendientes <= 0) {
             dialogBinding.tvTextoResumenAnual.text = "🟢 ¡Vas 100% al día con tus pagos de $anioActual!"
@@ -542,61 +556,74 @@ class FragmentGastosFijos : Fragment() {
                 b.tvNombreMes.text = item.nombreMes
                 b.tvDetallePagoMes.text = item.fechaPagoTexto
 
-                if (item.estaPagado) {
+                if (item.cuotasPagadas == item.totalCuotas) {
                     b.tvBadgeEstadoMes.visibility = View.VISIBLE
-                    b.tvBadgeEstadoMes.text = "✓ PAGADO"
+                    b.tvBadgeEstadoMes.text = "✓ PAGADO (${item.cuotasPagadas}/${item.totalCuotas})"
                     b.tvBadgeEstadoMes.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.primary_fixed))
                     b.tvBadgeEstadoMes.setTextColor(ContextCompat.getColor(mContext, R.color.on_primary_fixed))
                     b.btnPagarMes.visibility = View.GONE
+                } else if (item.cuotasPagadas > 0) {
+                    b.tvBadgeEstadoMes.visibility = View.VISIBLE
+                    b.tvBadgeEstadoMes.text = "🟡 PARCIAL (${item.cuotasPagadas}/${item.totalCuotas})"
+                    b.tvBadgeEstadoMes.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.debt_amber_bg))
+                    b.tvBadgeEstadoMes.setTextColor(ContextCompat.getColor(mContext, R.color.debt_amber))
+                    b.btnPagarMes.visibility = View.VISIBLE
+                    b.btnPagarMes.text = "Pagar Q2 ${format.format(gasto.monto)}"
                 } else {
                     b.tvBadgeEstadoMes.visibility = View.GONE
                     b.btnPagarMes.visibility = View.VISIBLE
-                    b.btnPagarMes.text = "Pagar ${format.format(montoMensualTotal)}"
+                    val textoBtn = if (esQuincenal) "Pagar Q1 ${format.format(gasto.monto)}" else "Pagar ${format.format(gasto.monto)}"
+                    b.btnPagarMes.text = textoBtn
+                }
 
-                    b.btnPagarMes.setOnClickListener {
-                        val mesFormatted = String.format(Locale.US, "%02d", item.numeroMes)
-                        val mesClave = "$anioActual-$mesFormatted"
-                        val diaNum = gasto.diaPago.trim().filter { it.isDigit() }.toIntOrNull() ?: 15
-                        val fechaPago = "$anioActual-$mesFormatted-${String.format(Locale.US, "%02d", diaNum)} 12:00:00"
+                b.btnPagarMes.setOnClickListener {
+                    val mesFormatted = String.format(Locale.US, "%02d", item.numeroMes)
+                    val mesClave = "$anioActual-$mesFormatted"
+                    val diaNum = gasto.diaPago.trim().filter { it.isDigit() }.toIntOrNull() ?: 15
+                    val fechaPago = "$anioActual-$mesFormatted-${String.format(Locale.US, "%02d", diaNum)} 12:00:00"
 
-                        val opcionesPago = arrayOf(
-                            "Solo marcar como Pagado (Checklist histórico)",
-                            "Registrar movimiento y descontar dinero"
-                        )
+                    val opcionesPago = arrayOf(
+                        "Solo marcar como Pagado (Checklist histórico)",
+                        "Registrar movimiento y descontar dinero"
+                    )
 
-                        AlertDialog.Builder(mContext)
-                            .setTitle("Marcar pago de ${nombresMeses[item.numeroMes - 1]}")
-                            .setItems(opcionesPago) { _, which ->
+                    AlertDialog.Builder(mContext)
+                        .setTitle("Marcar pago de ${nombresMeses[item.numeroMes - 1]}")
+                        .setItems(opcionesPago) { _, which ->
+                            val montoAAnadir = if (esQuincenal) gasto.monto else montoMensualTotal
+                            val quincenaAAnadir = if (esQuincenal) (if (item.cuotasPagadas == 0) 1 else 2) else 0
+
+                            if (quincenaAAnadir == 1 || !esQuincenal) {
                                 gasto.ultimoPagoQ1 = mesClave
-                                if (esQuincenal) {
-                                    gasto.ultimoPagoQ2 = mesClave
-                                }
-                                db.updateGastoFijo(gasto)
-
-                                if (which == 1) {
-                                    val nuevoMov = Movimiento(
-                                        id = 0,
-                                        descripcion = "PAGO: ${gasto.concepto}".uppercase(),
-                                        valor = montoMensualTotal.toInt(),
-                                        tipo_reg = "GASTO FIJO",
-                                        fecha = fechaPago,
-                                        gastoFijoId = gfIdInt,
-                                        quincenaPagada = 0,
-                                        categoria = gasto.categoria,
-                                        fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
-                                    )
-                                    db.insertNota(nuevoMov)
-                                    Toast.makeText(mContext, "Pago registrado con movimiento en dinero", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(mContext, "Mes de ${nombresMeses[item.numeroMes - 1]} marcado como pagado (Checklist)", Toast.LENGTH_SHORT).show()
-                                }
-
-                                bottomSheetDialog.dismiss()
-                                cargarGastosFijos()
                             }
-                            .setNegativeButton("Cancelar", null)
-                            .show()
-                    }
+                            if (quincenaAAnadir == 2 || !esQuincenal) {
+                                gasto.ultimoPagoQ2 = mesClave
+                            }
+                            db.updateGastoFijo(gasto)
+
+                            if (which == 1) {
+                                val nuevoMov = Movimiento(
+                                    id = 0,
+                                    descripcion = "PAGO: ${gasto.concepto}".uppercase(),
+                                    valor = montoAAnadir.toInt(),
+                                    tipo_reg = "GASTO FIJO",
+                                    fecha = fechaPago,
+                                    gastoFijoId = gfIdInt,
+                                    quincenaPagada = quincenaAAnadir,
+                                    categoria = gasto.categoria,
+                                    fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
+                                )
+                                db.insertNota(nuevoMov)
+                                Toast.makeText(mContext, "Pago registrado con movimiento en dinero", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(mContext, "Mes de ${nombresMeses[item.numeroMes - 1]} marcado como pagado (Checklist)", Toast.LENGTH_SHORT).show()
+                            }
+
+                            bottomSheetDialog.dismiss()
+                            cargarGastosFijos()
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
                 }
             }
         }
