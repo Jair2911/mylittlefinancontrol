@@ -127,13 +127,19 @@ class FragmentBalance : Fragment() {
     }
 
     private fun aplicarFiltro() {
-        val deudasPendientes = listaDeudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
-        val filtradas = if (filtroTipoSeleccionado == "Todas") {
-            deudasPendientes
+        val porTipo = if (filtroTipoSeleccionado == "Todas") {
+            listaDeudasTodas
         } else {
-            deudasPendientes.filter { it.tipo.contains(filtroTipoSeleccionado, ignoreCase = true) }
+            listaDeudasTodas.filter { it.tipo.contains(filtroTipoSeleccionado, ignoreCase = true) }
         }
-        adapter.actualizarLista(filtradas)
+
+        // Ordenar: Deudas pendientes PRIMERO, deudas completadas (✓ PAGADA) AL FINAL
+        val ordenadas = porTipo.sortedWith(
+            compareBy<Deuda> { (it.totalDeuda - it.totalPagado) <= 0.0 }
+                .thenBy { it.concepto }
+        )
+
+        adapter.actualizarLista(ordenadas)
     }
 
     private fun mostrarDialogoDeuda(deudaExistente: Deuda?) {
@@ -411,10 +417,10 @@ class FragmentBalance : Fragment() {
         binding.tvResumenAbonado.text = "Abonado: ${format.format(totalPagadoSum)}"
         binding.tvResumenPendiente.text = "Pendiente: ${format.format(totalRestante)}"
 
-        binding.chipTodasDeudas.text = "Pendientes (${deudasPendientes.size})"
-        binding.chipTarjetas.text = "Tarjetas (${deudasPendientes.count { it.tipo.contains("tarjeta", true) }})"
-        binding.chipPrestamos.text = "Préstamos (${deudasPendientes.count { it.tipo.contains("préstamo", true) || it.tipo.contains("prestamo", true) || it.tipo.contains("bancario", true) }})"
-        binding.chipPersonales.text = "Personales (${deudasPendientes.count { it.tipo.contains("personal", true) }})"
+        binding.chipTodasDeudas.text = "Todas (${listaDeudasTodas.size})"
+        binding.chipTarjetas.text = "Tarjetas (${listaDeudasTodas.count { it.tipo.contains("tarjeta", true) }})"
+        binding.chipPrestamos.text = "Préstamos (${listaDeudasTodas.count { it.tipo.contains("préstamo", true) || it.tipo.contains("prestamo", true) || it.tipo.contains("bancario", true) }})"
+        binding.chipPersonales.text = "Personales (${listaDeudasTodas.count { it.tipo.contains("personal", true) }})"
     }
 
     private fun eliminarDeuda(deuda: Deuda) {
