@@ -808,7 +808,7 @@ class FragmentMovimiento : Fragment() {
                     SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
                 )
 
-                val modelos = listOf("gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro")
+                val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest")
                 var rawText: String? = null
                 var ultimoError: Exception? = null
 

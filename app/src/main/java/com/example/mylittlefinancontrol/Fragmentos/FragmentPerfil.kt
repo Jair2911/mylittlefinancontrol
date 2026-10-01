@@ -37,6 +37,7 @@ class FragmentPerfil : Fragment() {
     private lateinit var mContext: Context
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var backupPrefs: SharedPreferences
+    private var pendingAction: String? = null
 
     private val job = Job()
     private val scope = CoroutineScope(Dispatchers.Main + job)
@@ -138,29 +139,59 @@ class FragmentPerfil : Fragment() {
         }
 
         binding.btnBackupNow.setOnClickListener {
-            forzarRespaldoManual()
+            val account = backupPrefs.getString("GoogleAccount", null)
+            if (account != null) {
+                forzarRespaldoManual()
+            } else {
+                pendingAction = "BACKUP"
+                Toast.makeText(mContext, "Iniciando vinculación con Google Drive...", Toast.LENGTH_SHORT).show()
+                iniciarVinculacionGoogle()
+            }
         }
 
         binding.btnRestore.setOnClickListener {
-            confirmarRestauracion()
+            val account = backupPrefs.getString("GoogleAccount", null)
+            if (account != null) {
+                confirmarRestauracion()
+            } else {
+                pendingAction = "RESTORE"
+                Toast.makeText(mContext, "Iniciando vinculación con Google Drive para restaurar...", Toast.LENGTH_SHORT).show()
+                iniciarVinculacionGoogle()
+            }
         }
     }
 
     private fun actualizarEstadoBackup() {
-        val account = backupPrefs.getString("GoogleAccount", null)
+        var account = backupPrefs.getString("GoogleAccount", null)
+
+        // Si no se ha guardado explícitamente pero hay sesión activa de Google con permisos de Drive, autodetectar
+        if (account == null) {
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
+            val driveScope = Scope(DriveScopes.DRIVE_APPDATA)
+            if (lastAccount != null && lastAccount.email != null && GoogleSignIn.hasPermissions(lastAccount, driveScope)) {
+                account = lastAccount.email
+                backupPrefs.edit().putString("GoogleAccount", account).apply()
+            }
+        }
+
         val lastTime = backupPrefs.getLong("LastBackupTime", 0)
 
         if (account != null) {
             binding.tvGoogleAccount.text = "Vinculado como: $account"
             binding.btnGoogleAuth.text = "Desvincular"
-            binding.btnBackupNow.isEnabled = true
-            binding.btnRestore.isEnabled = true
         } else {
-            binding.tvGoogleAccount.text = "Cuenta: No vinculada"
-            binding.btnGoogleAuth.text = "Vincular"
-            binding.btnBackupNow.isEnabled = false
-            binding.btnRestore.isEnabled = false
+            val userEmail = firebaseAuth.currentUser?.email
+            if (!userEmail.isNullOrBlank()) {
+                binding.tvGoogleAccount.text = "Cuenta: $userEmail (Drive no vinculado)"
+            } else {
+                binding.tvGoogleAccount.text = "Cuenta: No vinculada"
+            }
+            binding.btnGoogleAuth.text = "Vincular Drive"
         }
+
+        // MANTENER SIEMPRE LOS BOTONES ACTIVOS PARA QUE EL USUARIO PUEDA PULSARLOS
+        binding.btnBackupNow.isEnabled = true
+        binding.btnRestore.isEnabled = true
 
         if (lastTime > 0) {
             binding.tvLastBackup.text = "Última copia: ${Constantes.formatoFecha(lastTime)}"
@@ -185,13 +216,22 @@ class FragmentPerfil : Fragment() {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             try {
                 val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                if (account != null) {
+                if (account != null && account.email != null) {
                     backupPrefs.edit().putString("GoogleAccount", account.email).apply()
-                    Toast.makeText(mContext, "Cuenta vinculada: ${account.email}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(mContext, "Cuenta de Drive vinculada: ${account.email}", Toast.LENGTH_SHORT).show()
                     actualizarEstadoBackup()
+
+                    val action = pendingAction
+                    pendingAction = null
+                    if (action == "RESTORE") {
+                        confirmarRestauracion()
+                    } else if (action == "BACKUP") {
+                        forzarRespaldoManual()
+                    }
                 }
             } catch (e: Exception) {
-                Toast.makeText(mContext, "Error al vincular: ${e.message}", Toast.LENGTH_SHORT).show()
+                pendingAction = null
+                Toast.makeText(mContext, "Error al vincular Drive: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -204,10 +244,15 @@ class FragmentPerfil : Fragment() {
     }
 
     private fun forzarRespaldoManual() {
-        val accountName = backupPrefs.getString("GoogleAccount", null) ?: return
+        val accountName = backupPrefs.getString("GoogleAccount", null)
+        if (accountName == null) {
+            pendingAction = "BACKUP"
+            iniciarVinculacionGoogle()
+            return
+        }
         
         binding.btnBackupNow.isEnabled = false
-        Toast.makeText(mContext, "Iniciando respaldo...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(mContext, "Iniciando respaldo en Google Drive...", Toast.LENGTH_SHORT).show()
 
         scope.launch(Dispatchers.IO) {
             try {
@@ -221,16 +266,21 @@ class FragmentPerfil : Fragment() {
                         if (fileId != null) {
                             backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
                             actualizarEstadoBackup()
-                            Toast.makeText(mContext, "Respaldo exitoso", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(mContext, "Respaldo exitoso en Google Drive", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(mContext, "Error al subir archivo", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(mContext, "Error al subir archivo a Drive", Toast.LENGTH_SHORT).show()
                         }
+                        binding.btnBackupNow.isEnabled = true
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(mContext, "No hay base de datos local para respaldar", Toast.LENGTH_SHORT).show()
                         binding.btnBackupNow.isEnabled = true
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(mContext, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(mContext, "Error en respaldo: ${e.message}", Toast.LENGTH_LONG).show()
                     binding.btnBackupNow.isEnabled = true
                 }
             }
@@ -239,17 +289,22 @@ class FragmentPerfil : Fragment() {
 
     private fun confirmarRestauracion() {
         AlertDialog.Builder(mContext)
-            .setTitle("Restaurar Datos")
-            .setMessage("¿Estás seguro? Se sobreescribirán todos los datos actuales con la copia de la nube. La app se reiniciará.")
+            .setTitle("Restaurar Datos desde la Nube")
+            .setMessage("¿Estás seguro? Se reemplazarán todos los datos actuales de la app con la copia de seguridad guardada en tu Google Drive. La app se reiniciará.")
             .setPositiveButton("Restaurar") { _, _ -> ejecutarRestauracion() }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun ejecutarRestauracion() {
-        val accountName = backupPrefs.getString("GoogleAccount", null) ?: return
+        val accountName = backupPrefs.getString("GoogleAccount", null)
+        if (accountName == null) {
+            pendingAction = "RESTORE"
+            iniciarVinculacionGoogle()
+            return
+        }
         
-        Toast.makeText(mContext, "Descargando copia...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(mContext, "Buscando copia de seguridad en Google Drive...", Toast.LENGTH_SHORT).show()
 
         scope.launch(Dispatchers.IO) {
             try {
@@ -263,23 +318,23 @@ class FragmentPerfil : Fragment() {
                     val restored = backupManager.restoreDatabase(tempFile)
                     withContext(Dispatchers.Main) {
                         if (restored) {
-                            Toast.makeText(mContext, "Restauración completada. Reiniciando...", Toast.LENGTH_LONG).show()
+                            Toast.makeText(mContext, "¡Restauración completada con éxito! Reiniciando la app...", Toast.LENGTH_LONG).show()
                             // Reiniciar app
                             val intent = mContext.packageManager.getLaunchIntentForPackage(mContext.packageName)
-                            intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                             startActivity(intent)
                         } else {
-                            Toast.makeText(mContext, "Error al sobreescribir base de datos", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(mContext, "Error al sobreescribir la base de datos local", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(mContext, "No se encontró respaldo en la nube", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(mContext, "No se encontró ningún archivo 'finanzas_backup.db' en la cuenta de Google Drive: $accountName", Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(mContext, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(mContext, "Error al conectar con Drive: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }

@@ -52,7 +52,7 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
         """.trimIndent()
 
         val systemInstructionContent = content { text(systemInstructionText) }
-        val modelos = listOf("gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro")
+        val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest")
 
         agregarMensaje("¡Hola! Soy tu asesor DABAFINN. He analizado tus datos y estoy listo para darte consejos. ¿En qué puedo ayudarte?", false)
 
