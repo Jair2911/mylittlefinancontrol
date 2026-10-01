@@ -262,7 +262,8 @@ class AgregarMovimientoActivity : AppCompatActivity() {
     }
 
     private fun guardarMovimento(descripcion: String, valor: Int, tipo_reg: String, fecha: String, gastoFijoId: Int? = null, quincena: Int? = null) {
-        val movimiento = Movimiento(0, descripcion, valor, tipo_reg, fecha, gastoFijoId, quincena)
+        val fc = Constantes.formatoFecha(System.currentTimeMillis())
+        val movimiento = Movimiento(0, descripcion, valor, tipo_reg, fecha, gastoFijoId, quincena, categoria = "Varios", fechaCreacion = fc)
         db.insertNota(movimiento)
         Toast.makeText(this, "Movimiento guardado", Toast.LENGTH_SHORT).show()
         finish()
