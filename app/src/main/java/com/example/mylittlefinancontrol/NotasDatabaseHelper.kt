@@ -6,8 +6,10 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.mylittlefinancontrol.Modelos.Ahorro
+import com.example.mylittlefinancontrol.Modelos.CategoriaGastoItem
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
+import com.example.mylittlefinancontrol.Modelos.ResumenPeriodoData
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -464,6 +466,57 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         cursorD.close()
 
         return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(balance, totalGF, totalDeudas)
+    }
+
+    // --- CONSULTAS DE PERIODOS Y ANALÍTICA ---
+    fun getMovimientosPorRangoFechas(startDate: String, endDate: String): List<Movimiento> {
+        val todos = getAllNotas()
+        return todos.filter { mov ->
+            val f = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+            val fClean = f.split(" ")[0]
+            fClean >= startDate && fClean <= endDate
+        }
+    }
+
+    fun getResumenPorRangoFechas(startDate: String, endDate: String): ResumenPeriodoData {
+        val movs = getMovimientosPorRangoFechas(startDate, endDate)
+        
+        var ingresos = 0.0
+        var gastos = 0.0
+
+        val catMap = mutableMapOf<String, Double>()
+        val catCountMap = mutableMapOf<String, Int>()
+
+        for (m in movs) {
+            val valor = m.valor.toDouble()
+            if (m.tipo_reg.contains("INGRESO", true)) {
+                ingresos += valor
+            } else {
+                gastos += valor
+                val cat = if (m.categoria.isNotBlank()) m.categoria else "Varios"
+                catMap[cat] = (catMap[cat] ?: 0.0) + valor
+                catCountMap[cat] = (catCountMap[cat] ?: 0) + 1
+            }
+        }
+
+        val listaCat = catMap.map { (nombre, total) ->
+            val pct = if (gastos > 0) (total / gastos) * 100.0 else 0.0
+            CategoriaGastoItem(
+                nombreCategoria = nombre,
+                totalMonto = total,
+                porcentaje = Constantes.redondearMonto(pct),
+                conteoTransacciones = catCountMap[nombre] ?: 0
+            )
+        }.sortedByDescending { it.totalMonto }
+
+        val balance = ingresos - gastos
+
+        return ResumenPeriodoData(
+            totalIngresos = Constantes.redondearMonto(ingresos),
+            totalGastos = Constantes.redondearMonto(gastos),
+            balanceNeto = Constantes.redondearMonto(balance),
+            listaCategorias = listaCat
+        )
     }
 
     fun clearAllData() {

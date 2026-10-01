@@ -44,6 +44,9 @@
             android:name=".AgregarMovimientoActivity"
             android:exported="false" />
         <activity
+            android:name=".DetallePeriodoActivity"
+            android:exported="false" />
+        <activity
             android:name=".EditarInformacion"
             android:exported="false" />
         <activity

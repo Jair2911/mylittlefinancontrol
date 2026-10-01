@@ -1,20 +1,21 @@
 package com.example.mylittlefinancontrol.Fragmentos
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.mylittlefinancontrol.Adaptadores.MovimientoInicioAdapter
+import com.example.mylittlefinancontrol.DetallePeriodoActivity
 import com.example.mylittlefinancontrol.GeminiAdvisorDialogFragment
 import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.FragmentInicioBinding
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
 
@@ -24,7 +25,6 @@ class FragmentInicio : Fragment() {
 
     private lateinit var mContext: Context
     private lateinit var db: NotasDatabaseHelper
-    private lateinit var movAdapter: MovimientoInicioAdapter
 
     private var totalGastosFijos = 0.0
     private var totalDeudasRestante = 0.0
@@ -49,7 +49,6 @@ class FragmentInicio : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         db = NotasDatabaseHelper(mContext)
 
-        setupRecyclerView()
         cargarDatosLocales()
         setupClickListeners()
     }
@@ -59,23 +58,15 @@ class FragmentInicio : Fragment() {
         cargarDatosLocales()
     }
 
-    private fun setupRecyclerView() {
-        movAdapter = MovimientoInicioAdapter(emptyList())
-        binding.rvUltimosMovimientos.apply {
-            layoutManager = LinearLayoutManager(mContext)
-            adapter = movAdapter
-            isNestedScrollingEnabled = false
-        }
-    }
-
     private fun cargarDatosLocales() {
         val listaGF = db.getAllGastosFijos()
         totalGastosFijos = listaGF.sumOf { it.monto }
 
         val listaD = db.getAllDeudas()
-        totalDeudasRestante = listaD.sumOf { it.totalDeuda - it.totalPagado }
+        totalDeudasRestante = listaD.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) }
 
         calcularMovimientosDelMes()
+        cargarPanelResumenesGrid()
     }
 
     private fun setupClickListeners() {
@@ -87,8 +78,6 @@ class FragmentInicio : Fragment() {
         binding.cardGastosFijos.setOnClickListener { mainActivity?.verFragmentoGastosFijos() }
         binding.cardDeudas.setOnClickListener { mainActivity?.verFragmentoDeudas() }
 
-        binding.btnVerTodosMovimientos.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
-        
         binding.cardSaludFinanciera.setOnClickListener {
             GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
         }
@@ -106,10 +95,18 @@ class FragmentInicio : Fragment() {
             GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
         }
 
-        // Plan de Ahorro
-        binding.btnNuevaMetaAhorro.setOnClickListener { mainActivity?.verFragmentoAhorros() }
-        binding.cardPlanAhorro.setOnClickListener { mainActivity?.verFragmentoAhorros() }
-        binding.rowMetaSecundaria.setOnClickListener { mainActivity?.verFragmentoAhorros() }
+        // Click listeners para los 4 resúmenes del Grid 2x2
+        binding.cardResumenSemanal.setOnClickListener { abrirDetallePeriodo("SEMANAL") }
+        binding.cardResumenMensual.setOnClickListener { abrirDetallePeriodo("MENSUAL") }
+        binding.cardResumenSemestral.setOnClickListener { abrirDetallePeriodo("SEMESTRAL") }
+        binding.cardResumenAnual.setOnClickListener { abrirDetallePeriodo("ANUAL") }
+    }
+
+    private fun abrirDetallePeriodo(tipoPeriodo: String) {
+        val intent = Intent(mContext, DetallePeriodoActivity::class.java).apply {
+            putExtra("TIPO_PERIODO", tipoPeriodo)
+        }
+        startActivity(intent)
     }
 
     private fun calcularMovimientosDelMes() {
@@ -131,7 +128,8 @@ class FragmentInicio : Fragment() {
             }
 
             try {
-                val partes = mov.fecha.split("-")
+                val f = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+                val partes = f.split(" ")[0].split("-")
                 val anio = partes[0].toInt()
                 val mes = partes[1].toInt() - 1
                 
@@ -144,11 +142,109 @@ class FragmentInicio : Fragment() {
                 }
             } catch (_: Exception) {}
         }
-        
-        val ultimosMovimientos = todosLosMovimientos.take(5)
-        movAdapter.actualizarLista(ultimosMovimientos)
 
         actualizarInterfaz()
+    }
+
+    private fun cargarPanelResumenesGrid() {
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+
+        val periodos = listOf("SEMANAL", "MENSUAL", "SEMESTRAL", "ANUAL")
+        for (p in periodos) {
+            val rangos = calcularFechasPeriodo(p)
+            val rangeActual = rangos.first
+            val rangeAnt = rangos.second
+
+            val resAct = db.getResumenPorRangoFechas(rangeActual.first, rangeActual.second)
+            val resAnt = db.getResumenPorRangoFechas(rangeAnt.first, rangeAnt.second)
+
+            val gastosAct = resAct.totalGastos
+            val gastosAnt = resAnt.totalGastos
+
+            val varPct = if (gastosAnt > 0) {
+                ((gastosAct - gastosAnt) / gastosAnt) * 100.0
+            } else {
+                0.0
+            }
+
+            val varTxt = if (varPct > 0) "📈 +${varPct.toInt()}% vs ant." else if (varPct < 0) "📉 ${varPct.toInt()}% vs ant." else "📊 Estables vs ant."
+
+            when (p) {
+                "SEMANAL" -> {
+                    binding.tvBalanceSemanal.text = format.format(resAct.balanceNeto)
+                    binding.tvTendenciaSemanal.text = varTxt
+                }
+                "MENSUAL" -> {
+                    binding.tvBalanceMensual.text = format.format(resAct.balanceNeto)
+                    binding.tvTendenciaMensual.text = varTxt
+                }
+                "SEMESTRAL" -> {
+                    binding.tvBalanceSemestral.text = format.format(resAct.balanceNeto)
+                    binding.tvTendenciaSemestral.text = varTxt
+                }
+                "ANUAL" -> {
+                    binding.tvBalanceAnual.text = format.format(resAct.balanceNeto)
+                    binding.tvTendenciaAnual.text = varTxt
+                }
+            }
+        }
+    }
+
+    private fun calcularFechasPeriodo(tipo: String): Pair<Pair<String, String>, Pair<String, String>> {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val cal = Calendar.getInstance()
+        val hoy = sdf.format(cal.time)
+
+        return when (tipo) {
+            "SEMANAL" -> {
+                val endActual = hoy
+                val calStartAct = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -6) }
+                val startActual = sdf.format(calStartAct.time)
+
+                val calEndAnt = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
+                val endAnt = sdf.format(calEndAnt.time)
+                val calStartAnt = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -13) }
+                val startAnt = sdf.format(calStartAnt.time)
+
+                Pair(Pair(startActual, endActual), Pair(startAnt, endAnt))
+            }
+            "MENSUAL" -> {
+                val calActIni = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) }
+                val startActual = sdf.format(calActIni.time)
+                val endActual = hoy
+
+                val calAntFin = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1); add(Calendar.DAY_OF_YEAR, -1) }
+                val endAnt = sdf.format(calAntFin.time)
+                val calAntIni = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1); add(Calendar.MONTH, -1) }
+                val startAnt = sdf.format(calAntIni.time)
+
+                Pair(Pair(startActual, endActual), Pair(startAnt, endAnt))
+            }
+            "SEMESTRAL" -> {
+                val endActual = hoy
+                val calStartAct = Calendar.getInstance().apply { add(Calendar.MONTH, -5); set(Calendar.DAY_OF_MONTH, 1) }
+                val startActual = sdf.format(calStartAct.time)
+
+                val calEndAnt = Calendar.getInstance().apply { time = calStartAct.time; add(Calendar.DAY_OF_YEAR, -1) }
+                val endAnt = sdf.format(calEndAnt.time)
+                val calStartAnt = Calendar.getInstance().apply { time = calEndAnt.time; add(Calendar.MONTH, -5); set(Calendar.DAY_OF_MONTH, 1) }
+                val startAnt = sdf.format(calStartAnt.time)
+
+                Pair(Pair(startActual, endActual), Pair(startAnt, endAnt))
+            }
+            else -> { // ANUAL
+                val calActIni = Calendar.getInstance().apply { set(Calendar.DAY_OF_YEAR, 1) }
+                val startActual = sdf.format(calActIni.time)
+                val endActual = hoy
+
+                val calAntFin = Calendar.getInstance().apply { set(Calendar.DAY_OF_YEAR, 1); add(Calendar.DAY_OF_YEAR, -1) }
+                val endAnt = sdf.format(calAntFin.time)
+                val calAntIni = Calendar.getInstance().apply { set(Calendar.DAY_OF_YEAR, 1); add(Calendar.YEAR, -1) }
+                val startAnt = sdf.format(calAntIni.time)
+
+                Pair(Pair(startActual, endActual), Pair(startAnt, endAnt))
+            }
+        }
     }
 
     private fun actualizarInterfaz() {
@@ -163,9 +259,10 @@ class FragmentInicio : Fragment() {
             binding.tvGastosMes.text = "••••••"
             binding.tvTotalGastosFijos.text = "••••••"
             binding.tvTotalDeudas.text = "••••••"
-            binding.tvMeta1Actual.text = "••••••"
-            binding.tvMeta1Total.text = "de ••••••"
-            binding.tvMeta2Subtitulo.text = "••••••"
+            binding.tvBalanceSemanal.text = "••••••"
+            binding.tvBalanceMensual.text = "••••••"
+            binding.tvBalanceSemestral.text = "••••••"
+            binding.tvBalanceAnual.text = "••••••"
             binding.btnIncognitoToggle.setImageResource(R.drawable.ic_visibility_off)
         } else {
             val signo = if (balanceTotal < 0) "-$ " else if (balanceTotal > 0) "+$ " else "$ "
@@ -197,47 +294,6 @@ class FragmentInicio : Fragment() {
 
         val countDeudas = db.getAllDeudas().size
         binding.tvSubtextDeudas.text = if (countDeudas > 0) "$countDeudas activas" else "Bajo control"
-
-        // Actualización dinámica de metas de ahorro en Inicio
-        val listaAhorros = db.getAllAhorros()
-        if (listaAhorros.isNotEmpty()) {
-            binding.tvAhorroBadgeActivas.text = "${listaAhorros.size} activas"
-            val meta1 = listaAhorros[0]
-            binding.tvMeta1Titulo.text = meta1.titulo
-            binding.tvMeta1Fecha.text = if (meta1.fechaMeta.isNotEmpty()) "Meta: ${meta1.fechaMeta}" else "Sin fecha límite"
-            val pct1 = if (meta1.montoObjetivo > 0) ((meta1.montoActual / meta1.montoObjetivo) * 100).toInt().coerceIn(0, 100) else 0
-            binding.tvMeta1Porcentaje.text = "$pct1%"
-            binding.pbMeta1.progress = pct1
-
-            if (!esIncognito) {
-                binding.tvMeta1Actual.text = format.format(meta1.montoActual)
-                binding.tvMeta1Total.text = "de ${format.format(meta1.montoObjetivo)}"
-            }
-
-            if (listaAhorros.size > 1) {
-                binding.rowMetaSecundaria.visibility = View.VISIBLE
-                val meta2 = listaAhorros[1]
-                binding.tvMeta2Titulo.text = meta2.titulo
-                val pct2 = if (meta2.montoObjetivo > 0) ((meta2.montoActual / meta2.montoObjetivo) * 100).toInt().coerceIn(0, 100) else 0
-                binding.tvMeta2Porcentaje.text = "$pct2%"
-                if (!esIncognito) {
-                    binding.tvMeta2Subtitulo.text = "${format.format(meta2.montoActual)} de ${format.format(meta2.montoObjetivo)}"
-                }
-            } else {
-                binding.rowMetaSecundaria.visibility = View.GONE
-            }
-        } else {
-            binding.tvAhorroBadgeActivas.text = "0 activas"
-            binding.tvMeta1Titulo.text = "Sin metas activas"
-            binding.tvMeta1Fecha.text = "Toca para agregar una meta"
-            binding.tvMeta1Porcentaje.text = "0%"
-            binding.pbMeta1.progress = 0
-            if (!esIncognito) {
-                binding.tvMeta1Actual.text = "$ 0"
-                binding.tvMeta1Total.text = "de $ 0"
-            }
-            binding.rowMetaSecundaria.visibility = View.GONE
-        }
 
         // Cálculo dinámico de salud financiera
         val pctFijos = if (ingresosMes > 0) {
