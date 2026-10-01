@@ -489,12 +489,27 @@ class FragmentGastosFijos : Fragment() {
                 idCoincide && fechaEfectiva.startsWith(mesClave)
             }
 
-            var q1Pagada = movsEncontrados.any { it.quincenaPagada == 1 } || gasto.ultimoPagoQ1.startsWith(mesClave)
-            var q2Pagada = movsEncontrados.any { it.quincenaPagada == 2 } || gasto.ultimoPagoQ2.startsWith(mesClave)
+            var q1Pagada = movsEncontrados.any { it.quincenaPagada == 1 }
+            var q2Pagada = movsEncontrados.any { it.quincenaPagada == 2 }
 
             if (!esQuincenal) {
                 if (movsEncontrados.isNotEmpty()) {
                     q1Pagada = true
+                } else if (gasto.ultimoPagoQ1.startsWith(mesClave)) {
+                    val tieneMovsEnOtrosMeses = todosMovimientos.any { mov ->
+                        (mov.gastoFijoId == gfIdInt && gfIdInt != -1) ||
+                                (mov.descripcion.contains(gasto.concepto, ignoreCase = true) && mov.tipo_reg.contains("GASTO", true))
+                    }
+                    if (!tieneMovsEnOtrosMeses) {
+                        q1Pagada = true
+                    }
+                }
+            } else {
+                if (!q1Pagada && gasto.ultimoPagoQ1.startsWith(mesClave)) {
+                    q1Pagada = true
+                }
+                if (!q2Pagada && gasto.ultimoPagoQ2.startsWith(mesClave)) {
+                    q2Pagada = true
                 }
             }
 
@@ -562,6 +577,25 @@ class FragmentGastosFijos : Fragment() {
                     b.tvBadgeEstadoMes.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.primary_fixed))
                     b.tvBadgeEstadoMes.setTextColor(ContextCompat.getColor(mContext, R.color.on_primary_fixed))
                     b.btnPagarMes.visibility = View.GONE
+
+                    // Permitir tocar para desmarcar o corregir el mes si hubo un error de fecha
+                    b.tvBadgeEstadoMes.setOnClickListener {
+                        AlertDialog.Builder(mContext)
+                            .setTitle("Desmarcar pago de ${nombresMeses[item.numeroMes - 1]}")
+                            .setMessage("¿Deseas desmarcar este mes y volver a colocarlo como PENDIENTE?")
+                            .setPositiveButton("Desmarcar") { _, _ ->
+                                val mesClave = String.format(Locale.US, "%04d-%02d", anioActual, item.numeroMes)
+                                if (gasto.ultimoPagoQ1.startsWith(mesClave)) gasto.ultimoPagoQ1 = ""
+                                if (gasto.ultimoPagoQ2.startsWith(mesClave)) gasto.ultimoPagoQ2 = ""
+                                db.updateGastoFijo(gasto)
+
+                                Toast.makeText(mContext, "Mes de ${nombresMeses[item.numeroMes - 1]} vuelto a colocar en PENDIENTE", Toast.LENGTH_SHORT).show()
+                                bottomSheetDialog.dismiss()
+                                cargarGastosFijos()
+                            }
+                            .setNegativeButton("Cancelar", null)
+                            .show()
+                    }
                 } else if (item.cuotasPagadas > 0) {
                     b.tvBadgeEstadoMes.visibility = View.VISIBLE
                     b.tvBadgeEstadoMes.text = "🟡 PARCIAL (${item.cuotasPagadas}/${item.totalCuotas})"
