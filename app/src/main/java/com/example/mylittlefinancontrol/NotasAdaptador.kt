@@ -127,6 +127,11 @@ class NotasAdaptador(
                     }
                 }
 
+                if (movimiento.fechaCreacion.isNotBlank() && movimiento.fechaCreacion != movimiento.fecha) {
+                    val fcLimpia = movimiento.fechaCreacion.split(" ")[0]
+                    itemHolder.tvMetodoPagoSub.text = "${itemHolder.tvMetodoPagoSub.text} (Reg: $fcLimpia)"
+                }
+
                 if (tipoUpper.contains("INGRESO")) {
                     itemHolder.itemValor.text = "+${format.format(movimiento.valor)}"
                     itemHolder.itemValor.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))

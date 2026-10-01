@@ -624,6 +624,16 @@ class FragmentMovimiento : Fragment() {
             dialogBinding.etValor.setText(movimientoExistente.valor.toString())
             actualizarTabsTipo(movimientoExistente.tipo_reg.uppercase())
             
+            // Precargar timestamp de la fecha del movimiento existente
+            if (movimientoExistente.fecha.isNotBlank()) {
+                val parsedTs = NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(movimientoExistente)
+                if (parsedTs > 0L) {
+                    fechaSeleccionadaTimestamp = parsedTs
+                    val cal = Calendar.getInstance().apply { timeInMillis = parsedTs }
+                    dialogBinding.tvFechaMovimiento.text = sdfFechaDisplay.format(cal.time)
+                }
+            }
+
             if (movimientoExistente.tipo_reg == "PAGO DEUDA" || movimientoExistente.tipo_reg == "GASTO FIJO") {
                 dialogBinding.cbEsPagoDeuda.visibility = View.GONE 
                 dialogBinding.cbEsGastoFijo.visibility = View.GONE
@@ -674,16 +684,17 @@ class FragmentMovimiento : Fragment() {
             }
 
             val valor = valStr.toIntOrNull() ?: 0
-            
+            val fechaMovimiento = Constantes.formatoFecha(fechaSeleccionadaTimestamp)
+            val mesAnio = fechaMovimiento.substring(0, 7)
+
             if (movimientoExistente == null) {
                 // CREAR
-                val fecha = Constantes.formatoFecha(fechaSeleccionadaTimestamp) // yyyy-MM-dd HH:mm:ss
-                val mesAnio = fecha.substring(0, 7) // yyyy-MM
+                val fc = Constantes.formatoFecha(System.currentTimeMillis())
 
                 if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
                     deudaSeleccionada!!.totalPagado += valor
                     db.updateDeuda(deudaSeleccionada!!)
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fecha))
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                 } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
                     val gf = gastoFijoSeleccionado!!
                     var quincena: Int? = null
@@ -701,19 +712,24 @@ class FragmentMovimiento : Fragment() {
                         quincena = 0
                     }
                     db.updateGastoFijo(gf)
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), quincena))
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fechaMovimiento, gf.id.toInt(), quincena, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                 } else {
                     val tipo = tipoSeleccionado
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fecha))
+                    db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                 }
             } else {
                 // EDITAR
+                val fc = if (movimientoExistente.fechaCreacion.isNotBlank()) movimientoExistente.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
                 val nuevoMov = Movimiento(
-                    movimientoExistente.id,
-                    desc.uppercase(),
-                    valor,
-                    if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
-                    movimientoExistente.fecha
+                    id = movimientoExistente.id,
+                    descripcion = desc.uppercase(),
+                    valor = valor,
+                    tipo_reg = if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
+                    fecha = fechaMovimiento,
+                    gastoFijoId = movimientoExistente.gastoFijoId,
+                    quincenaPagada = movimientoExistente.quincenaPagada,
+                    categoria = categoriaSeleccionadaEnDialogo,
+                    fechaCreacion = fc
                 )
                 db.updateMovimiento(nuevoMov)
             }
