@@ -51,7 +51,8 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
             ${generarContextoFinanciero()}
         """.trimIndent()
 
-        val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b")
+        val systemInstructionContent = content { text(systemInstructionText) }
+        val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest")
 
         agregarMensaje("¡Hola! Soy tu asesor DABAFINN. He analizado tus datos y estoy listo para darte consejos. ¿En qué puedo ayudarte?", false)
 
@@ -67,16 +68,15 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
                         var respuestaTexto: String? = null
                         var ultimoError: Exception? = null
 
-                        val promptCompleto = "$systemInstructionText\n\nPregunta del usuario: $textoUsuario"
-
                         for (nombreModelo in modelos) {
                             try {
                                 val generativeModel = GenerativeModel(
                                     modelName = nombreModelo,
-                                    apiKey = BuildConfig.GEMINI_API_KEY
+                                    apiKey = BuildConfig.GEMINI_API_KEY,
+                                    systemInstruction = systemInstructionContent
                                 )
                                 val response = withContext(Dispatchers.IO) {
-                                    generativeModel.generateContent(promptCompleto)
+                                    generativeModel.generateContent(textoUsuario)
                                 }
                                 if (!response.text.isNullOrBlank()) {
                                     respuestaTexto = response.text

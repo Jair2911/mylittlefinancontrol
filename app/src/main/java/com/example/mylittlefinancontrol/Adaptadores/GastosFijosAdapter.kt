@@ -15,7 +15,8 @@ import java.util.*
 class GastosFijosAdapter(
     private var listaGastos: List<GastoFijo>,
     private val onEditarClick: (GastoFijo) -> Unit,
-    private val onEliminarClick: (GastoFijo) -> Unit
+    private val onEliminarClick: (GastoFijo) -> Unit,
+    private val onControlAnualClick: (GastoFijo) -> Unit = {}
 ) : RecyclerView.Adapter<GastosFijosAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: ItemGastoFijoBinding) : RecyclerView.ViewHolder(binding.root)
@@ -132,6 +133,7 @@ class GastosFijosAdapter(
 
             ivEditar.setOnClickListener { onEditarClick(gasto) }
             ivEliminar.setOnClickListener { onEliminarClick(gasto) }
+            btnControlAnual.setOnClickListener { onControlAnualClick(gasto) }
         }
     }
 

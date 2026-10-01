@@ -15,12 +15,17 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Adaptadores.GastosFijosAdapter
+import com.example.mylittlefinancontrol.Constantes
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
+import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarGastoFijoBinding
+import com.example.mylittlefinancontrol.databinding.DialogControlAnualGastoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentGastosFijosBinding
+import com.example.mylittlefinancontrol.databinding.ItemMesControlAnualBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import java.text.NumberFormat
@@ -137,7 +142,8 @@ class FragmentGastosFijos : Fragment() {
         adapter = GastosFijosAdapter(
             emptyList(),
             onEditarClick = { gasto -> mostrarDialogoGastoFijo(gasto) },
-            onEliminarClick = { gasto -> eliminarGastoFijo(gasto) }
+            onEliminarClick = { gasto -> eliminarGastoFijo(gasto) },
+            onControlAnualClick = { gasto -> mostrarDialogoControlAnual(gasto) }
         )
         binding.rvGastosFijos.apply {
             layoutManager = LinearLayoutManager(mContext)
@@ -418,6 +424,146 @@ class FragmentGastosFijos : Fragment() {
     private fun eliminarGastoFijo(gasto: GastoFijo) {
         db.deleteGastoFijo(gasto.id)
         cargarGastosFijos()
+    }
+
+    private fun mostrarDialogoControlAnual(gasto: GastoFijo) {
+        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
+        val dialogBinding = DialogControlAnualGastoBinding.inflate(layoutInflater)
+        bottomSheetDialog.setContentView(dialogBinding.root)
+
+        val calActual = Calendar.getInstance()
+        val anioActual = calActual.get(Calendar.YEAR)
+        val mesActual = calActual.get(Calendar.MONTH) // 0 = Enero
+
+        dialogBinding.tvTituloControlAnual.text = "📅 Control Anual $anioActual"
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        dialogBinding.tvSubtituloGasto.text = "${gasto.concepto} · ${format.format(gasto.monto)} / mes"
+
+        dialogBinding.btnCerrarControl.setOnClickListener { bottomSheetDialog.dismiss() }
+
+        // Consultar movimientos para verificar qué meses se han pagado
+        val todosMovimientos = db.getAllNotas()
+        val gfIdInt = gasto.id.toIntOrNull() ?: -1
+
+        val nombresMeses = arrayOf(
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        )
+
+        class MesEstadoItem(
+            val numeroMes: Int, // 1 a 12
+            val nombreMes: String,
+            val estaPagado: Boolean,
+            val fechaPagoTexto: String
+        )
+
+        val listaMeses = mutableListOf<MesEstadoItem>()
+
+        for (m in 1..12) {
+            val mesClave = String.format(Locale.US, "%04d-%02d", anioActual, m)
+            
+            // Buscar si hay movimiento para este gasto fijo en este mes
+            val movEncontrado = todosMovimientos.firstOrNull { mov ->
+                val idCoincide = (mov.gastoFijoId == gfIdInt && gfIdInt != -1) ||
+                        (mov.descripcion.contains(gasto.concepto, ignoreCase = true) && mov.tipo_reg.contains("GASTO", true))
+                val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+                val fechaCoincide = fechaEfectiva.startsWith(mesClave)
+                idCoincide && fechaCoincide
+            }
+
+            var pagado = movEncontrado != null
+            if (!pagado && m == (mesActual + 1)) {
+                pagado = gasto.ultimoPagoQ1 == mesClave
+            }
+
+            val detalle = if (pagado) {
+                if (movEncontrado != null && movEncontrado.fecha.isNotBlank()) {
+                    "Pagado el ${movEncontrado.fecha.split(" ")[0]}"
+                } else {
+                    "Pagado en $mesClave"
+                }
+            } else {
+                if (m <= (mesActual + 1)) "⏱️ Pendiente de pago" else "Próximo pago"
+            }
+
+            listaMeses.add(MesEstadoItem(m, "${nombresMeses[m - 1]} $anioActual", pagado, detalle))
+        }
+
+        // Calcular resumen general
+        val mesesTranscurridos = (mesActual + 1)
+        val mesesPagadosHastaHoy = listaMeses.take(mesesTranscurridos).count { it.estaPagado }
+        val mesesPendientes = mesesTranscurridos - mesesPagadosHastaHoy
+
+        if (mesesPendientes <= 0) {
+            dialogBinding.tvTextoResumenAnual.text = "🟢 ¡Vas 100% al día con tus pagos de $anioActual!"
+            dialogBinding.ivIconoResumenAnual.setImageResource(R.drawable.ic_check_circle)
+            dialogBinding.ivIconoResumenAnual.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.primary_emerald))
+        } else {
+            dialogBinding.tvTextoResumenAnual.text = "🔴 Tienes $mesesPendientes mes(es) pendiente(s) de pago este año"
+            dialogBinding.ivIconoResumenAnual.setImageResource(R.drawable.ic_local_fire_department)
+            dialogBinding.ivIconoResumenAnual.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.expense_red))
+        }
+
+        // Adapter para los 12 meses
+        dialogBinding.rvMesesControlAnual.layoutManager = LinearLayoutManager(mContext)
+        val adapterMeses = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                val b = ItemMesControlAnualBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                return object : RecyclerView.ViewHolder(b.root) {}
+            }
+
+            override fun getItemCount() = listaMeses.size
+
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val item = listaMeses[position]
+                val b = ItemMesControlAnualBinding.bind(holder.itemView)
+
+                b.tvNombreMes.text = item.nombreMes
+                b.tvDetallePagoMes.text = item.fechaPagoTexto
+
+                if (item.estaPagado) {
+                    b.tvBadgeEstadoMes.visibility = View.VISIBLE
+                    b.tvBadgeEstadoMes.text = "✓ PAGADO"
+                    b.tvBadgeEstadoMes.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.primary_fixed))
+                    b.tvBadgeEstadoMes.setTextColor(ContextCompat.getColor(mContext, R.color.on_primary_fixed))
+                    b.btnPagarMes.visibility = View.GONE
+                } else {
+                    b.tvBadgeEstadoMes.visibility = View.GONE
+                    b.btnPagarMes.visibility = View.VISIBLE
+                    b.btnPagarMes.text = "Pagar ${format.format(gasto.monto)}"
+
+                    b.btnPagarMes.setOnClickListener {
+                        val mesFormatted = String.format(Locale.US, "%02d", item.numeroMes)
+                        val mesClave = "$anioActual-$mesFormatted"
+                        val diaNum = gasto.diaPago.trim().filter { it.isDigit() }.toIntOrNull() ?: 15
+                        val fechaPago = "$anioActual-$mesFormatted-${String.format(Locale.US, "%02d", diaNum)} 12:00:00"
+
+                        gasto.ultimoPagoQ1 = mesClave
+                        db.updateGastoFijo(gasto)
+
+                        val nuevoMov = Movimiento(
+                            id = 0,
+                            descripcion = "PAGO: ${gasto.concepto}".uppercase(),
+                            valor = gasto.monto.toInt(),
+                            tipo_reg = "GASTO FIJO",
+                            fecha = fechaPago,
+                            gastoFijoId = gfIdInt,
+                            quincenaPagada = 0,
+                            categoria = gasto.categoria,
+                            fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
+                        )
+                        db.insertNota(nuevoMov)
+
+                        Toast.makeText(mContext, "Pago de ${nombresMeses[item.numeroMes - 1]} registrado", Toast.LENGTH_SHORT).show()
+                        bottomSheetDialog.dismiss()
+                        cargarGastosFijos()
+                    }
+                }
+            }
+        }
+
+        dialogBinding.rvMesesControlAnual.adapter = adapterMeses
+        bottomSheetDialog.show()
     }
 
     override fun onDestroyView() {

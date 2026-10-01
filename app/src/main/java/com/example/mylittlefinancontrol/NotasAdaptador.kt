@@ -72,7 +72,7 @@ class NotasAdaptador(
                 itemHolder.itemDescripcion.text = movimiento.descripcion
 
                 // Parsear hora de la fecha si existe
-                val horaStr = obtenerHoraFormateada(movimiento.fecha)
+                val horaStr = obtenerHoraFormateada(movimiento)
                 itemHolder.itemFecha.text = horaStr
 
                 val descUpper = movimiento.descripcion.uppercase()
@@ -175,7 +175,8 @@ class NotasAdaptador(
         return clean
     }
 
-    private fun obtenerHoraFormateada(fechaCompleta: String): String {
+    private fun obtenerHoraFormateada(movimiento: Movimiento): String {
+        val fechaCompleta = if (movimiento.fecha.isNotBlank()) movimiento.fecha else movimiento.fechaCreacion
         return try {
             val ts = fechaCompleta.trim().toLongOrNull()
             if (ts != null && ts > 100000000000L) {
@@ -201,6 +202,12 @@ class NotasAdaptador(
             return
         }
 
+        // Ordenar dando prioridad a la Fecha de Movimiento, fallback a Fecha de Creación
+        val movimientosOrdenados = movimientos.sortedWith(
+            compareByDescending<Movimiento> { NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(it) }
+                .thenByDescending { it.id }
+        )
+
         val sdfParser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val calHoy = Calendar.getInstance()
         val strHoy = sdfParser.format(calHoy.time)
@@ -212,8 +219,9 @@ class NotasAdaptador(
 
         // Agrupar por clave de fecha normalizada 'yyyy-MM-dd'
         val agrupados = LinkedHashMap<String, MutableList<Movimiento>>()
-        for (mov in movimientos) {
-            val keyFecha = normalizarFechaClave(mov.fecha)
+        for (mov in movimientosOrdenados) {
+            val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+            val keyFecha = normalizarFechaClave(fechaEfectiva)
             agrupados.getOrPut(keyFecha) { mutableListOf() }.add(mov)
         }
 

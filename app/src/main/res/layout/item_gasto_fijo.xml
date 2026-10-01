@@ -214,5 +214,19 @@
                 android:visibility="gone" />
 
         </LinearLayout>
+
+        <!-- Botón Ver Control Anual -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_control_anual"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:layout_marginTop="8dp"
+            android:text="📅 Control Anual de Pagos"
+            android:textColor="@color/primary_emerald"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:cornerRadius="10dp"
+            app:strokeColor="@color/primary_emerald" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

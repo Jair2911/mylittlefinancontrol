@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper
 import com.example.mylittlefinancontrol.Modelos.Ahorro
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     context, DATABASE_NAME, null, DATABASE_VERSION
@@ -57,6 +59,48 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_A_FECHA_META = "fecha_meta"
         private const val COLUMN_A_ICONO = "icono"
         private const val COLUMN_A_DESC = "descripcion"
+
+        fun obtenerTimestampParaOrdenamiento(mov: Movimiento): Long {
+            val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+            if (fechaEfectiva.isBlank()) return 0L
+
+            val ts = fechaEfectiva.trim().toLongOrNull()
+            if (ts != null && ts > 100000000000L) {
+                return ts
+            }
+
+            val formatos = arrayOf(
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd HH:mm",
+                "yyyy-MM-dd",
+                "dd/MM/yyyy HH:mm:ss",
+                "dd/MM/yyyy HH:mm",
+                "dd/MM/yyyy"
+            )
+            for (fmt in formatos) {
+                try {
+                    val sdf = SimpleDateFormat(fmt, Locale.US)
+                    val date = sdf.parse(fechaEfectiva.trim())
+                    if (date != null) return date.time
+                } catch (_: Exception) {}
+            }
+
+            if (mov.fechaCreacion.isNotBlank() && mov.fechaCreacion != fechaEfectiva) {
+                val tsCreacion = mov.fechaCreacion.trim().toLongOrNull()
+                if (tsCreacion != null && tsCreacion > 100000000000L) {
+                    return tsCreacion
+                }
+                for (fmt in formatos) {
+                    try {
+                        val sdf = SimpleDateFormat(fmt, Locale.US)
+                        val date = sdf.parse(mov.fechaCreacion.trim())
+                        if (date != null) return date.time
+                    } catch (_: Exception) {}
+                }
+            }
+
+            return 0L
+        }
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
@@ -141,12 +185,16 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     fun getAllNotas(): List<Movimiento> {
         val lista = mutableListOf<Movimiento>()
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO ORDER BY $COLUMN_MOV_ID DESC", null)
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO", null)
         while (cursor.moveToNext()) {
             lista.add(cursorToMovimiento(cursor))
         }
         cursor.close()
-        return lista
+
+        return lista.sortedWith(
+            compareByDescending<Movimiento> { obtenerTimestampParaOrdenamiento(it) }
+                .thenByDescending { it.id }
+        )
     }
 
     fun getIdMovimiento(id: Int): Movimiento {
