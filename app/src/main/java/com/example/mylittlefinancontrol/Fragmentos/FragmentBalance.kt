@@ -178,16 +178,50 @@ class FragmentBalance : Fragment() {
         dialogBinding.chipTipoAuto.setOnClickListener { pintarChipTipo("Crédito Automotriz") }
 
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        var tipoInteres = "Anual"
+        var totalDeudaRealCalculado = 0.0
+        var valorCuotaCalculada = 0.0
 
-        // Cálculo dinámico de saldo restante y cuota estimada
+        // Cálculo dinámico de saldo restante, intereses y cuota estimada
         fun actualizarCalculos() {
-            val total = dialogBinding.etTotalDeuda.text.toString().replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
+            val capitalBase = dialogBinding.etTotalDeuda.text.toString().replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
             val pagado = dialogBinding.etTotalPagado.text.toString().replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
-            val rest = max(0.0, total - pagado)
-            dialogBinding.tvSaldoRestanteCalculado.text = "Saldo Restante: ${format.format(rest)}"
+            val tasaNum = dialogBinding.etTasaInteres.text.toString().replace(",", ".").toDoubleOrNull() ?: 0.0
+            val cuotaManual = dialogBinding.etValorCuotaManual.text.toString().replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
 
-            val cuotaEst = if (cuotasSeleccionadas > 0 && total > 0) total / cuotasSeleccionadas else 0.0
-            dialogBinding.tvCuotaEstimada.text = "Cuota est.: ${format.format(cuotaEst)} / mes"
+            val n = if (cuotasSeleccionadas > 0) cuotasSeleccionadas else 1
+
+            if (cuotaManual > 0.0) {
+                valorCuotaCalculada = cuotaManual
+                totalDeudaRealCalculado = cuotaManual * n
+            } else if (tasaNum > 0.0 && capitalBase > 0.0) {
+                val rateMonthly = if (tipoInteres == "Anual") (tasaNum / 1200.0) else (tasaNum / 100.0)
+                if (rateMonthly > 0) {
+                    val factor = Math.pow(1.0 + rateMonthly, n.toDouble())
+                    valorCuotaCalculada = capitalBase * (rateMonthly * factor) / (factor - 1.0)
+                } else {
+                    valorCuotaCalculada = capitalBase / n
+                }
+                totalDeudaRealCalculado = valorCuotaCalculada * n
+            } else {
+                valorCuotaCalculada = if (capitalBase > 0) capitalBase / n else 0.0
+                totalDeudaRealCalculado = capitalBase
+            }
+
+            val interesTotal = max(0.0, totalDeudaRealCalculado - capitalBase)
+            val saldoRestante = max(0.0, totalDeudaRealCalculado - pagado)
+
+            dialogBinding.tvCuotaEstimada.text = "Cuota est.: ${format.format(valorCuotaCalculada)} / mes"
+            dialogBinding.tvSaldoRestanteCalculado.text = "Saldo Restante: ${format.format(saldoRestante)}"
+            dialogBinding.tvResumenTotalInteres.text = "Interés estimado: ${format.format(interesTotal)} (${String.format(Locale.US, "%.2f", tasaNum)}% $tipoInteres)"
+            dialogBinding.tvResumenTotalDeudaReal.text = "Total real a pagar: ${format.format(totalDeudaRealCalculado)}"
+        }
+
+        // Configuración de conmutador de Tasa Anual / Mensual
+        dialogBinding.tvTipoInteresBadge.setOnClickListener {
+            tipoInteres = if (tipoInteres == "Anual") "Mensual" else "Anual"
+            dialogBinding.tvTipoInteresBadge.text = "% $tipoInteres"
+            actualizarCalculos()
         }
 
         // Botones de Cuotas (6x, 12x, 24x, Otro)
@@ -232,6 +266,8 @@ class FragmentBalance : Fragment() {
         }
         dialogBinding.etTotalDeuda.addTextChangedListener(textWatcher)
         dialogBinding.etTotalPagado.addTextChangedListener(textWatcher)
+        dialogBinding.etTasaInteres.addTextChangedListener(textWatcher)
+        dialogBinding.etValorCuotaManual.addTextChangedListener(textWatcher)
 
         val setupDatePicker = { clickContainer: View, editText: EditText ->
             val datePickerAction = {
@@ -255,7 +291,19 @@ class FragmentBalance : Fragment() {
             dialogBinding.etTotalPagado.setText(deudaExistente.totalPagado.toInt().toString())
             dialogBinding.etFechaInicio.setText(deudaExistente.fechaInicio)
             dialogBinding.etFechaFin.setText(deudaExistente.fechaFin)
+
+            tipoInteres = if (deudaExistente.tipoInteres.isNotBlank()) deudaExistente.tipoInteres else "Anual"
+            dialogBinding.tvTipoInteresBadge.text = "% $tipoInteres"
+            if (deudaExistente.tasaInteres > 0) {
+                dialogBinding.etTasaInteres.setText(deudaExistente.tasaInteres.toString())
+            }
+            if (deudaExistente.valorCuota > 0) {
+                dialogBinding.etValorCuotaManual.setText(deudaExistente.valorCuota.toInt().toString())
+            }
             pintarChipTipo(deudaExistente.tipo)
+            if (deudaExistente.cuotas > 0) {
+                pintarBotonCuotas(deudaExistente.cuotas)
+            }
         } else {
             pintarChipTipo("Tarjeta de Crédito")
             pintarBotonCuotas(12)
@@ -269,22 +317,27 @@ class FragmentBalance : Fragment() {
             val tipo = tipoSeleccionado
             val concepto = dialogBinding.etConcepto.text.toString().trim()
             val descripcion = dialogBinding.etDescripcion.text.toString().trim()
-            val total = dialogBinding.etTotalDeuda.text.toString().replace("$", "").trim().toDoubleOrNull() ?: 0.0
+            val totalFinal = if (totalDeudaRealCalculado > 0) totalDeudaRealCalculado else dialogBinding.etTotalDeuda.text.toString().replace("$", "").trim().toDoubleOrNull() ?: 0.0
             val pagado = dialogBinding.etTotalPagado.text.toString().replace("$", "").trim().toDoubleOrNull() ?: 0.0
+            val tasaNum = dialogBinding.etTasaInteres.text.toString().replace(",", ".").toDoubleOrNull() ?: 0.0
             val fechaIni = dialogBinding.etFechaInicio.text.toString().trim()
             val fechaFin = dialogBinding.etFechaFin.text.toString().trim()
 
-            if (concepto.isNotEmpty() && total > 0) {
+            if (concepto.isNotEmpty() && totalFinal > 0) {
                 if (deudaExistente == null) {
-                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, total, pagado, fechaIni, fechaFin))
+                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, totalFinal, pagado, fechaIni, fechaFin, tasaNum, tipoInteres, cuotasSeleccionadas, valorCuotaCalculada))
                 } else {
                     deudaExistente.tipo = tipo
                     deudaExistente.concepto = concepto
                     deudaExistente.descripcion = descripcion
-                    deudaExistente.totalDeuda = total
+                    deudaExistente.totalDeuda = totalFinal
                     deudaExistente.totalPagado = pagado
                     deudaExistente.fechaInicio = fechaIni
                     deudaExistente.fechaFin = fechaFin
+                    deudaExistente.tasaInteres = tasaNum
+                    deudaExistente.tipoInteres = tipoInteres
+                    deudaExistente.cuotas = cuotasSeleccionadas
+                    deudaExistente.valorCuota = valorCuotaCalculada
                     db.updateDeuda(deudaExistente)
                 }
                 cargarDeudas()

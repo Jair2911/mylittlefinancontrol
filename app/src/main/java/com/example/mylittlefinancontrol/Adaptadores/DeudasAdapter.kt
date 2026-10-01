@@ -34,7 +34,15 @@ class DeudasAdapter(
 
         holder.binding.apply {
             tvConcepto.text = deuda.concepto
-            tvTipo.text = deuda.tipo
+
+            val infoInteres = if (deuda.tasaInteres > 0) " · ${deuda.tasaInteres}% ${deuda.tipoInteres}" else ""
+            val infoCuota = if (deuda.valorCuota > 0) {
+                " (${deuda.cuotas}x · ${format.format(deuda.valorCuota)}/mes)"
+            } else if (deuda.cuotas > 0) {
+                " (${deuda.cuotas} cuotas)"
+            } else ""
+
+            tvTipo.text = "${deuda.tipo}$infoInteres$infoCuota"
             
             if (deuda.descripcion.isNotEmpty()) {
                 llNotaContainer.visibility = View.VISIBLE

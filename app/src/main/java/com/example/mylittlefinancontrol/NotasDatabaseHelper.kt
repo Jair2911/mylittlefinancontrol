@@ -17,7 +17,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 10
+        private const val DATABASE_VERSION = 11
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -50,6 +50,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_D_PAGADO = "totalPagado"
         private const val COLUMN_D_FECHA_INI = "fecha_inicio"
         private const val COLUMN_D_FECHA_FIN = "fecha_fin"
+        private const val COLUMN_D_TASA_INTERES = "tasa_interes"
+        private const val COLUMN_D_TIPO_INTERES = "tipo_interes"
+        private const val COLUMN_D_CUOTAS = "cuotas"
+        private const val COLUMN_D_VALOR_CUOTA = "valor_cuota"
 
         private const val TABLE_AHORROS = "ahorros"
         private const val COLUMN_A_ID = "id"
@@ -107,7 +111,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT, $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1)")
-        db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT)")
+        db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT, $COLUMN_D_TASA_INTERES REAL DEFAULT 0, $COLUMN_D_TIPO_INTERES TEXT DEFAULT 'Anual', $COLUMN_D_CUOTAS INTEGER DEFAULT 12, $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0)")
         db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
     }
 
@@ -131,6 +135,12 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         }
         if (oldVersion < 10) {
             db?.execSQL("ALTER TABLE $TABLE_GASTOS_FIJOS ADD COLUMN $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1")
+        }
+        if (oldVersion < 11) {
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_TASA_INTERES REAL DEFAULT 0")
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_TIPO_INTERES TEXT DEFAULT 'Anual'")
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_CUOTAS INTEGER DEFAULT 12")
+            db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0")
         }
     }
 
@@ -296,6 +306,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
             put(COLUMN_D_DESC, d.descripcion); put(COLUMN_D_TOTAL, d.totalDeuda); put(COLUMN_D_PAGADO, d.totalPagado)
             put(COLUMN_D_FECHA_INI, d.fechaInicio); put(COLUMN_D_FECHA_FIN, d.fechaFin)
+            put(COLUMN_D_TASA_INTERES, d.tasaInteres)
+            put(COLUMN_D_TIPO_INTERES, d.tipoInteres)
+            put(COLUMN_D_CUOTAS, d.cuotas)
+            put(COLUMN_D_VALOR_CUOTA, d.valorCuota)
         }
         db.insert(TABLE_DEUDAS, null, v)
         db.close()
@@ -307,6 +321,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
             put(COLUMN_D_DESC, d.descripcion); put(COLUMN_D_TOTAL, d.totalDeuda); put(COLUMN_D_PAGADO, d.totalPagado)
             put(COLUMN_D_FECHA_INI, d.fechaInicio); put(COLUMN_D_FECHA_FIN, d.fechaFin)
+            put(COLUMN_D_TASA_INTERES, d.tasaInteres)
+            put(COLUMN_D_TIPO_INTERES, d.tipoInteres)
+            put(COLUMN_D_CUOTAS, d.cuotas)
+            put(COLUMN_D_VALOR_CUOTA, d.valorCuota)
         }
         db.update(TABLE_DEUDAS, v, "$COLUMN_D_ID = ?", arrayOf(d.id))
         db.close()
@@ -316,7 +334,18 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val lista = mutableListOf<Deuda>()
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_DEUDAS", null)
+
+        val tasaIdx = cursor.getColumnIndex(COLUMN_D_TASA_INTERES)
+        val tipoIntIdx = cursor.getColumnIndex(COLUMN_D_TIPO_INTERES)
+        val cuotasIdx = cursor.getColumnIndex(COLUMN_D_CUOTAS)
+        val vCuotaIdx = cursor.getColumnIndex(COLUMN_D_VALOR_CUOTA)
+
         while (cursor.moveToNext()) {
+            val tasa = if (tasaIdx != -1 && !cursor.isNull(tasaIdx)) cursor.getDouble(tasaIdx) else 0.0
+            val tipoInt = if (tipoIntIdx != -1 && !cursor.isNull(tipoIntIdx)) cursor.getString(tipoIntIdx) ?: "Anual" else "Anual"
+            val cuotas = if (cuotasIdx != -1 && !cursor.isNull(cuotasIdx)) cursor.getInt(cuotasIdx) else 12
+            val vCuota = if (vCuotaIdx != -1 && !cursor.isNull(vCuotaIdx)) cursor.getDouble(vCuotaIdx) else 0.0
+
             lista.add(Deuda(
                 cursor.getInt(0).toString(), 
                 cursor.getString(1), 
@@ -325,7 +354,11 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
                 cursor.getDouble(4), 
                 cursor.getDouble(5),
                 cursor.getString(6) ?: "",
-                cursor.getString(7) ?: ""
+                cursor.getString(7) ?: "",
+                tasa,
+                tipoInt,
+                cuotas,
+                vCuota
             ))
         }
         cursor.close()

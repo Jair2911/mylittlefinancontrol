@@ -8,5 +8,9 @@ data class Deuda(
     var totalDeuda: Double = 0.0,
     var totalPagado: Double = 0.0,
     var fechaInicio: String = "",
-    var fechaFin: String = ""
+    var fechaFin: String = "",
+    var tasaInteres: Double = 0.0,
+    var tipoInteres: String = "Anual",
+    var cuotas: Int = 12,
+    var valorCuota: Double = 0.0
 )
