@@ -2,6 +2,7 @@ package com.example.mylittlefinancontrol
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.mylittlefinancontrol.Modelos.Ahorro
@@ -14,7 +15,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 8
+        private const val DATABASE_VERSION = 9
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -24,6 +25,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_MOV_FECHA = "fecha"
         private const val COLUMN_MOV_GF_ID = "gasto_fijo_id"
         private const val COLUMN_MOV_Q_PAGADA = "quincena_pagada"
+        private const val COLUMN_MOV_CATEGORIA = "categoria"
+        private const val COLUMN_MOV_FECHA_CREACION = "fecha_creacion"
 
         private const val TABLE_GASTOS_FIJOS = "gastos_fijos"
         private const val COLUMN_GF_ID = "id"
@@ -57,7 +60,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER)")
+        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT)")
         db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
@@ -77,11 +80,50 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         if (oldVersion < 8) {
             db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
         }
+        if (oldVersion < 9) {
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios'")
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_FECHA_CREACION TEXT")
+        }
+    }
+
+    private fun cursorToMovimiento(cursor: Cursor): Movimiento {
+        val idIdx = cursor.getColumnIndex(COLUMN_MOV_ID)
+        val descIdx = cursor.getColumnIndex(COLUMN_MOV_DESC)
+        val valIdx = cursor.getColumnIndex(COLUMN_MOV_VALOR)
+        val tipoIdx = cursor.getColumnIndex(COLUMN_MOV_TIPO)
+        val fechaIdx = cursor.getColumnIndex(COLUMN_MOV_FECHA)
+        val gfIdx = cursor.getColumnIndex(COLUMN_MOV_GF_ID)
+        val qIdx = cursor.getColumnIndex(COLUMN_MOV_Q_PAGADA)
+        val catIdx = cursor.getColumnIndex(COLUMN_MOV_CATEGORIA)
+        val fcIdx = cursor.getColumnIndex(COLUMN_MOV_FECHA_CREACION)
+
+        val id = if (idIdx != -1) cursor.getInt(idIdx) else 0
+        val desc = if (descIdx != -1) cursor.getString(descIdx) ?: "" else ""
+        val valor = if (valIdx != -1) cursor.getInt(valIdx) else 0
+        val tipo = if (tipoIdx != -1) cursor.getString(tipoIdx) ?: "" else ""
+        val fecha = if (fechaIdx != -1) cursor.getString(fechaIdx) ?: "" else ""
+        val gfId = if (gfIdx != -1 && !cursor.isNull(gfIdx)) cursor.getInt(gfIdx) else null
+        val qPag = if (qIdx != -1 && !cursor.isNull(qIdx)) cursor.getInt(qIdx) else null
+        val cat = if (catIdx != -1 && !cursor.isNull(catIdx)) cursor.getString(catIdx) ?: "Varios" else "Varios"
+        val fc = if (fcIdx != -1 && !cursor.isNull(fcIdx)) cursor.getString(fcIdx) ?: fecha else fecha
+
+        return Movimiento(
+            id = id,
+            descripcion = desc,
+            valor = valor,
+            tipo_reg = tipo,
+            fecha = fecha,
+            gastoFijoId = gfId,
+            quincenaPagada = qPag,
+            categoria = cat,
+            fechaCreacion = fc
+        )
     }
 
     // --- MÉTODOS MOVIMIENTOS ---
     fun insertNota(mov: Movimiento) {
         val db = writableDatabase
+        val fechaCreacionFinal: String = if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD())
         val v = ContentValues().apply {
             put(COLUMN_MOV_DESC, mov.descripcion)
             put(COLUMN_MOV_VALOR, mov.valor)
@@ -89,6 +131,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_FECHA, mov.fecha)
             put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
             put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
+            put(COLUMN_MOV_CATEGORIA, mov.categoria)
+            put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
         }
         db.insert(TABLE_MOVIMIENTO, null, v)
         db.close()
@@ -99,15 +143,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO ORDER BY $COLUMN_MOV_ID DESC", null)
         while (cursor.moveToNext()) {
-            lista.add(Movimiento(
-                cursor.getInt(0), 
-                cursor.getString(1), 
-                cursor.getInt(2), 
-                cursor.getString(3), 
-                cursor.getString(4),
-                if (cursor.isNull(5)) null else cursor.getInt(5),
-                if (cursor.isNull(6)) null else cursor.getInt(6)
-            ))
+            lista.add(cursorToMovimiento(cursor))
         }
         cursor.close()
         return lista
@@ -117,21 +153,14 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_ID = ?", arrayOf(id.toString()))
         cursor.moveToFirst()
-        val mov = Movimiento(
-            cursor.getInt(0), 
-            cursor.getString(1), 
-            cursor.getInt(2), 
-            cursor.getString(3), 
-            cursor.getString(4),
-            if (cursor.isNull(5)) null else cursor.getInt(5),
-            if (cursor.isNull(6)) null else cursor.getInt(6)
-        )
+        val mov = cursorToMovimiento(cursor)
         cursor.close()
         return mov
     }
 
     fun updateMovimiento(mov: Movimiento) {
         val db = writableDatabase
+        val fechaCreacionFinal: String = if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD())
         val v = ContentValues().apply {
             put(COLUMN_MOV_DESC, mov.descripcion)
             put(COLUMN_MOV_VALOR, mov.valor)
@@ -139,6 +168,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_FECHA, mov.fecha)
             put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
             put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
+            put(COLUMN_MOV_CATEGORIA, mov.categoria)
+            put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
         }
         db.update(TABLE_MOVIMIENTO, v, "$COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
         db.close()

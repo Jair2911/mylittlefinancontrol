@@ -328,27 +328,35 @@ class FragmentMovimiento : Fragment() {
     private fun evaluarCoincideCategoria(mov: Movimiento, categoria: String): Boolean {
         val tipoUpper = mov.tipo_reg.uppercase()
         val descUpper = mov.descripcion.uppercase()
+        val catUpper = mov.categoria.uppercase()
+
+        if (categoria == "TODOS") return true
+
+        // Coincidencia directa si la categoría fue elegida explícitamente al crear el movimiento
+        if (catUpper.isNotBlank() && catUpper != "VARIOS" && catUpper != "SIN CATEGORÍA") {
+            if (catUpper.contains(categoria, ignoreCase = true) || categoria.contains(catUpper, ignoreCase = true)) {
+                return true
+            }
+            if ((categoria == "STREAMING" || categoria == "OCIO") && (catUpper.contains("PELÍCULA") || catUpper.contains("OCIO"))) {
+                return true
+            }
+            if (categoria == "DEUDAS" && catUpper.contains("PRÉSTAMO")) return true
+        }
+
         return when (categoria) {
             "TODOS" -> true
             "GASTOS FIJOS" -> tipoUpper.contains("GASTO FIJO") || descUpper.contains("PAGO:") || descUpper.contains("ARRIENDO") || descUpper.contains("FIBRA")
-            "SUPERMERCADO" -> descUpper.contains("SUPERMERCADO") || descUpper.contains("DESPENSA") || descUpper.contains("LÍDER") || descUpper.contains("ALIMENT") || descUpper.contains("ÉXITO") || descUpper.contains("CARULLA") || descUpper.contains("D1")
-            "INGRESOS" -> tipoUpper.contains("INGRESO") || descUpper.contains("HONORARIOS") || descUpper.contains("SUELDO") || descUpper.contains("NÓMINA") || descUpper.contains("VENTA")
-            "DEUDAS" -> tipoUpper.contains("PAGO DEUDA") || tipoUpper.contains("DEUDA") || descUpper.contains("TARJETA VISA") || descUpper.contains("CRÉDITO") || descUpper.contains("PRÉSTAMO")
-            "SERVICIOS" -> descUpper.contains("SERVICIO") || descUpper.contains("ENERGÍA") || descUpper.contains("AGUA") || descUpper.contains("LUZ") || descUpper.contains("INTERNET") || descUpper.contains("FIBRA") || descUpper.contains("MÓVIL") || descUpper.contains("GAS")
-            "COMIDA" -> descUpper.contains("RESTAURANTE") || descUpper.contains("CAFÉ") || descUpper.contains("MERIENDA") || descUpper.contains("COMIDA") || descUpper.contains("JUAN VALDEZ") || descUpper.contains("ALMUERZO") || descUpper.contains("CENA") || descUpper.contains("PIZZA")
-            "TRANSPORTE" -> descUpper.contains("TRANSPORTE") || descUpper.contains("GASOLINA") || descUpper.contains("UBER") || descUpper.contains("TAXI") || descUpper.contains("ESTACIÓN") || descUpper.contains("AUTO") || descUpper.contains("BUS")
-            "SALUD" -> descUpper.contains("FARMACIA") || descUpper.contains("SALUD") || descUpper.contains("MÉDICO") || descUpper.contains("DROGUERÍA") || descUpper.contains("HOSPITAL") || descUpper.contains("CONSULTA")
-            "STREAMING" -> descUpper.contains("NETFLIX") || descUpper.contains("SPOTIFY") || descUpper.contains("STREAMING") || descUpper.contains("DISNEY") || descUpper.contains("PRIME") || descUpper.contains("CINE") || descUpper.contains("SUSCRIP")
-            "EDUCACION" -> descUpper.contains("ESPECIALIZACIÓN") || descUpper.contains("CURSO") || descUpper.contains("EDUCACIÓN") || descUpper.contains("UNIVERSIDAD") || descUpper.contains("COLEGIO") || descUpper.contains("MATRÍCULA")
-            "OTROS" -> !tipoUpper.contains("INGRESO") && !tipoUpper.contains("GASTO FIJO") && !tipoUpper.contains("PAGO DEUDA") &&
-                    !descUpper.contains("SUPERMERCADO") && !descUpper.contains("DESPENSA") && !descUpper.contains("ÉXITO") && !descUpper.contains("CARULLA") && !descUpper.contains("D1") &&
-                    !descUpper.contains("SERVICIO") && !descUpper.contains("ENERGÍA") && !descUpper.contains("AGUA") && !descUpper.contains("LUZ") && !descUpper.contains("INTERNET") && !descUpper.contains("FIBRA") && !descUpper.contains("MÓVIL") &&
-                    !descUpper.contains("RESTAURANTE") && !descUpper.contains("CAFÉ") && !descUpper.contains("MERIENDA") && !descUpper.contains("JUAN VALDEZ") &&
-                    !descUpper.contains("TRANSPORTE") && !descUpper.contains("GASOLINA") && !descUpper.contains("UBER") && !descUpper.contains("TAXI") &&
-                    !descUpper.contains("FARMACIA") && !descUpper.contains("SALUD") &&
-                    !descUpper.contains("NETFLIX") && !descUpper.contains("SPOTIFY") && !descUpper.contains("STREAMING") &&
-                    !descUpper.contains("ESPECIALIZACIÓN") && !descUpper.contains("CURSO") && !descUpper.contains("EDUCACIÓN")
-            else -> true
+            "SUPERMERCADO" -> catUpper.contains("SUPERMERCADO") || descUpper.contains("SUPERMERCADO") || descUpper.contains("DESPENSA") || descUpper.contains("ÉXITO") || descUpper.contains("CARULLA") || descUpper.contains("D1")
+            "INGRESOS" -> tipoUpper.contains("INGRESO") || catUpper.contains("INGRESO") || descUpper.contains("HONORARIOS") || descUpper.contains("SUELDO") || descUpper.contains("NÓMINA") || descUpper.contains("VENTA")
+            "DEUDAS" -> tipoUpper.contains("PAGO DEUDA") || tipoUpper.contains("DEUDA") || catUpper.contains("PRÉSTAMO") || descUpper.contains("TARJETA") || descUpper.contains("CRÉDITO") || descUpper.contains("PRÉSTAMO")
+            "SERVICIOS" -> catUpper.contains("SERVICIO") || descUpper.contains("SERVICIO") || descUpper.contains("ENERGÍA") || descUpper.contains("AGUA") || descUpper.contains("LUZ") || descUpper.contains("INTERNET") || descUpper.contains("MÓVIL") || descUpper.contains("GAS")
+            "COMIDA" -> catUpper.contains("COMIDA") || descUpper.contains("RESTAURANTE") || descUpper.contains("CAFÉ") || descUpper.contains("MERIENDA") || descUpper.contains("COMIDA") || descUpper.contains("ALMUERZO") || descUpper.contains("CENA")
+            "TRANSPORTE" -> catUpper.contains("TRANSPORTE") || descUpper.contains("TRANSPORTE") || descUpper.contains("GASOLINA") || descUpper.contains("UBER") || descUpper.contains("TAXI") || descUpper.contains("ESTACIÓN")
+            "SALUD" -> catUpper.contains("SALUD") || descUpper.contains("FARMACIA") || descUpper.contains("SALUD") || descUpper.contains("MÉDICO") || descUpper.contains("DROGUERÍA") || descUpper.contains("HOSPITAL")
+            "STREAMING" -> catUpper.contains("STREAMING") || catUpper.contains("PELÍCULA") || catUpper.contains("OCIO") || descUpper.contains("NETFLIX") || descUpper.contains("SPOTIFY") || descUpper.contains("DISNEY") || descUpper.contains("PRIME") || descUpper.contains("CINE")
+            "EDUCACION" -> catUpper.contains("EDUCACION") || descUpper.contains("ESPECIALIZACIÓN") || descUpper.contains("CURSO") || descUpper.contains("EDUCACIÓN") || descUpper.contains("UNIVERSIDAD") || descUpper.contains("COLEGIO")
+            "OTROS" -> true
+            else -> false
         }
     }
 
@@ -540,7 +548,10 @@ class FragmentMovimiento : Fragment() {
         dialogBinding.btnTipoTransferencia.setOnClickListener { actualizarTabsTipo("TRANSFERENCIA") }
 
         // Category Chips Interactivity
+        var categoriaSeleccionadaEnDialogo = movimientoExistente?.categoria ?: "Supermercado"
+
         fun pintarChipCategoria(categoria: String) {
+            categoriaSeleccionadaEnDialogo = categoria
             val bgActivo = ContextCompat.getColor(mContext, R.color.surface_container_low)
             val bgInactivo = ContextCompat.getColor(mContext, R.color.surface_bg)
             val colorActivo = ContextCompat.getColor(mContext, R.color.primary_emerald)
@@ -551,41 +562,39 @@ class FragmentMovimiento : Fragment() {
                 text.setTextColor(if (activo) colorActivo else colorInactivo)
             }
 
-            val tvSuper = dialogBinding.chipSupermercado.getChildAt(1) as TextView
-            val tvServ = dialogBinding.chipServicios.getChildAt(1) as TextView
-            val tvComida = dialogBinding.chipComida.getChildAt(1) as TextView
-            val tvTransp = dialogBinding.chipTransporte.getChildAt(1) as TextView
+            fun setupChip(container: View, nombreCat: String) {
+                val vg = container as? ViewGroup
+                if ((vg?.childCount ?: 0) >= 2) {
+                    val icon = vg?.getChildAt(0)
+                    val tv = vg?.getChildAt(1) as? TextView
+                    if (tv != null) {
+                        setChipStyle(container, icon, tv, categoria.equals(nombreCat, ignoreCase = true))
+                    }
+                }
+            }
 
-            setChipStyle(dialogBinding.chipSupermercado, dialogBinding.chipSupermercado.getChildAt(0), tvSuper, categoria == "Supermercado")
-            setChipStyle(dialogBinding.chipServicios, dialogBinding.chipServicios.getChildAt(0), tvServ, categoria == "Servicios")
-            setChipStyle(dialogBinding.chipComida, dialogBinding.chipComida.getChildAt(0), tvComida, categoria == "Comida")
-            setChipStyle(dialogBinding.chipTransporte, dialogBinding.chipTransporte.getChildAt(0), tvTransp, categoria == "Transporte")
+            setupChip(dialogBinding.chipSupermercado, "Supermercado")
+            setupChip(dialogBinding.chipServicios, "Servicios")
+            setupChip(dialogBinding.chipComida, "Comida")
+            setupChip(dialogBinding.chipTransporte, "Transporte")
+            setupChip(dialogBinding.chipVivienda, "Vivienda")
+            setupChip(dialogBinding.chipOcio, "Ocio")
+            setupChip(dialogBinding.chipPeliculas, "Películas")
+            setupChip(dialogBinding.chipPrestamo, "Préstamo")
+            setupChip(dialogBinding.chipSinCategoria, "Sin categoría")
         }
 
-        dialogBinding.chipSupermercado.setOnClickListener {
-            pintarChipCategoria("Supermercado")
-            if (dialogBinding.etDescripcion.text.isNullOrEmpty() || dialogBinding.etDescripcion.text.toString().contains("Servicios|Comida|Transporte".toRegex())) {
-                dialogBinding.etDescripcion.setText("Supermercado")
-            }
-        }
-        dialogBinding.chipServicios.setOnClickListener {
-            pintarChipCategoria("Servicios")
-            if (dialogBinding.etDescripcion.text.isNullOrEmpty() || dialogBinding.etDescripcion.text.toString().contains("Supermercado|Comida|Transporte".toRegex())) {
-                dialogBinding.etDescripcion.setText("Servicios")
-            }
-        }
-        dialogBinding.chipComida.setOnClickListener {
-            pintarChipCategoria("Comida")
-            if (dialogBinding.etDescripcion.text.isNullOrEmpty() || dialogBinding.etDescripcion.text.toString().contains("Supermercado|Servicios|Transporte".toRegex())) {
-                dialogBinding.etDescripcion.setText("Comida")
-            }
-        }
-        dialogBinding.chipTransporte.setOnClickListener {
-            pintarChipCategoria("Transporte")
-            if (dialogBinding.etDescripcion.text.isNullOrEmpty() || dialogBinding.etDescripcion.text.toString().contains("Supermercado|Servicios|Comida".toRegex())) {
-                dialogBinding.etDescripcion.setText("Transporte")
-            }
-        }
+        dialogBinding.chipSupermercado.setOnClickListener { pintarChipCategoria("Supermercado") }
+        dialogBinding.chipServicios.setOnClickListener { pintarChipCategoria("Servicios") }
+        dialogBinding.chipComida.setOnClickListener { pintarChipCategoria("Comida") }
+        dialogBinding.chipTransporte.setOnClickListener { pintarChipCategoria("Transporte") }
+        dialogBinding.chipVivienda.setOnClickListener { pintarChipCategoria("Vivienda") }
+        dialogBinding.chipOcio.setOnClickListener { pintarChipCategoria("Ocio") }
+        dialogBinding.chipPeliculas.setOnClickListener { pintarChipCategoria("Películas") }
+        dialogBinding.chipPrestamo.setOnClickListener { pintarChipCategoria("Préstamo") }
+        dialogBinding.chipSinCategoria.setOnClickListener { pintarChipCategoria("Sin categoría") }
+
+        pintarChipCategoria(categoriaSeleccionadaEnDialogo)
 
         // Selector de Fecha
         dialogBinding.tvFechaMovimiento.setOnClickListener {
@@ -808,7 +817,7 @@ class FragmentMovimiento : Fragment() {
                     SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
                 )
 
-                val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest")
+                val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b")
                 var rawText: String? = null
                 var ultimoError: Exception? = null
 

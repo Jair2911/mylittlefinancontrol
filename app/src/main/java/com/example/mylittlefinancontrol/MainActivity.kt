@@ -1,12 +1,16 @@
 package com.example.mylittlefinancontrol
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.os.Build
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -37,6 +41,7 @@ class MainActivity : AppCompatActivity() {
 
         actualizarNombreUsuario()
         verificarConfiguracionBackup()
+        solicitarPermisosSmsYNotificaciones()
 
         if (firebaseAuth.currentUser == null) {
             irOpcionesLogin()
@@ -218,6 +223,33 @@ class MainActivity : AppCompatActivity() {
     fun verFragmentoInicio() {
         actualizarEstadoNavegacion(-1)
         reemplazarFragmento(FragmentInicio(), "Inicio")
+    }
+
+    private fun solicitarPermisosSmsYNotificaciones() {
+        val permisos = mutableListOf<String>()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permisos.add(Manifest.permission.RECEIVE_SMS)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permisos.add(Manifest.permission.READ_SMS)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permisos.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        if (permisos.isNotEmpty()) {
+            val requestLauncher = registerForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { result ->
+                if (result[Manifest.permission.RECEIVE_SMS] == true) {
+                    Toast.makeText(this, "Detección de SMS bancarios activada", Toast.LENGTH_SHORT).show()
+                }
+            }
+            requestLauncher.launch(permisos.toTypedArray())
+        }
     }
 
     private fun verificarTutorial() {
