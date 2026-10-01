@@ -8,5 +8,6 @@ data class GastoFijo(
     var diaPago: String = "",
     var periodo: String = "Mensual", // Mensual o Quincenal
     var ultimoPagoQ1: String = "", // Formato yyyy-MM
-    var ultimoPagoQ2: String = ""  // Formato yyyy-MM
+    var ultimoPagoQ2: String = "",  // Formato yyyy-MM
+    var recordatorio: Boolean = true // Recordatorio 3 días antes de vencimiento
 )

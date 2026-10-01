@@ -17,7 +17,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 9
+        private const val DATABASE_VERSION = 10
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -39,6 +39,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_GF_PERIODO = "periodo"
         private const val COLUMN_GF_U_PAGO_Q1 = "ultimo_pago_q1"
         private const val COLUMN_GF_U_PAGO_Q2 = "ultimo_pago_q2"
+        private const val COLUMN_GF_RECORDATORIO = "recordatorio"
 
         private const val TABLE_DEUDAS = "deudas"
         private const val COLUMN_D_ID = "id"
@@ -105,7 +106,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT)")
-        db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT)")
+        db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT, $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1)")
         db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT)")
         db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
     }
@@ -127,6 +128,9 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         if (oldVersion < 9) {
             db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios'")
             db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_FECHA_CREACION TEXT")
+        }
+        if (oldVersion < 10) {
+            db?.execSQL("ALTER TABLE $TABLE_GASTOS_FIJOS ADD COLUMN $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1")
         }
     }
 
@@ -237,6 +241,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
             put(COLUMN_GF_MONTO, gf.monto); put(COLUMN_GF_DIA, gf.diaPago); put(COLUMN_GF_PERIODO, gf.periodo)
             put(COLUMN_GF_U_PAGO_Q1, gf.ultimoPagoQ1); put(COLUMN_GF_U_PAGO_Q2, gf.ultimoPagoQ2)
+            put(COLUMN_GF_RECORDATORIO, if (gf.recordatorio) 1 else 0)
         }
         db.insert(TABLE_GASTOS_FIJOS, null, v)
         db.close()
@@ -248,6 +253,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
             put(COLUMN_GF_MONTO, gf.monto); put(COLUMN_GF_DIA, gf.diaPago); put(COLUMN_GF_PERIODO, gf.periodo)
             put(COLUMN_GF_U_PAGO_Q1, gf.ultimoPagoQ1); put(COLUMN_GF_U_PAGO_Q2, gf.ultimoPagoQ2)
+            put(COLUMN_GF_RECORDATORIO, if (gf.recordatorio) 1 else 0)
         }
         db.update(TABLE_GASTOS_FIJOS, v, "$COLUMN_GF_ID = ?", arrayOf(gf.id))
         db.close()
@@ -257,7 +263,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         val lista = mutableListOf<GastoFijo>()
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_GASTOS_FIJOS", null)
+        val recIdx = cursor.getColumnIndex(COLUMN_GF_RECORDATORIO)
+
         while (cursor.moveToNext()) {
+            val recordatorio = if (recIdx != -1 && !cursor.isNull(recIdx)) cursor.getInt(recIdx) == 1 else true
             lista.add(GastoFijo(
                 cursor.getInt(0).toString(), 
                 cursor.getString(1), 
@@ -266,7 +275,8 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
                 cursor.getString(4), 
                 cursor.getString(5),
                 cursor.getString(6) ?: "",
-                cursor.getString(7) ?: ""
+                cursor.getString(7) ?: "",
+                recordatorio
             ))
         }
         cursor.close()

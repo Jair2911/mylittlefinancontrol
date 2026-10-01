@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -19,6 +20,7 @@ import androidx.work.*
 import com.example.mylittlefinancontrol.Fragmentos.*
 import com.example.mylittlefinancontrol.Servicios.AppTourManager
 import com.example.mylittlefinancontrol.Servicios.BackupWorker
+import com.example.mylittlefinancontrol.Servicios.GastoFijoWorker
 import com.example.mylittlefinancontrol.Servicios.TutorialHelper
 import com.example.mylittlefinancontrol.databinding.ActivityMainBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -42,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         actualizarNombreUsuario()
         verificarConfiguracionBackup()
         solicitarPermisosSmsYNotificaciones()
+        programarRecordatoriosGastosFijos()
 
         if (firebaseAuth.currentUser == null) {
             irOpcionesLogin()
@@ -249,6 +252,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             requestLauncher.launch(permisos.toTypedArray())
+        }
+    }
+
+    private fun programarRecordatoriosGastosFijos() {
+        try {
+            val workManager = WorkManager.getInstance(this)
+            val periodicWorkRequest = PeriodicWorkRequestBuilder<GastoFijoWorker>(
+                24, TimeUnit.HOURS
+            ).build()
+
+            workManager.enqueueUniquePeriodicWork(
+                "GastoFijoWorkerPeriodic",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicWorkRequest
+            )
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error iniciando recordatorios de gastos fijos: ${e.message}")
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,12 +17,17 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.mylittlefinancontrol.Adaptadores.GastosFijosAdapter
 import com.example.mylittlefinancontrol.Constantes
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
+import com.example.mylittlefinancontrol.Servicios.GastoFijoWorker
 import com.example.mylittlefinancontrol.databinding.DialogAgregarGastoFijoBinding
 import com.example.mylittlefinancontrol.databinding.DialogControlAnualGastoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentGastosFijosBinding
@@ -30,6 +36,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import java.text.NumberFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class FragmentGastosFijos : Fragment() {
 
@@ -295,8 +302,10 @@ class FragmentGastosFijos : Fragment() {
             val diaMatch = diasPago.find { it.contains(diaStr) } ?: "Día $diaStr de cada mes"
             dialogBinding.autoDiaPago.setText(diaMatch, false)
 
+            dialogBinding.swRecordatorio.isChecked = gastoExistente.recordatorio
             actualizarSeleccionCategoria(gastoExistente.categoria)
         } else {
+            dialogBinding.swRecordatorio.isChecked = true
             actualizarSeleccionCategoria("Telecom")
         }
 
@@ -319,18 +328,21 @@ class FragmentGastosFijos : Fragment() {
             val rawPeriodo = dialogBinding.autoPeriodo.text.toString().trim()
             val periodo = if (rawPeriodo.contains("Quincenal", true)) "Quincenal" else rawPeriodo.ifEmpty { "Mensual" }
             val categoria = categoriaSeleccionada
+            val recordatorio = dialogBinding.swRecordatorio.isChecked
 
             if (concepto.isNotEmpty() && monto > 0) {
                 if (gastoExistente == null) {
-                    db.insertGastoFijo(GastoFijo("", concepto, categoria, monto, diaPago, periodo))
+                    db.insertGastoFijo(GastoFijo("", concepto, categoria, monto, diaPago, periodo, recordatorio = recordatorio))
                 } else {
                     gastoExistente.concepto = concepto
                     gastoExistente.monto = monto
                     gastoExistente.diaPago = diaPago
                     gastoExistente.categoria = categoria
                     gastoExistente.periodo = periodo
+                    gastoExistente.recordatorio = recordatorio
                     db.updateGastoFijo(gastoExistente)
                 }
+                programarVerificacionGastoFijoWorker(mContext)
                 cargarGastosFijos()
                 bottomSheetDialog.dismiss()
             } else {
@@ -564,6 +576,26 @@ class FragmentGastosFijos : Fragment() {
 
         dialogBinding.rvMesesControlAnual.adapter = adapterMeses
         bottomSheetDialog.show()
+    }
+
+    private fun programarVerificacionGastoFijoWorker(context: Context) {
+        try {
+            val workManager = WorkManager.getInstance(context)
+            val periodicWorkRequest = PeriodicWorkRequestBuilder<GastoFijoWorker>(
+                24, TimeUnit.HOURS
+            ).build()
+
+            workManager.enqueueUniquePeriodicWork(
+                "GastoFijoWorkerPeriodic",
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicWorkRequest
+            )
+
+            val oneTimeRequest = OneTimeWorkRequestBuilder<GastoFijoWorker>().build()
+            workManager.enqueue(oneTimeRequest)
+        } catch (e: Exception) {
+            Log.e("FragmentGastosFijos", "Error programando GastoFijoWorker: ${e.message}")
+        }
     }
 
     override fun onDestroyView() {
