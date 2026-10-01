@@ -90,11 +90,16 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
                         if (!respuestaTexto.isNullOrBlank()) {
                             agregarMensaje(respuestaTexto, false)
                         } else {
-                            agregarMensaje("Error: ${ultimoError?.localizedMessage ?: "No se pudo obtener respuesta"}", false)
+                            val errStr = ultimoError?.localizedMessage ?: ""
+                            val msg = when {
+                                errStr.contains("429") || errStr.contains("Quota", true) -> "Límite de consultas alcanzado. Por favor espera 10 segundos antes de realizar otra pregunta."
+                                else -> "El servidor de Google IA se encuentra en alta demanda. Reintenta tu consulta en unos segundos."
+                            }
+                            agregarMensaje(msg, false)
                         }
                     } catch (e: Exception) {
                         binding.pbLoading.visibility = View.GONE
-                        agregarMensaje("Error: ${e.message}", false)
+                        agregarMensaje("Límite o micro-corte de conexión con la IA. Por favor reintenta en unos segundos.", false)
                     }
                 }
             }

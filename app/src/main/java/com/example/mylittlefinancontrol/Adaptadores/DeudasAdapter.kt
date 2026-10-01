@@ -76,42 +76,31 @@ class DeudasAdapter(
             }
             
             val restante = (deuda.totalDeuda - deuda.totalPagado).coerceAtLeast(0.0)
-            tvValorRestanteTop.text = format.format(restante)
-            
+            val esPagadaCompletamente = restante <= 0.0 || deuda.totalPagado >= deuda.totalDeuda
+
             val progresoPct = if (deuda.totalDeuda > 0) {
                 ((deuda.totalPagado / deuda.totalDeuda) * 100).toInt().coerceIn(0, 100)
             } else {
                 0
             }
 
-            val esPagadaCompletamente = restante <= 0.0 || deuda.totalPagado >= deuda.totalDeuda
-
-            // Badge Estado
-            when {
-                esPagadaCompletamente -> {
-                    tvBadgeEstado.text = "✓ PAGADA"
-                    tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
-                    tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
-                    tvLabelMontoTop.text = "Completado"
-                    btnAbonarCuota.visibility = View.GONE
-                    ivEditar.alpha = 0.3f
-                }
-                progresoPct > 0 -> {
-                    tvBadgeEstado.text = "AL DÍA"
-                    tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
-                    tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
-                    tvLabelMontoTop.text = "Pendiente"
-                    btnAbonarCuota.visibility = View.VISIBLE
-                    ivEditar.alpha = 1.0f
-                }
-                else -> {
-                    tvBadgeEstado.text = "EN CURSO"
-                    tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.debt_amber_bg))
-                    tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.debt_amber))
-                    tvLabelMontoTop.text = "Saldo total"
-                    btnAbonarCuota.visibility = View.VISIBLE
-                    ivEditar.alpha = 1.0f
-                }
+            // Muestra en la esquina superior el monto contratado/total si está pagada, o el saldo pendiente si está activa
+            if (esPagadaCompletamente) {
+                tvLabelMontoTop.text = "Deuda Total"
+                tvValorRestanteTop.text = format.format(deuda.totalDeuda)
+                tvBadgeEstado.text = "✓ PAGADA"
+                tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
+                tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
+                btnAbonarCuota.visibility = View.GONE
+                ivEditar.alpha = 0.3f
+            } else {
+                tvLabelMontoTop.text = "Pendiente"
+                tvValorRestanteTop.text = format.format(restante)
+                tvBadgeEstado.text = if (progresoPct > 0) "AL DÍA" else "EN CURSO"
+                tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, if (progresoPct > 0) R.color.surface_container_low else R.color.debt_amber_bg))
+                tvBadgeEstado.setTextColor(ContextCompat.getColor(context, if (progresoPct > 0) R.color.primary_emerald else R.color.debt_amber))
+                btnAbonarCuota.visibility = View.VISIBLE
+                ivEditar.alpha = 1.0f
             }
 
             tvPagadoLabel.text = "Pagado: ${format.format(deuda.totalPagado)} ($progresoPct%)"

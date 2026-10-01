@@ -866,9 +866,13 @@ class FragmentMovimiento : Fragment() {
                 }
 
                 if (rawText.isNullOrBlank()) {
-                    val msg = ultimoError?.localizedMessage ?: "La IA no pudo procesar esta imagen"
+                    val errStr = ultimoError?.localizedMessage ?: ""
+                    val msg = when {
+                        errStr.contains("429") || errStr.contains("Quota", true) -> "Límite de consultas por minuto alcanzado. Espera 10 segundos e intenta de nuevo."
+                        else -> "El servidor de Google IA estuvo ocupado. Por favor reintenta en unos segundos."
+                    }
                     Log.e("GeminiVision", "Error general IA: $msg", ultimoError)
-                    Toast.makeText(mContext, "Error IA: $msg", Toast.LENGTH_LONG).show()
+                    Toast.makeText(mContext, msg, Toast.LENGTH_LONG).show()
                     return@launch
                 }
 
@@ -882,29 +886,32 @@ class FragmentMovimiento : Fragment() {
                     val valorTotal = jsonResponse.optString("valor_total").replace(Regex("[^0-9]"), "")
                     val fechaEscaneada = jsonResponse.optString("fecha")
 
-                    if (concepto.isNotBlank()) {
-                        binding.etDescripcion.setText(concepto.uppercase())
-                    }
-                    if (valorTotal.isNotBlank()) {
-                        binding.etValor.setText(valorTotal)
-                    }
-                    if (fechaEscaneada.isNotBlank() && fechaEscaneada != "null") {
-                        try {
-                            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
-                            val dateParsed = sdf.parse(fechaEscaneada)
-                            if (dateParsed != null) {
-                                val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
-                                binding.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsed)
-                            }
-                        } catch (_: Exception) {
+                    val dialogB = currentDialogBinding
+                    if (dialogB != null) {
+                        if (concepto.isNotBlank()) {
+                            dialogB.etDescripcion.setText(concepto.uppercase())
+                        }
+                        if (valorTotal.isNotBlank()) {
+                            dialogB.etValor.setText(valorTotal)
+                        }
+                        if (fechaEscaneada.isNotBlank() && fechaEscaneada != "null") {
                             try {
-                                val sdfSimple = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                                val dateParsedSimple = sdfSimple.parse(fechaEscaneada)
-                                if (dateParsedSimple != null) {
+                                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+                                val dateParsed = sdf.parse(fechaEscaneada)
+                                if (dateParsed != null) {
                                     val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
-                                    binding.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsedSimple)
+                                    dialogB.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsed)
                                 }
-                            } catch (_: Exception) {}
+                            } catch (_: Exception) {
+                                try {
+                                    val sdfSimple = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                                    val dateParsedSimple = sdfSimple.parse(fechaEscaneada)
+                                    if (dateParsedSimple != null) {
+                                        val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
+                                        dialogB.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsedSimple)
+                                    }
+                                } catch (_: Exception) {}
+                            }
                         }
                     }
                     Toast.makeText(mContext, "Datos y fecha escaneados con éxito", Toast.LENGTH_SHORT).show()
