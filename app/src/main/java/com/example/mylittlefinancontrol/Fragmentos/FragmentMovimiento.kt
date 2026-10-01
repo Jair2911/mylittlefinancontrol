@@ -806,8 +806,9 @@ class FragmentMovimiento : Fragment() {
                     Analiza este recibo o comprobante de compra. Extrae:
                     1. 'concepto': Descripción corta del establecimiento o compra (máximo 4 palabras).
                     2. 'valor_total': El valor o total a pagar como un número entero sin puntos, comas ni símbolos (ej: 35000).
+                    3. 'fecha': La fecha y hora de la compra si aparece en el recibo, en formato YYYY-MM-DD HH:mm (ej: 2026-09-30 14:30). Si no aparece, deja este campo vacío.
                     Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
-                    {"concepto": "...", "valor_total": "..."}
+                    {"concepto": "...", "valor_total": "...", "fecha": "..."}
                 """.trimIndent()
 
                 val safetySettings = listOf(
@@ -862,14 +863,34 @@ class FragmentMovimiento : Fragment() {
                     
                     val concepto = jsonResponse.optString("concepto")
                     val valorTotal = jsonResponse.optString("valor_total").replace(Regex("[^0-9]"), "")
-                    
+                    val fechaEscaneada = jsonResponse.optString("fecha")
+
                     if (concepto.isNotBlank()) {
                         binding.etDescripcion.setText(concepto.uppercase())
                     }
                     if (valorTotal.isNotBlank()) {
                         binding.etValor.setText(valorTotal)
                     }
-                    Toast.makeText(mContext, "Datos escaneados con éxito", Toast.LENGTH_SHORT).show()
+                    if (fechaEscaneada.isNotBlank() && fechaEscaneada != "null") {
+                        try {
+                            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+                            val dateParsed = sdf.parse(fechaEscaneada)
+                            if (dateParsed != null) {
+                                val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
+                                binding.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsed)
+                            }
+                        } catch (_: Exception) {
+                            try {
+                                val sdfSimple = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                                val dateParsedSimple = sdfSimple.parse(fechaEscaneada)
+                                if (dateParsedSimple != null) {
+                                    val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
+                                    binding.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsedSimple)
+                                }
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    Toast.makeText(mContext, "Datos y fecha escaneados con éxito", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(mContext, "No se pudo interpretar el texto del recibo", Toast.LENGTH_SHORT).show()
                 }
