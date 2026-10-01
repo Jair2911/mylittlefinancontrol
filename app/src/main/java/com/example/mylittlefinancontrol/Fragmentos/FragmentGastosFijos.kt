@@ -447,13 +447,20 @@ class FragmentGastosFijos : Fragment() {
         val anioActual = calActual.get(Calendar.YEAR)
         val mesActual = calActual.get(Calendar.MONTH) // 0 = Enero
 
+        val esQuincenal = gasto.periodo.contains("Quincenal", true)
+        val montoMensualTotal = if (esQuincenal) gasto.monto * 2 else gasto.monto
+
         dialogBinding.tvTituloControlAnual.text = "📅 Control Anual $anioActual"
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        dialogBinding.tvSubtituloGasto.text = "${gasto.concepto} · ${format.format(gasto.monto)} / mes"
+        
+        if (esQuincenal) {
+            dialogBinding.tvSubtituloGasto.text = "${gasto.concepto} · ${format.format(montoMensualTotal)} / mes (${format.format(gasto.monto)} x 2 quincenas)"
+        } else {
+            dialogBinding.tvSubtituloGasto.text = "${gasto.concepto} · ${format.format(montoMensualTotal)} / mes"
+        }
 
         dialogBinding.btnCerrarControl.setOnClickListener { bottomSheetDialog.dismiss() }
 
-        // Consultar movimientos para verificar qué meses se han pagado
         val todosMovimientos = db.getAllNotas()
         val gfIdInt = gasto.id.toIntOrNull() ?: -1
 
@@ -474,34 +481,37 @@ class FragmentGastosFijos : Fragment() {
         for (m in 1..12) {
             val mesClave = String.format(Locale.US, "%04d-%02d", anioActual, m)
             
-            // Buscar si hay movimiento para este gasto fijo en este mes
-            val movEncontrado = todosMovimientos.firstOrNull { mov ->
+            val movsEncontrados = todosMovimientos.filter { mov ->
                 val idCoincide = (mov.gastoFijoId == gfIdInt && gfIdInt != -1) ||
                         (mov.descripcion.contains(gasto.concepto, ignoreCase = true) && mov.tipo_reg.contains("GASTO", true))
                 val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
-                val fechaCoincide = fechaEfectiva.startsWith(mesClave)
-                idCoincide && fechaCoincide
+                idCoincide && fechaEfectiva.startsWith(mesClave)
             }
 
-            var pagado = movEncontrado != null
-            if (!pagado && m == (mesActual + 1)) {
-                pagado = gasto.ultimoPagoQ1 == mesClave
+            var pagado = movsEncontrados.isNotEmpty()
+            if (!pagado) {
+                pagado = if (esQuincenal) {
+                    gasto.ultimoPagoQ1.startsWith(mesClave) && gasto.ultimoPagoQ2.startsWith(mesClave)
+                } else {
+                    gasto.ultimoPagoQ1.startsWith(mesClave)
+                }
             }
 
             val detalle = if (pagado) {
-                if (movEncontrado != null && movEncontrado.fecha.isNotBlank()) {
-                    "Pagado el ${movEncontrado.fecha.split(" ")[0]}"
+                val mov = movsEncontrados.firstOrNull()
+                if (mov != null && mov.fecha.isNotBlank()) {
+                    "Pagado el ${mov.fecha.split(" ")[0]} (${format.format(montoMensualTotal)})"
                 } else {
-                    "Pagado en $mesClave"
+                    "Pagado en $mesClave (${format.format(montoMensualTotal)})"
                 }
             } else {
-                if (m <= (mesActual + 1)) "⏱️ Pendiente de pago" else "Próximo pago"
+                if (m <= (mesActual + 1)) "⏱️ Pendiente (${format.format(montoMensualTotal)})" else "Próximo pago (${format.format(montoMensualTotal)})"
             }
 
             listaMeses.add(MesEstadoItem(m, "${nombresMeses[m - 1]} $anioActual", pagado, detalle))
         }
 
-        // Calcular resumen general
+        // Resumen general
         val mesesTranscurridos = (mesActual + 1)
         val mesesPagadosHastaHoy = listaMeses.take(mesesTranscurridos).count { it.estaPagado }
         val mesesPendientes = mesesTranscurridos - mesesPagadosHastaHoy
@@ -516,7 +526,6 @@ class FragmentGastosFijos : Fragment() {
             dialogBinding.ivIconoResumenAnual.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.expense_red))
         }
 
-        // Adapter para los 12 meses
         dialogBinding.rvMesesControlAnual.layoutManager = LinearLayoutManager(mContext)
         val adapterMeses = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -542,7 +551,7 @@ class FragmentGastosFijos : Fragment() {
                 } else {
                     b.tvBadgeEstadoMes.visibility = View.GONE
                     b.btnPagarMes.visibility = View.VISIBLE
-                    b.btnPagarMes.text = "Pagar ${format.format(gasto.monto)}"
+                    b.btnPagarMes.text = "Pagar ${format.format(montoMensualTotal)}"
 
                     b.btnPagarMes.setOnClickListener {
                         val mesFormatted = String.format(Locale.US, "%02d", item.numeroMes)
@@ -550,25 +559,43 @@ class FragmentGastosFijos : Fragment() {
                         val diaNum = gasto.diaPago.trim().filter { it.isDigit() }.toIntOrNull() ?: 15
                         val fechaPago = "$anioActual-$mesFormatted-${String.format(Locale.US, "%02d", diaNum)} 12:00:00"
 
-                        gasto.ultimoPagoQ1 = mesClave
-                        db.updateGastoFijo(gasto)
-
-                        val nuevoMov = Movimiento(
-                            id = 0,
-                            descripcion = "PAGO: ${gasto.concepto}".uppercase(),
-                            valor = gasto.monto.toInt(),
-                            tipo_reg = "GASTO FIJO",
-                            fecha = fechaPago,
-                            gastoFijoId = gfIdInt,
-                            quincenaPagada = 0,
-                            categoria = gasto.categoria,
-                            fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
+                        val opcionesPago = arrayOf(
+                            "Solo marcar como Pagado (Checklist histórico)",
+                            "Registrar movimiento y descontar dinero"
                         )
-                        db.insertNota(nuevoMov)
 
-                        Toast.makeText(mContext, "Pago de ${nombresMeses[item.numeroMes - 1]} registrado", Toast.LENGTH_SHORT).show()
-                        bottomSheetDialog.dismiss()
-                        cargarGastosFijos()
+                        AlertDialog.Builder(mContext)
+                            .setTitle("Marcar pago de ${nombresMeses[item.numeroMes - 1]}")
+                            .setItems(opcionesPago) { _, which ->
+                                gasto.ultimoPagoQ1 = mesClave
+                                if (esQuincenal) {
+                                    gasto.ultimoPagoQ2 = mesClave
+                                }
+                                db.updateGastoFijo(gasto)
+
+                                if (which == 1) {
+                                    val nuevoMov = Movimiento(
+                                        id = 0,
+                                        descripcion = "PAGO: ${gasto.concepto}".uppercase(),
+                                        valor = montoMensualTotal.toInt(),
+                                        tipo_reg = "GASTO FIJO",
+                                        fecha = fechaPago,
+                                        gastoFijoId = gfIdInt,
+                                        quincenaPagada = 0,
+                                        categoria = gasto.categoria,
+                                        fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
+                                    )
+                                    db.insertNota(nuevoMov)
+                                    Toast.makeText(mContext, "Pago registrado con movimiento en dinero", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(mContext, "Mes de ${nombresMeses[item.numeroMes - 1]} marcado como pagado (Checklist)", Toast.LENGTH_SHORT).show()
+                                }
+
+                                bottomSheetDialog.dismiss()
+                                cargarGastosFijos()
+                            }
+                            .setNegativeButton("Cancelar", null)
+                            .show()
                     }
                 }
             }
