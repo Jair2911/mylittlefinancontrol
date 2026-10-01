@@ -483,7 +483,8 @@ class FragmentMovimiento : Fragment() {
 
     private fun cargarDeudasLocales() {
         listaDeudas.clear()
-        listaDeudas.addAll(db.getAllDeudas())
+        val deudasTodas = db.getAllDeudas()
+        listaDeudas.addAll(deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 })
         listaGastosFijos.clear()
         listaGastosFijos.addAll(db.getAllGastosFijos())
     }

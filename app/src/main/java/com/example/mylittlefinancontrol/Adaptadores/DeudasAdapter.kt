@@ -4,6 +4,7 @@ import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Modelos.Deuda
@@ -75,25 +76,33 @@ class DeudasAdapter(
                 0
             }
 
+            val esPagadaCompletamente = restante <= 0.0 || deuda.totalPagado >= deuda.totalDeuda
+
             // Badge Estado
             when {
-                restante <= 0.0 -> {
-                    tvBadgeEstado.text = "PAGADA"
+                esPagadaCompletamente -> {
+                    tvBadgeEstado.text = "✓ PAGADA"
                     tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
                     tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
                     tvLabelMontoTop.text = "Completado"
+                    btnAbonarCuota.visibility = View.GONE
+                    ivEditar.alpha = 0.3f
                 }
                 progresoPct > 0 -> {
                     tvBadgeEstado.text = "AL DÍA"
                     tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
                     tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
                     tvLabelMontoTop.text = "Pendiente"
+                    btnAbonarCuota.visibility = View.VISIBLE
+                    ivEditar.alpha = 1.0f
                 }
                 else -> {
                     tvBadgeEstado.text = "EN CURSO"
                     tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.debt_amber_bg))
                     tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.debt_amber))
                     tvLabelMontoTop.text = "Saldo total"
+                    btnAbonarCuota.visibility = View.VISIBLE
+                    ivEditar.alpha = 1.0f
                 }
             }
 
@@ -110,9 +119,19 @@ class DeudasAdapter(
             pbDeuda.max = 100
             pbDeuda.progress = progresoPct
 
-            ivEditar.setOnClickListener { onEditarClick(deuda) }
+            ivEditar.setOnClickListener {
+                if (esPagadaCompletamente) {
+                    Toast.makeText(context, "Las deudas completadas no se pueden editar", Toast.LENGTH_SHORT).show()
+                } else {
+                    onEditarClick(deuda)
+                }
+            }
             ivEliminar.setOnClickListener { onEliminarClick(deuda) }
-            btnAbonarCuota.setOnClickListener { onAbonarClick(deuda) }
+            btnAbonarCuota.setOnClickListener {
+                if (!esPagadaCompletamente) {
+                    onAbonarClick(deuda)
+                }
+            }
         }
     }
 

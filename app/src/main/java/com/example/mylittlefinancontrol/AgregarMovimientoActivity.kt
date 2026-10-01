@@ -206,7 +206,8 @@ class AgregarMovimientoActivity : AppCompatActivity() {
 
     private fun cargarDeudasLocales() {
         listaDeudas.clear()
-        listaDeudas.addAll(db.getAllDeudas())
+        val deudasTodas = db.getAllDeudas()
+        listaDeudas.addAll(deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 })
         val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
         binding.autoDeudas.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, nombresDeudas))
 

@@ -136,6 +136,11 @@ class FragmentBalance : Fragment() {
     }
 
     private fun mostrarDialogoDeuda(deudaExistente: Deuda?) {
+        if (deudaExistente != null && (deudaExistente.totalDeuda - deudaExistente.totalPagado) <= 0.0) {
+            Toast.makeText(mContext, "Las deudas completadas no se pueden editar", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val dialogBinding = DialogAgregarDeudaBinding.inflate(layoutInflater)
         val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
         bottomSheetDialog.setContentView(dialogBinding.root)
@@ -330,9 +335,10 @@ class FragmentBalance : Fragment() {
         listaDeudasTodas = db.getAllDeudas().toMutableList()
         aplicarFiltro()
         
-        val totalDeudaSum = listaDeudasTodas.sumOf { it.totalDeuda }
-        val totalPagadoSum = listaDeudasTodas.sumOf { it.totalPagado }
-        val totalRestante = max(0.0, totalDeudaSum - totalPagadoSum)
+        val deudasPendientes = listaDeudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
+        val totalDeudaSum = deudasPendientes.sumOf { it.totalDeuda }
+        val totalPagadoSum = deudasPendientes.sumOf { it.totalPagado }
+        val totalRestante = deudasPendientes.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) }
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
         saldoRealTexto = format.format(totalRestante).replace("$", "").trim()
@@ -347,7 +353,7 @@ class FragmentBalance : Fragment() {
         }
         binding.pbAmortizacionTotal.progress = progreso
         binding.tvAmortizacionPagada.text = "$progreso% (${format.format(totalPagadoSum)} pagado)"
-        binding.tvBadgeDeudas.text = "${listaDeudasTodas.size} pendientes"
+        binding.tvBadgeDeudas.text = "${deudasPendientes.size} pendientes"
         binding.tvResumenAbonado.text = "Abonado: ${format.format(totalPagadoSum)}"
         binding.tvResumenPendiente.text = "Pendiente: ${format.format(totalRestante)}"
 
