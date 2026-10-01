@@ -290,7 +290,7 @@ class FragmentGastosFijos : Fragment() {
         if (gastoExistente != null) {
             dialogBinding.tvTituloDialogo.text = "Editar Gasto Fijo"
             dialogBinding.etConcepto.setText(gastoExistente.concepto)
-            val montoStr = String.format(Locale.US, "%.2f", gastoExistente.monto)
+            val montoStr = if (gastoExistente.monto % 1.0 == 0.0) gastoExistente.monto.toLong().toString() else gastoExistente.monto.toString()
             dialogBinding.etMonto.setText(montoStr)
             
             // Frecuencia
@@ -315,11 +315,7 @@ class FragmentGastosFijos : Fragment() {
         dialogBinding.btnGuardar.setOnClickListener {
             val concepto = dialogBinding.etConcepto.text.toString().trim()
             val rawMonto = dialogBinding.etMonto.text.toString()
-                .replace("$", "")
-                .replace(".", "")
-                .replace(",", ".")
-                .trim()
-            val monto = rawMonto.toDoubleOrNull() ?: 0.0
+            val monto = Constantes.limpiarYParsearMonto(rawMonto)
 
             val rawDiaPago = dialogBinding.autoDiaPago.text.toString().trim()
             // Extraer el número del día (ej. "Día 05 de cada mes" -> "05")
