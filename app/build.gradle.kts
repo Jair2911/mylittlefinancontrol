@@ -97,6 +97,9 @@ dependencies {
     implementation(libs.google.http.client.gson)
     implementation(libs.google.http.client.android.ext)
 
+    // Google ML Kit Text Recognition (Offline)
+    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+
     // Gemini AI
     implementation(libs.generativeai)
     implementation(libs.firebase.vertexai)

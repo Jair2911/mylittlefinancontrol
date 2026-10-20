@@ -31,16 +31,16 @@ import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarMovimientoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentMovimientoBinding
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.BlockThreshold
-import com.google.ai.client.generativeai.type.HarmCategory
-import com.google.ai.client.generativeai.type.SafetySetting
-import com.google.ai.client.generativeai.type.content
+import com.example.mylittlefinancontrol.Servicios.DatosTransaccion
+import com.example.mylittlefinancontrol.Servicios.TransaccionBancariaParser
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -60,17 +60,18 @@ class FragmentMovimiento : Fragment() {
     private val listaGastosFijos = mutableListOf<GastoFijo>()
     private var gastoFijoSeleccionado: GastoFijo? = null
 
-    // IA y Cámara
+    // ML Kit y Cámara
     private var currentDialogBinding: DialogAgregarMovimientoBinding? = null
     private var photoUri: Uri? = null
+    private var onDatosEscaneadosListener: ((DatosTransaccion) -> Unit)? = null
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { procesarImagenConIA(it) }
+        uri?.let { procesarImagenConMLKit(it) }
     }
 
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
-            photoUri?.let { procesarImagenConIA(it) }
+            photoUri?.let { procesarImagenConMLKit(it) }
         }
     }
 
@@ -710,6 +711,58 @@ class FragmentMovimiento : Fragment() {
             dialogBinding.etValor.setText(gastoFijoSeleccionado?.monto?.toInt().toString())
         }
 
+        var movEnEdicion: Movimiento? = movimientoExistente
+
+        fun aplicarDatosAlFormulario(datos: DatosTransaccion, comoEdicion: Boolean, movimientoParaEditar: Movimiento?) {
+            if (comoEdicion && movimientoParaEditar != null) {
+                movEnEdicion = movimientoParaEditar
+                dialogBinding.tvTituloDialogo.text = "Actualizar Movimiento (${movimientoParaEditar.id})"
+            } else {
+                movEnEdicion = null
+                dialogBinding.tvTituloDialogo.text = if (movimientoExistente != null) "Editar Movimiento" else "Agregar Movimiento"
+            }
+
+            dialogBinding.etDescripcion.setText(datos.descripcion)
+            dialogBinding.etValor.setText(datos.valor.toString())
+            actualizarTabsTipo(datos.tipo_reg.uppercase())
+            pintarChipCategoria(datos.categoria)
+
+            try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+                val d = sdf.parse(datos.fecha)
+                if (d != null) {
+                    fechaSeleccionadaTimestamp = d.time
+                    dialogBinding.tvFechaMovimiento.text = sdfFechaDisplay.format(d)
+                }
+            } catch (_: Exception) {}
+        }
+
+        onDatosEscaneadosListener = { datos ->
+            lifecycleScope.launch(Dispatchers.IO) {
+                val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.tipo_reg, datos.fecha)
+                withContext(Dispatchers.Main) {
+                    dialogBinding.llLoadingAi.visibility = View.GONE
+                    if (duplicado == null) {
+                        aplicarDatosAlFormulario(datos, comoEdicion = false, movimientoParaEditar = null)
+                        Toast.makeText(mContext, "Comprobante procesado con éxito (ML Kit Offline)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        mostrarDialogoDuplicado(
+                            datos = datos,
+                            duplicado = duplicado,
+                            onActualizar = {
+                                aplicarDatosAlFormulario(datos, comoEdicion = true, movimientoParaEditar = duplicado)
+                                Toast.makeText(mContext, "Modo actualización activo para movimiento #${duplicado.id}", Toast.LENGTH_SHORT).show()
+                            },
+                            onGuardarNuevo = {
+                                aplicarDatosAlFormulario(datos, comoEdicion = false, movimientoParaEditar = null)
+                                Toast.makeText(mContext, "Listo para guardar como nuevo registro", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         dialogBinding.btnGuardar.setOnClickListener {
             val desc = dialogBinding.etDescripcion.text.toString()
             val valStr = dialogBinding.etValor.text.toString()
@@ -723,7 +776,8 @@ class FragmentMovimiento : Fragment() {
             val mesAnio = fechaMovimiento.substring(0, 7)
 
             lifecycleScope.launch(Dispatchers.IO) {
-                if (movimientoExistente == null) {
+                val edicionActual = movEnEdicion
+                if (edicionActual == null) {
                     // CREAR
                     val fc = Constantes.formatoFecha(System.currentTimeMillis())
 
@@ -754,16 +808,16 @@ class FragmentMovimiento : Fragment() {
                         db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                     }
                 } else {
-                    // EDITAR
-                    val fc = if (movimientoExistente.fechaCreacion.isNotBlank()) movimientoExistente.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
+                    // EDITAR / ACTUALIZAR
+                    val fc = if (edicionActual.fechaCreacion.isNotBlank()) edicionActual.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
                     val nuevoMov = Movimiento(
-                        id = movimientoExistente.id,
+                        id = edicionActual.id,
                         descripcion = desc.uppercase(),
                         valor = valor,
-                        tipo_reg = if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
+                        tipo_reg = if (edicionActual.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
                         fecha = fechaMovimiento,
-                        gastoFijoId = movimientoExistente.gastoFijoId,
-                        quincenaPagada = movimientoExistente.quincenaPagada,
+                        gastoFijoId = edicionActual.gastoFijoId,
+                        quincenaPagada = edicionActual.quincenaPagada,
                         categoria = categoriaSeleccionadaEnDialogo,
                         fechaCreacion = fc
                     )
@@ -778,6 +832,10 @@ class FragmentMovimiento : Fragment() {
         }
 
         dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
+        dialog.setOnDismissListener {
+            currentDialogBinding = null
+            onDatosEscaneadosListener = null
+        }
         dialog.show()
     }
 
@@ -813,157 +871,87 @@ class FragmentMovimiento : Fragment() {
         }
     }
 
-    private fun procesarImagenConIA(uri: Uri) {
-        val binding = currentDialogBinding ?: return
-        
-        Log.d("GeminiVision", "Iniciando procesamiento de imagen: $uri")
-        
-        if (BuildConfig.GEMINI_API_KEY.isBlank()) {
-            Log.e("GeminiVision", "Error: API Key de Gemini está vacía")
-            Toast.makeText(mContext, "Error: API Key de Gemini no configurada", Toast.LENGTH_LONG).show()
-            return
+    private fun mostrarDialogoDuplicado(
+        datos: DatosTransaccion,
+        duplicado: Movimiento,
+        onActualizar: () -> Unit,
+        onGuardarNuevo: () -> Unit
+    ) {
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        val valorFmt = format.format(duplicado.valor)
+
+        var fechaDisplay = duplicado.fecha
+        var horaDisplay = ""
+        val ts = NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(duplicado)
+        if (ts > 0L) {
+            val cal = Calendar.getInstance().apply { timeInMillis = ts }
+            fechaDisplay = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(cal.time)
+            horaDisplay = SimpleDateFormat("HH:mm", Locale.US).format(cal.time)
         }
+
+        val mensaje = if (horaDisplay.isNotBlank()) {
+            "El día $fechaDisplay a las $horaDisplay ya se registró un movimiento por $valorFmt (${duplicado.descripcion}). ¿Es el mismo movimiento?"
+        } else {
+            "El día $fechaDisplay ya se registró un movimiento por $valorFmt (${duplicado.descripcion}). ¿Es el mismo movimiento?"
+        }
+
+        MaterialAlertDialogBuilder(mContext)
+            .setTitle("Movimiento Existente Detectado")
+            .setMessage(mensaje)
+            .setPositiveButton("Actualizar existente") { _, _ ->
+                onActualizar()
+            }
+            .setNeutralButton("Guardar de nuevo") { _, _ ->
+                onGuardarNuevo()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun procesarImagenConMLKit(uri: Uri) {
+        val binding = currentDialogBinding ?: return
+        Log.d("MLKitVision", "Iniciando reconocimiento de comprobante: $uri")
 
         binding.llLoadingAi.visibility = View.VISIBLE
 
-        lifecycleScope.launch {
-            try {
-                Log.d("GeminiVision", "Cargando bitmap desde URI...")
-                val bitmap = withContext(Dispatchers.IO) {
-                    val inputStream = mContext.contentResolver.openInputStream(uri)
-                    val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                    inputStream?.close()
-                    
-                    if (originalBitmap == null) {
-                        Log.e("GeminiVision", "Bitmap original es nulo")
-                        return@withContext null
+        try {
+            val image = InputImage.fromFilePath(mContext, uri)
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+            recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    val texto = visionText.text
+                    Log.d("MLKitVision", "Texto extraído:\n$texto")
+
+                    if (texto.isBlank()) {
+                        binding.llLoadingAi.visibility = View.GONE
+                        Toast.makeText(mContext, "No se detectó texto en la imagen", Toast.LENGTH_SHORT).show()
+                        return@addOnSuccessListener
                     }
 
-                    Log.d("GeminiVision", "Bitmap original cargado: ${originalBitmap.width}x${originalBitmap.height}")
+                    val datos = TransaccionBancariaParser.parsear(texto)
+                    if (datos == null || datos.valor <= 0) {
+                        binding.llLoadingAi.visibility = View.GONE
+                        Toast.makeText(mContext, "No se pudo identificar una transacción bancaria válida en el comprobante", Toast.LENGTH_LONG).show()
+                        return@addOnSuccessListener
+                    }
 
-                    // Escalar para optimizar memoria
-                    if (originalBitmap.width > 1024 || originalBitmap.height > 1024) {
-                        val ratio = originalBitmap.width.toFloat() / originalBitmap.height.toFloat()
-                        val width = if (ratio > 1) 1024 else (1024 * ratio).toInt()
-                        val height = if (ratio > 1) (1024 / ratio).toInt() else 1024
-                        Bitmap.createScaledBitmap(originalBitmap, width, height, true)
+                    val listener = onDatosEscaneadosListener
+                    if (listener != null) {
+                        listener(datos)
                     } else {
-                        originalBitmap
+                        binding.llLoadingAi.visibility = View.GONE
                     }
                 }
-
-                if (bitmap == null) {
-                    Log.e("GeminiVision", "Error: El bitmap final es nulo")
-                    Toast.makeText(mContext, "No se pudo cargar la imagen", Toast.LENGTH_SHORT).show()
-                    return@launch
+                .addOnFailureListener { e ->
+                    binding.llLoadingAi.visibility = View.GONE
+                    Log.e("MLKitVision", "Error al procesar con ML Kit", e)
+                    Toast.makeText(mContext, "Error al leer comprobante: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                 }
-
-                val prompt = """
-                    Analiza este recibo o comprobante de compra. Extrae:
-                    1. 'concepto': Descripción corta del establecimiento o compra (máximo 4 palabras).
-                    2. 'valor_total': El valor o total a pagar como un número entero sin puntos, comas ni símbolos (ej: 35000).
-                    3. 'fecha': La fecha y hora de la compra si aparece en el recibo, en formato YYYY-MM-DD HH:mm (ej: 2026-09-30 14:30). Si no aparece, deja este campo vacío.
-                    Responde ÚNICAMENTE en formato JSON con la siguiente estructura:
-                    {"concepto": "...", "valor_total": "...", "fecha": "..."}
-                """.trimIndent()
-
-                val safetySettings = listOf(
-                    SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
-                    SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
-                    SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
-                    SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
-                )
-
-                val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b")
-                var rawText: String? = null
-                var ultimoError: Exception? = null
-
-                for (nombreModelo in modelos) {
-                    try {
-                        val generativeModel = GenerativeModel(
-                            modelName = nombreModelo,
-                            apiKey = BuildConfig.GEMINI_API_KEY,
-                            safetySettings = safetySettings
-                        )
-
-                        val response = withContext(Dispatchers.IO) {
-                            generativeModel.generateContent(content {
-                                image(bitmap)
-                                text(prompt)
-                            })
-                        }
-
-                        if (!response.text.isNullOrBlank()) {
-                            rawText = response.text
-                            Log.d("GeminiVision", "Éxito con modelo: $nombreModelo -> $rawText")
-                            break
-                        }
-                    } catch (e: Exception) {
-                        ultimoError = e
-                        Log.w("GeminiVision", "Fallo con modelo $nombreModelo: ${e.message}")
-                    }
-                }
-
-                if (rawText.isNullOrBlank()) {
-                    val errStr = ultimoError?.localizedMessage ?: ""
-                    val msg = when {
-                        errStr.contains("429") || errStr.contains("Quota", true) -> "Límite de consultas por minuto alcanzado. Espera 10 segundos e intenta de nuevo."
-                        else -> "El servidor de Google IA estuvo ocupado. Por favor reintenta en unos segundos."
-                    }
-                    Log.e("GeminiVision", "Error general IA: $msg", ultimoError)
-                    Toast.makeText(mContext, msg, Toast.LENGTH_LONG).show()
-                    return@launch
-                }
-
-                val jsonStart = rawText.indexOf("{")
-                val jsonEnd = rawText.lastIndexOf("}")
-                if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
-                    val cleanJson = rawText.substring(jsonStart, jsonEnd + 1)
-                    val jsonResponse = JSONObject(cleanJson)
-                    
-                    val concepto = jsonResponse.optString("concepto")
-                    val valorTotal = jsonResponse.optString("valor_total").replace(Regex("[^0-9]"), "")
-                    val fechaEscaneada = jsonResponse.optString("fecha")
-
-                    val dialogB = currentDialogBinding
-                    if (dialogB != null) {
-                        if (concepto.isNotBlank()) {
-                            dialogB.etDescripcion.setText(concepto.uppercase())
-                        }
-                        if (valorTotal.isNotBlank()) {
-                            dialogB.etValor.setText(valorTotal)
-                        }
-                        if (fechaEscaneada.isNotBlank() && fechaEscaneada != "null") {
-                            try {
-                                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
-                                val dateParsed = sdf.parse(fechaEscaneada)
-                                if (dateParsed != null) {
-                                    val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
-                                    dialogB.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsed)
-                                }
-                            } catch (_: Exception) {
-                                try {
-                                    val sdfSimple = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                                    val dateParsedSimple = sdfSimple.parse(fechaEscaneada)
-                                    if (dateParsedSimple != null) {
-                                        val sdfFechaDisplay = SimpleDateFormat("dd MMM, HH:mm 'hrs'", Locale("es", "ES"))
-                                        dialogB.tvFechaMovimiento.text = sdfFechaDisplay.format(dateParsedSimple)
-                                    }
-                                } catch (_: Exception) {}
-                            }
-                        }
-                    }
-                    Toast.makeText(mContext, "Datos y fecha escaneados con éxito", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(mContext, "No se pudo interpretar el texto del recibo", Toast.LENGTH_SHORT).show()
-                }
-                
-            } catch (e: Exception) {
-                Log.e("GeminiVision", "Error en IA: ${e.message}", e)
-                Toast.makeText(mContext, "Error IA: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-            } finally {
-                binding.llLoadingAi.visibility = View.GONE
-            }
+        } catch (e: Exception) {
+            binding.llLoadingAi.visibility = View.GONE
+            Log.e("MLKitVision", "Error cargando archivo de imagen", e)
+            Toast.makeText(mContext, "Error cargando imagen: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
 

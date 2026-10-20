@@ -65,102 +65,44 @@ class SmsBancarioReceiver : BroadcastReceiver() {
 
         return senderUpper.contains("85540") ||
                 bodyUpper.contains("BANCOLOMBIA") ||
-                bodyUpper.contains("PAGASTE $") ||
-                bodyUpper.contains("RECIBISTE UN PAGO") ||
-                bodyUpper.contains("COMPRA POR $") ||
+                bodyUpper.contains("PAGASTE") ||
+                bodyUpper.contains("TRANSFERISTE") ||
+                bodyUpper.contains("RECIBISTE") ||
+                bodyUpper.contains("COMPRA") ||
                 bodyUpper.contains("TRANSFERENCIA")
     }
 
     private fun procesarSmsBancario(context: Context, body: String) {
         try {
-            val bodyUpper = body.uppercase()
-
-            // 1. Determinar Tipo (INGRESO o GASTO)
-            val esIngreso = bodyUpper.contains("RECIBISTE UN PAGO") ||
-                    bodyUpper.contains("ABONO") ||
-                    bodyUpper.contains("CONSIGNACION") ||
-                    bodyUpper.contains("TRANSFERENCIA RECIBIDA") ||
-                    bodyUpper.contains("NÓMINA") ||
-                    bodyUpper.contains("NOMINA")
-
-            val tipoReg = if (esIngreso) "INGRESO" else "GASTO"
-
-            // 2. Extraer Valor/Monto ($X,XXX.XX)
-            val regexMonto = Pattern.compile("\\$\\s?([0-9]{1,3}(?:,[0-9]{3})*(?:\\.[0-9]{2})?)")
-            val matcherMonto = regexMonto.matcher(body)
-            var valorInt = 0
-
-            if (matcherMonto.find()) {
-                val montoRaw = matcherMonto.group(1) ?: "0"
-                // Quitar comas y decimales
-                val montoLimpio = montoRaw.replace(",", "").split(".")[0]
-                valorInt = montoLimpio.toIntOrNull() ?: 0
-            }
-
-            if (valorInt <= 0) {
-                Log.w(TAG, "No se pudo extraer un monto válido del SMS")
+            val datos = TransaccionBancariaParser.parsear(body)
+            if (datos == null || datos.valor <= 0) {
+                Log.w(TAG, "No se pudo extraer una transacción válida del SMS")
                 return
             }
 
-            // 3. Extraer Concepto o Detalle
-            var concepto = if (esIngreso) "INGRESO BANCARIO" else "GASTO BANCOLOMBIA"
-            var categoria = "Varios"
-
-            if (bodyUpper.contains("PAGO DE NOMINA") || bodyUpper.contains("NOMINA")) {
-                concepto = "PAGO NÓMINA"
-                if (body.contains("de ", ignoreCase = true)) {
-                    val partes = body.split("de ", ignoreCase = true)
-                    if (partes.size > 1) {
-                        val entidad = partes[1].split(" por")[0].trim()
-                        concepto = "NÓMINA $entidad".uppercase()
-                    }
-                }
-                categoria = "Ingresos"
-            } else if (bodyUpper.contains("CODIGO QR") || bodyUpper.contains("CÓDIGO QR")) {
-                concepto = "PAGO CÓDIGO QR BANCOLOMBIA"
-                categoria = "Comida"
-            } else if (bodyUpper.contains("COMPRA EN")) {
-                val partes = body.split("COMPRA EN", ignoreCase = true)
-                if (partes.size > 1) {
-                    val lugar = partes[1].split(" POR")[0].trim()
-                    concepto = "COMPRA EN $lugar".uppercase()
-                }
-            }
-
-            // 4. Extraer Fecha del SMS si está presente (ej: 29/09/2026 a las 10:12)
-            var fechaFinal = Constantes.formatoFecha(System.currentTimeMillis())
-            val regexFecha = Pattern.compile("([0-9]{2}/[0-9]{2}/[0-9]{4}).+?([0-9]{2}:[0-9]{2})")
-            val matcherFecha = regexFecha.matcher(body)
-
-            if (matcherFecha.find()) {
-                val fStr = matcherFecha.group(1)
-                val hStr = matcherFecha.group(2)
-                if (fStr != null && hStr != null) {
-                    val partesF = fStr.split("/")
-                    if (partesF.size == 3) {
-                        fechaFinal = "${partesF[2]}-${partesF[1]}-${partesF[0]} $hStr:00"
-                    }
-                }
-            }
-
-            // 5. Guardar en Base de Datos Local (SQLite) en hilo I/O
             val db = NotasDatabaseHelper.getInstance(context)
+
+            // Validación inteligente de duplicados (tolerancia ±5 minutos)
+            val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.tipo_reg, datos.fecha)
+            if (duplicado != null) {
+                Log.d(TAG, "SMS ignorado: Ya existe un movimiento idéntico registrado previamente (ID #${duplicado.id}, $${duplicado.valor}, ${duplicado.fecha})")
+                return
+            }
+
             val movimiento = Movimiento(
                 id = 0,
-                descripcion = concepto,
-                valor = valorInt,
-                tipo_reg = tipoReg,
-                fecha = fechaFinal,
-                categoria = categoria,
+                descripcion = datos.descripcion,
+                valor = datos.valor,
+                tipo_reg = datos.tipo_reg,
+                fecha = datos.fecha,
+                categoria = datos.categoria,
                 fechaCreacion = Constantes.formatoFecha(System.currentTimeMillis())
             )
 
             db.insertNota(movimiento)
-            Log.d(TAG, "Movimiento guardado automáticamente desde SMS: $concepto - $$valorInt")
+            Log.d(TAG, "Movimiento guardado automáticamente desde SMS: ${datos.descripcion} - $$${datos.valor}")
 
-            // 6. Lanzar Notificación
-            mostrarNotificacion(context, concepto, valorInt, esIngreso)
-
+            mostrarNotificacion(context, datos.descripcion, datos.valor, datos.tipo_reg == "INGRESO")
         } catch (e: Exception) {
             Log.e(TAG, "Error procesando SMS bancario: ${e.message}", e)
         }

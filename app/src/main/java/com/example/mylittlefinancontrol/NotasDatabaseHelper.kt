@@ -345,6 +345,86 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         return db.delete(TABLE_MOVIMIENTO, "$COLUMN_MOV_ID = ?", arrayOf(id.toString()))
     }
 
+    /**
+     * Busca si ya existe un movimiento con el mismo valor, tipo_reg y cuya fecha
+     * coincida exactamente en día y hora/minuto (con una tolerancia de ±5 minutos).
+     */
+    fun buscarMovimientoDuplicado(valor: Int, tipoReg: String, fechaHora: String): Movimiento? {
+        if (valor <= 0 || fechaHora.isBlank()) return null
+
+        val targetTs = parsearFechaTimestamp(fechaHora)
+        val db = readableDatabase
+
+        val cursor = if (tipoReg.equals("GASTO", ignoreCase = true)) {
+            db.rawQuery(
+                "SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_VALOR = ? AND UPPER($COLUMN_MOV_TIPO) IN ('GASTO', 'GASTO FIJO', 'PAGO DEUDA') ORDER BY $COLUMN_MOV_ID DESC",
+                arrayOf(valor.toString())
+            )
+        } else {
+            db.rawQuery(
+                "SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_VALOR = ? AND UPPER($COLUMN_MOV_TIPO) = UPPER(?) ORDER BY $COLUMN_MOV_ID DESC",
+                arrayOf(valor.toString(), tipoReg.trim())
+            )
+        }
+
+        try {
+            while (cursor.moveToNext()) {
+                val mov = cursorToMovimiento(cursor)
+                val movTs = obtenerTimestampParaOrdenamiento(mov)
+
+                if (targetTs > 0L && movTs > 0L) {
+                    val diffMinutos = Math.abs(movTs - targetTs) / (60 * 1000L)
+                    if (diffMinutos <= 5L) {
+                        return mov
+                    }
+                } else {
+                    val fecha1 = extraerDiaSolo(mov.fecha)
+                    val fecha2 = extraerDiaSolo(fechaHora)
+                    if (fecha1.isNotBlank() && fecha1 == fecha2) {
+                        return mov
+                    }
+                }
+            }
+        } finally {
+            cursor.close()
+        }
+
+        return null
+    }
+
+    private fun parsearFechaTimestamp(fechaStr: String): Long {
+        val clean = fechaStr.trim()
+        val formatos = arrayOf(
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "dd/MM/yyyy HH:mm:ss",
+            "dd/MM/yyyy HH:mm",
+            "dd/MM/yyyy hh:mm a",
+            "yyyy-MM-dd"
+        )
+        for (fmt in formatos) {
+            try {
+                val sdf = SimpleDateFormat(fmt, Locale.US)
+                val d = sdf.parse(clean)
+                if (d != null) return d.time
+            } catch (_: Exception) {}
+        }
+        return 0L
+    }
+
+    private fun extraerDiaSolo(fechaStr: String): String {
+        val clean = fechaStr.trim()
+        val m1 = java.util.regex.Pattern.compile("(\\d{4})[-/](\\d{2})[-/](\\d{2})").matcher(clean)
+        if (m1.find()) {
+            return "${m1.group(1)}-${m1.group(2)}-${m1.group(3)}"
+        }
+        val m2 = java.util.regex.Pattern.compile("(\\d{2})[-/](\\d{2})[-/](\\d{4})").matcher(clean)
+        if (m2.find()) {
+            return "${m2.group(3)}-${m2.group(2)}-${m2.group(1)}"
+        }
+        return ""
+    }
+
     // --- MÉTODOS GASTOS FIJOS ---
     fun insertGastoFijo(gf: GastoFijo) {
         invalidateCache()
