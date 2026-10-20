@@ -86,15 +86,19 @@ class FragmentPerfil : Fragment() {
     }
 
     private fun setupDemoDataUI() {
-        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper(mContext)
+        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
 
         binding.btnCargarDemo.setOnClickListener {
             AlertDialog.Builder(mContext)
                 .setTitle("Cargar Datos de Demostración")
                 .setMessage("¿Deseas poblar todos los módulos con datos de prueba realistas (Movimientos, Gastos Fijos, Deudas y Metas de Ahorro)?")
                 .setPositiveButton("Cargar Datos") { _, _ ->
-                    DemoDataHelper.cargarDatosPrueba(mContext, db)
-                    Toast.makeText(mContext, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
+                    scope.launch(Dispatchers.IO) {
+                        DemoDataHelper.cargarDatosPrueba(mContext, db)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(mContext, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
@@ -105,8 +109,12 @@ class FragmentPerfil : Fragment() {
                 .setTitle("Limpiar Base de Datos")
                 .setMessage("¿Estás seguro de vaciar todos los registros para comenzar con una base de datos limpia?")
                 .setPositiveButton("Limpiar Todo") { _, _ ->
-                    DemoDataHelper.limpiarTodosLosDatos(mContext, db)
-                    Toast.makeText(mContext, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
+                    scope.launch(Dispatchers.IO) {
+                        DemoDataHelper.limpiarTodosLosDatos(mContext, db)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(mContext, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
@@ -163,20 +171,26 @@ class FragmentPerfil : Fragment() {
 
     private fun actualizarEstadoBackup() {
         var account = backupPrefs.getString("GoogleAccount", null)
+        if (account.isNullOrBlank() || account == "null") {
+            account = null
+        }
 
         // Si no se ha guardado explícitamente pero hay sesión activa de Google con permisos de Drive, autodetectar
         if (account == null) {
             val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
             val driveScope = Scope(DriveScopes.DRIVE_APPDATA)
-            if (lastAccount != null && lastAccount.email != null && GoogleSignIn.hasPermissions(lastAccount, driveScope)) {
-                account = lastAccount.email
-                backupPrefs.edit().putString("GoogleAccount", account).apply()
+            if (lastAccount != null && GoogleSignIn.hasPermissions(lastAccount, driveScope)) {
+                val email = lastAccount.email ?: lastAccount.account?.name
+                if (!email.isNullOrBlank() && email != "null") {
+                    account = email
+                    backupPrefs.edit().putString("GoogleAccount", account).apply()
+                }
             }
         }
 
         val lastTime = backupPrefs.getLong("LastBackupTime", 0)
 
-        if (account != null) {
+        if (!account.isNullOrBlank()) {
             binding.tvGoogleAccount.text = "Vinculado como: $account"
             binding.btnGoogleAuth.text = "Desvincular"
         } else {
@@ -207,7 +221,9 @@ class FragmentPerfil : Fragment() {
             .build()
         
         val client = GoogleSignIn.getClient(requireActivity(), gso)
-        startActivityForResult(client.signInIntent, 1001)
+        client.signOut().addOnCompleteListener {
+            startActivityForResult(client.signInIntent, 1001)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -216,9 +232,10 @@ class FragmentPerfil : Fragment() {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             try {
                 val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                if (account != null && account.email != null) {
-                    backupPrefs.edit().putString("GoogleAccount", account.email).apply()
-                    Toast.makeText(mContext, "Cuenta de Drive vinculada: ${account.email}", Toast.LENGTH_SHORT).show()
+                val email = account?.email ?: account?.account?.name
+                if (!email.isNullOrBlank() && email != "null") {
+                    backupPrefs.edit().putString("GoogleAccount", email).apply()
+                    Toast.makeText(mContext, "Cuenta de Drive vinculada: $email", Toast.LENGTH_SHORT).show()
                     actualizarEstadoBackup()
 
                     val action = pendingAction
@@ -228,6 +245,9 @@ class FragmentPerfil : Fragment() {
                     } else if (action == "BACKUP") {
                         forzarRespaldoManual()
                     }
+                } else {
+                    pendingAction = null
+                    Toast.makeText(mContext, "No se pudo obtener el correo de la cuenta de Google", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 pendingAction = null
@@ -244,15 +264,29 @@ class FragmentPerfil : Fragment() {
     }
 
     private fun forzarRespaldoManual() {
-        val accountName = backupPrefs.getString("GoogleAccount", null)
-        if (accountName == null) {
+        var accountName = backupPrefs.getString("GoogleAccount", null)
+        if (accountName.isNullOrBlank() || accountName == "null") {
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
+            val email = lastAccount?.email ?: lastAccount?.account?.name
+            if (!email.isNullOrBlank() && email != "null") {
+                accountName = email
+                backupPrefs.edit().putString("GoogleAccount", accountName).apply()
+            }
+        }
+
+        if (accountName.isNullOrBlank() || accountName == "null") {
             pendingAction = "BACKUP"
             iniciarVinculacionGoogle()
             return
         }
         
         binding.btnBackupNow.isEnabled = false
-        Toast.makeText(mContext, "Iniciando respaldo en Google Drive...", Toast.LENGTH_SHORT).show()
+        
+        val progressDialog = android.app.ProgressDialog(mContext)
+        progressDialog.setTitle("Respaldando...")
+        progressDialog.setMessage("Subiendo datos a Google Drive, por favor espera.")
+        progressDialog.setCanceledOnTouchOutside(false)
+        progressDialog.show()
 
         scope.launch(Dispatchers.IO) {
             try {
@@ -263,6 +297,7 @@ class FragmentPerfil : Fragment() {
                 if (dbFile != null) {
                     val fileId = driveService.uploadFile(dbFile, "finanzas_backup.db")
                     withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
                         if (fileId != null) {
                             backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
                             actualizarEstadoBackup()
@@ -274,12 +309,14 @@ class FragmentPerfil : Fragment() {
                     }
                 } else {
                     withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
                         Toast.makeText(mContext, "No hay base de datos local para respaldar", Toast.LENGTH_SHORT).show()
                         binding.btnBackupNow.isEnabled = true
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
                     Toast.makeText(mContext, "Error en respaldo: ${e.message}", Toast.LENGTH_LONG).show()
                     binding.btnBackupNow.isEnabled = true
                 }
@@ -297,14 +334,27 @@ class FragmentPerfil : Fragment() {
     }
 
     private fun ejecutarRestauracion() {
-        val accountName = backupPrefs.getString("GoogleAccount", null)
-        if (accountName == null) {
+        var accountName = backupPrefs.getString("GoogleAccount", null)
+        if (accountName.isNullOrBlank() || accountName == "null") {
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
+            val email = lastAccount?.email ?: lastAccount?.account?.name
+            if (!email.isNullOrBlank() && email != "null") {
+                accountName = email
+                backupPrefs.edit().putString("GoogleAccount", accountName).apply()
+            }
+        }
+
+        if (accountName.isNullOrBlank() || accountName == "null") {
             pendingAction = "RESTORE"
             iniciarVinculacionGoogle()
             return
         }
         
-        Toast.makeText(mContext, "Buscando copia de seguridad en Google Drive...", Toast.LENGTH_SHORT).show()
+        val progressDialog = android.app.ProgressDialog(mContext)
+        progressDialog.setTitle("Restaurando...")
+        progressDialog.setMessage("Descargando datos desde Google Drive, por favor espera.")
+        progressDialog.setCanceledOnTouchOutside(false)
+        progressDialog.show()
 
         scope.launch(Dispatchers.IO) {
             try {
@@ -317,23 +367,30 @@ class FragmentPerfil : Fragment() {
                 if (success) {
                     val restored = backupManager.restoreDatabase(tempFile)
                     withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
                         if (restored) {
                             Toast.makeText(mContext, "¡Restauración completada con éxito! Reiniciando la app...", Toast.LENGTH_LONG).show()
-                            // Reiniciar app
-                            val intent = mContext.packageManager.getLaunchIntentForPackage(mContext.packageName)
-                            intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(intent)
+                            
+                            // Usar Process.killProcess para un reinicio duro forzado sin bloquear la UI principal
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                val intent = mContext.packageManager.getLaunchIntentForPackage(mContext.packageName)
+                                intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                mContext.startActivity(intent)
+                                android.os.Process.killProcess(android.os.Process.myPid())
+                            }, 500)
                         } else {
                             Toast.makeText(mContext, "Error al sobreescribir la base de datos local", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
                     withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
                         Toast.makeText(mContext, "No se encontró ningún archivo 'finanzas_backup.db' en la cuenta de Google Drive: $accountName", Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
                     Toast.makeText(mContext, "Error al conectar con Drive: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
@@ -369,7 +426,8 @@ class FragmentPerfil : Fragment() {
         )
 
         // 2. Ejecutar un respaldo inmediato si hay cuenta vinculada
-        if (backupPrefs.getString("GoogleAccount", null) != null) {
+        val currentAcc = backupPrefs.getString("GoogleAccount", null)
+        if (!currentAcc.isNullOrBlank() && currentAcc != "null") {
             val immediateRequest = OneTimeWorkRequestBuilder<BackupWorker>()
                 .setConstraints(constraints)
                 .addTag("ImmediateBackup")
@@ -432,7 +490,7 @@ class FragmentPerfil : Fragment() {
         val uid = firebaseAuth.uid ?: return
         val ref = FirebaseDatabase.getInstance().getReference("usuarios")
         ref.child(uid)
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val nombres = snapshot.child("nombres").value?.toString()
                     val email = snapshot.child("email").value?.toString()

@@ -8,9 +8,8 @@ import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.File
 import com.google.api.client.http.FileContent
+import java.io.BufferedOutputStream
 import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
 import java.util.Collections
 
 class GoogleDriveService(context: Context, accountName: String) {
@@ -18,6 +17,9 @@ class GoogleDriveService(context: Context, accountName: String) {
     private val driveService: Drive
 
     init {
+        require(accountName.isNotBlank() && accountName != "null") {
+            "Nombre de cuenta de Google no válido: '$accountName'"
+        }
         val credential = GoogleAccountCredential.usingOAuth2(
             context, Collections.singleton(DriveScopes.DRIVE_APPDATA)
         ).setSelectedAccountName(accountName)
@@ -55,14 +57,15 @@ class GoogleDriveService(context: Context, accountName: String) {
     }
 
     /**
-     * Descarga un archivo desde Google Drive.
+     * Descarga un archivo desde Google Drive usando un búfer de salida optimizado.
      */
     fun downloadFile(driveFileName: String, localFile: java.io.File): Boolean {
         val driveFile = findFile(driveFileName) ?: return false
         
-        val outputStream: OutputStream = FileOutputStream(localFile)
-        driveService.files().get(driveFile.id).executeMediaAndDownloadTo(outputStream)
-        outputStream.close()
+        BufferedOutputStream(FileOutputStream(localFile), 8192).use { outputStream ->
+            driveService.files().get(driveFile.id).executeMediaAndDownloadTo(outputStream)
+            outputStream.flush()
+        }
         return true
     }
 

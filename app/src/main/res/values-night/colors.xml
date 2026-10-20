@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- DABA Design System — Engineered Obsidian (v2.4 Dark) Tokens Exactos -->
+    <color name="surface_bg">#121412</color>
+    <color name="surface_card">#1A1C1A</color>
+    <color name="surface_container">#202420</color>
+    <color name="surface_container_low">#121412</color>
+    <color name="surface_container_high">#242A24</color>
+    <color name="surface_container_highest">#242A24</color>
+    <color name="surface_variant">#202420</color>
+
+    <color name="border_subtle">#273829</color>
+    <color name="border_internal">#273829</color>
+    <color name="outline_variant">#273829</color>
+
+    <color name="primary_emerald">#00C853</color>
+    <color name="primary_emerald_dark">#00E676</color>
+    <color name="primary_emerald_light">#00FF66</color>
+    <color name="primary_emerald_50">#1A00C853</color>
+    <color name="primary_fixed">#1A00C853</color>
+    <color name="on_primary_fixed">#00C853</color>
+    <color name="primary_fixed_dim">#1A00C853</color>
+
+    <color name="ghost_bg">#1A00C853</color>
+    <color name="ghost_border">#6600C853</color>
+    <color name="active_state_dot">#00FF66</color>
+
+    <color name="text_primary">#F5FAF5</color>
+    <color name="text_secondary">#D2DED3</color>
+    <color name="text_variant">#D2DED3</color>
+    <color name="text_muted">#8F9E91</color>
+    <color name="text_meta">#697A6B</color>
+
+    <color name="income_green">#00C853</color>
+    <color name="income_green_bg">#1A00C853</color>
+    <color name="expense_red">#F87171</color>
+    <color name="expense_red_bg">#1FEF4444</color>
+    <color name="on_expense_red">#F87171</color>
+    <color name="error_text">#F87171</color>
+    <color name="secondary_container">#202420</color>
+    <color name="on_secondary_container">#F5FAF5</color>
+    <color name="debt_amber">#FBBF24</color>
+    <color name="debt_amber_bg">#332400</color>
+
+    <color name="badge_paid_bg">#1A00C853</color>
+    <color name="badge_paid_text">#00C853</color>
+    <color name="badge_pending_bg">#332400</color>
+    <color name="badge_pending_text">#FBBF24</color>
+
+    <!-- Aliases para modo oscuro -->
+    <color name="verde_oscuro">#00E676</color>
+    <color name="verde_brillante">#00C853</color>
+    <color name="verde_claro">#1A00C853</color>
+    <color name="verde_negro">#0A140A</color>
+    <color name="verde_gris">#8F9E91</color>
+    <color name="rojo_alerta">#F87171</color>
+    <color name="rojo_transparente">#1FEF4444</color>
+    <color name="verde_transparente">#1A00C853</color>
+    <color name="verde_blanco_transparente">#1A1C1A</color>
+    <color name="verde">#00C853</color>
+    <color name="verde_oscuro_transparente">#1A00C853</color>
+    <color name="negro_transparente">#CC000000</color>
+</resources>

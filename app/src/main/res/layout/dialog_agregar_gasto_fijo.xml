@@ -6,9 +6,9 @@
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     app:cardBackgroundColor="@color/surface_card"
-    app:cardCornerRadius="32dp"
-    app:cardElevation="16dp"
-    app:strokeColor="@color/outline_variant"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:strokeColor="@color/border_subtle"
     app:strokeWidth="1dp">
 
     <ScrollView
@@ -176,7 +176,7 @@
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
                         app:strokeColor="@color/primary_emerald"
-                        app:strokeWidth="1.5dp">
+                        app:strokeWidth="1dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -215,7 +215,7 @@
                         app:cardBackgroundColor="@color/surface_bg"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/outline_variant"
+                        app:strokeColor="@color/border_subtle"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -263,7 +263,7 @@
                         app:cardBackgroundColor="@color/surface_bg"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/outline_variant"
+                        app:strokeColor="@color/border_subtle"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -303,7 +303,7 @@
                         app:cardBackgroundColor="@color/surface_bg"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/outline_variant"
+                        app:strokeColor="@color/border_subtle"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -351,7 +351,7 @@
                         app:cardBackgroundColor="@color/surface_bg"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/outline_variant"
+                        app:strokeColor="@color/border_subtle"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -391,7 +391,7 @@
                         app:cardBackgroundColor="@color/surface_bg"
                         app:cardCornerRadius="12dp"
                         app:cardElevation="0dp"
-                        app:strokeColor="@color/outline_variant"
+                        app:strokeColor="@color/border_subtle"
                         app:strokeWidth="1dp">
 
                         <LinearLayout
@@ -427,9 +427,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
                 app:cardBackgroundColor="@color/surface_container_low"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/primary_fixed"
+                app:strokeColor="@color/border_subtle"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -607,9 +607,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="18dp"
                 app:cardBackgroundColor="@color/surface_bg"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/outline_variant"
+                app:strokeColor="@color/border_subtle"
                 app:strokeWidth="1dp">
 
                 <RelativeLayout

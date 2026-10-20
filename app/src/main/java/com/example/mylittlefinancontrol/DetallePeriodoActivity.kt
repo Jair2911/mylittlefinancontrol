@@ -58,7 +58,7 @@ class DetallePeriodoActivity : AppCompatActivity() {
         binding = ActivityDetallePeriodoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        db = NotasDatabaseHelper(this)
+        db = NotasDatabaseHelper.getInstance(this)
         tipoPeriodo = intent.getStringExtra("TIPO_PERIODO") ?: "MENSUAL"
 
         calcularRangosFechas()
@@ -98,65 +98,70 @@ class DetallePeriodoActivity : AppCompatActivity() {
     }
 
     private fun cargarDatosPeriodo() {
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        resumenActual = db.getResumenPorRangoFechas(startDate, endDate)
-        listaMovimientosPeriodo = db.getMovimientosPorRangoFechas(startDate, endDate)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val res = db.getResumenPorRangoFechas(startDate, endDate)
+            val movs = db.getMovimientosPorRangoFechas(startDate, endDate)
+            resumenActual = res
+            listaMovimientosPeriodo = movs
 
-        val res = resumenActual ?: return
+            withContext(Dispatchers.Main) {
+                val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
-        binding.tvBalanceNetoPeriodo.text = format.format(res.balanceNeto)
-        binding.tvIngresosPeriodo.text = "+${format.format(res.totalIngresos)}"
-        binding.tvGastosPeriodo.text = "-${format.format(res.totalGastos)}"
+                binding.tvBalanceNetoPeriodo.text = format.format(res.balanceNeto)
+                binding.tvIngresosPeriodo.text = "+${format.format(res.totalIngresos)}"
+                binding.tvGastosPeriodo.text = "-${format.format(res.totalGastos)}"
 
-        val colorBalance = if (res.balanceNeto < 0) 
-            ContextCompat.getColor(this, R.color.expense_red) 
-        else 
-            ContextCompat.getColor(this, R.color.primary_emerald)
-        binding.tvBalanceNetoPeriodo.setTextColor(colorBalance)
+                val colorBalance = if (res.balanceNeto < 0) 
+                    ContextCompat.getColor(this@DetallePeriodoActivity, R.color.expense_red) 
+                else 
+                    ContextCompat.getColor(this@DetallePeriodoActivity, R.color.primary_emerald)
+                binding.tvBalanceNetoPeriodo.setTextColor(colorBalance)
 
-        // Proyección Inteligente al Cierre
-        if (res.totalIngresos > 0) {
-            val margenAhorro = ((res.balanceNeto / res.totalIngresos) * 100).toInt()
-            if (res.balanceNeto >= 0) {
-                binding.tvProyeccionTexto.text = "🟢 Al ritmo de gasto actual, proyectas cerrar este periodo con un margen positivo del $margenAhorro% sobre tus ingresos."
-            } else {
-                binding.tvProyeccionTexto.text = "🔴 Tus gastos superan tus ingresos en este periodo. Alerta de sobregiro estimada de ${format.format(res.balanceNeto)}."
-            }
-        } else if (res.totalGastos > 0) {
-            binding.tvProyeccionTexto.text = "⚠️ Se han registrado gastos por ${format.format(res.totalGastos)} sin ingresos reportados aún en este periodo."
-        } else {
-            binding.tvProyeccionTexto.text = "ℹ️ No se registran movimientos financieros en el rango de fechas seleccionado."
-        }
-
-        // Categorías
-        val categorias = res.listaCategorias
-        binding.tvTotalCategoriasCount.text = "${categorias.size} categorías"
-
-        binding.rvCategoriasPeriodo.layoutManager = LinearLayoutManager(this)
-        val adapterCats = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-                val b = ItemCategoriaResumenBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                return object : RecyclerView.ViewHolder(b.root) {}
-            }
-
-            override fun getItemCount() = categorias.size
-
-            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                val item = categorias[position]
-                val b = ItemCategoriaResumenBinding.bind(holder.itemView)
-
-                b.tvNombreCategoria.text = item.nombreCategoria
-                b.tvMontoCategoria.text = "-${format.format(item.totalMonto)}"
-                b.tvPorcentajeCategoria.text = "${item.porcentaje}%"
-                b.tvConteoTransacciones.text = "${item.conteoTransacciones} transacciones"
-                b.pbPorcentajeCategoria.progress = item.porcentaje.toInt().coerceIn(0, 100)
-
-                holder.itemView.setOnClickListener {
-                    mostrarBottomSheetDetalleCategoria(item)
+                // Proyección Inteligente al Cierre
+                if (res.totalIngresos > 0) {
+                    val margenAhorro = ((res.balanceNeto / res.totalIngresos) * 100).toInt()
+                    if (res.balanceNeto >= 0) {
+                        binding.tvProyeccionTexto.text = "🟢 Al ritmo de gasto actual, proyectas cerrar este periodo con un margen positivo del $margenAhorro% sobre tus ingresos."
+                    } else {
+                        binding.tvProyeccionTexto.text = "🔴 Tus gastos superan tus ingresos en este periodo. Alerta de sobregiro estimada de ${format.format(res.balanceNeto)}."
+                    }
+                } else if (res.totalGastos > 0) {
+                    binding.tvProyeccionTexto.text = "⚠️ Se han registrado gastos por ${format.format(res.totalGastos)} sin ingresos reportados aún en este periodo."
+                } else {
+                    binding.tvProyeccionTexto.text = "ℹ️ No se registran movimientos financieros en el rango de fechas seleccionado."
                 }
+
+                // Categorías
+                val categorias = res.listaCategorias
+                binding.tvTotalCategoriasCount.text = "${categorias.size} categorías"
+
+                binding.rvCategoriasPeriodo.layoutManager = LinearLayoutManager(this@DetallePeriodoActivity)
+                val adapterCats = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+                    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                        val b = ItemCategoriaResumenBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                        return object : RecyclerView.ViewHolder(b.root) {}
+                    }
+
+                    override fun getItemCount() = categorias.size
+
+                    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                        val item = categorias[position]
+                        val b = ItemCategoriaResumenBinding.bind(holder.itemView)
+
+                        b.tvNombreCategoria.text = item.nombreCategoria
+                        b.tvMontoCategoria.text = "-${format.format(item.totalMonto)}"
+                        b.tvPorcentajeCategoria.text = "${item.porcentaje}%"
+                        b.tvConteoTransacciones.text = "${item.conteoTransacciones} transacciones"
+                        b.pbPorcentajeCategoria.progress = item.porcentaje.toInt().coerceIn(0, 100)
+
+                        holder.itemView.setOnClickListener {
+                            mostrarBottomSheetDetalleCategoria(item)
+                        }
+                    }
+                }
+                binding.rvCategoriasPeriodo.adapter = adapterCats
             }
         }
-        binding.rvCategoriasPeriodo.adapter = adapterCats
     }
 
     private fun mostrarBottomSheetDetalleCategoria(item: CategoriaGastoItem) {

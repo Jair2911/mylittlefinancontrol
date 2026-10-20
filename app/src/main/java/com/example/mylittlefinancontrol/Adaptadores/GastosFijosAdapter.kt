@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.R
@@ -12,12 +14,29 @@ import com.example.mylittlefinancontrol.databinding.ItemGastoFijoBinding
 import java.text.NumberFormat
 import java.util.*
 
+object GastoFijoDiffCallback : DiffUtil.ItemCallback<GastoFijo>() {
+    override fun areItemsTheSame(oldItem: GastoFijo, newItem: GastoFijo): Boolean = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: GastoFijo, newItem: GastoFijo): Boolean = oldItem == newItem
+}
+
 class GastosFijosAdapter(
-    private var listaGastos: List<GastoFijo>,
     private val onEditarClick: (GastoFijo) -> Unit,
     private val onEliminarClick: (GastoFijo) -> Unit,
     private val onControlAnualClick: (GastoFijo) -> Unit = {}
-) : RecyclerView.Adapter<GastosFijosAdapter.ViewHolder>() {
+) : ListAdapter<GastoFijo, GastosFijosAdapter.ViewHolder>(GastoFijoDiffCallback) {
+
+    constructor(
+        listaInicial: List<GastoFijo>,
+        onEditarClick: (GastoFijo) -> Unit,
+        onEliminarClick: (GastoFijo) -> Unit,
+        onControlAnualClick: (GastoFijo) -> Unit = {}
+    ) : this(onEditarClick, onEliminarClick, onControlAnualClick) {
+        submitList(listaInicial)
+    }
+
+    companion object {
+        private val formatMoneda = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+    }
 
     class ViewHolder(val binding: ItemGastoFijoBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -27,17 +46,15 @@ class GastosFijosAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val gasto = listaGastos[position]
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        val gasto = getItem(position)
         val context = holder.itemView.context
 
         holder.binding.apply {
             tvConcepto.text = gasto.concepto
             tvCategoriaTag.text = gasto.categoria.uppercase()
-            tvMonto.text = format.format(gasto.monto)
+            tvMonto.text = formatMoneda.format(gasto.monto)
             tvPagoInfo.text = "Día ${gasto.diaPago} · ${gasto.periodo}"
 
-            // Icono y paleta cromática según categoría
             val catLower = gasto.categoria.lowercase()
             when {
                 catLower.contains("serv") || catLower.contains("básic") || catLower.contains("luz") || catLower.contains("agua") || catLower.contains("gas") -> {
@@ -87,7 +104,6 @@ class GastosFijosAdapter(
                 tvEstadoMensual.visibility = View.GONE
                 tvStatusLabel.text = "CUOTAS DEL MES:"
 
-                // Q1
                 if (gasto.ultimoPagoQ1 == mesAnioActual) {
                     tvEstadoQ1.text = "✓ Q1 PAGADA"
                     tvEstadoQ1.backgroundTintList = ColorStateList.valueOf(bgPagado)
@@ -98,7 +114,6 @@ class GastosFijosAdapter(
                     tvEstadoQ1.setTextColor(textPendiente)
                 }
 
-                // Q2
                 if (gasto.ultimoPagoQ2 == mesAnioActual) {
                     tvEstadoQ2.text = "✓ Q2 PAGADA"
                     tvEstadoQ2.backgroundTintList = ColorStateList.valueOf(bgPagado)
@@ -137,10 +152,7 @@ class GastosFijosAdapter(
         }
     }
 
-    override fun getItemCount() = listaGastos.size
-
     fun actualizarLista(nuevaLista: List<GastoFijo>) {
-        listaGastos = nuevaLista
-        notifyDataSetChanged()
+        submitList(nuevaLista)
     }
 }

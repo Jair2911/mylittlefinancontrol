@@ -1,64 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Paleta Modern Financial Balance (Tailwind / Material 3) -->
-    <color name="primary_emerald">#006948</color>
-    <color name="primary_emerald_dark">#005137</color>
-    <color name="primary_emerald_light">#68DBA9</color>
-    <color name="primary_emerald_50">#EFF4FF</color>
-    <color name="primary_fixed">#85F8C4</color>
-    <color name="on_primary_fixed">#002114</color>
-    <color name="primary_fixed_dim">#68DBA9</color>
+    <!-- DABA Design System — Technical Precision (Light Mode) Tokens Exactos -->
+    <color name="surface_bg">#F8FAF9</color>
+    <color name="surface_card">#F0FFF4</color>
+    <color name="surface_container">#F4F7F5</color>
+    <color name="surface_container_low">#F4F7F5</color>
+    <color name="surface_container_high">#EDF2EE</color>
+    <color name="surface_container_highest">#EDF2EE</color>
+    <color name="surface_variant">#EDF2EE</color>
 
-    <color name="surface_bg">#F8F9FF</color>
-    <color name="surface_container">#E5EEFF</color>
-    <color name="surface_container_low">#EFF4FF</color>
-    <color name="surface_container_high">#DCE9FF</color>
-    <color name="surface_container_highest">#D3E4FE</color>
-    <color name="surface_card">#FFFFFF</color>
-    <color name="surface_variant">#D3E4FE</color>
+    <color name="border_subtle">#D6DFD8</color>
+    <color name="border_internal">#EDF2EE</color>
+    <color name="outline_variant">#D6DFD8</color>
 
-    <color name="text_primary">#0B1C30</color>
-    <color name="text_secondary">#565E74</color>
-    <color name="text_variant">#3D4A42</color>
-    <color name="text_muted">#6D7A72</color>
-    <color name="border_subtle">#BCCAC0</color>
-    <color name="outline_variant">#BCCAC0</color>
+    <color name="primary_emerald">#00873D</color>
+    <color name="primary_emerald_dark">#007334</color>
+    <color name="primary_emerald_light">#00C853</color>
+    <color name="primary_emerald_50">#E6F7EC</color>
+    <color name="primary_fixed">#E6F7EC</color>
+    <color name="on_primary_fixed">#00873D</color>
+    <color name="primary_fixed_dim">#D8E6D9</color>
 
-    <color name="income_green">#006948</color>
-    <color name="income_green_bg">#85F8C4</color>
+    <color name="ghost_bg">#E6F7EC</color>
+    <color name="ghost_border">#4D00873D</color>
+    <color name="active_state_dot">#00C853</color>
+
+    <color name="text_primary">#111713</color>
+    <color name="text_secondary">#3D4D41</color>
+    <color name="text_variant">#55695A</color>
+    <color name="text_muted">#667769</color>
+    <color name="text_meta">#88998B</color>
+
+    <color name="income_green">#00873D</color>
+    <color name="income_green_bg">#E6F7EC</color>
     <color name="expense_red">#BA1A1A</color>
     <color name="expense_red_bg">#FFDAD6</color>
     <color name="on_expense_red">#93000A</color>
     <color name="error_text">#BA1A1A</color>
-    <color name="secondary_container">#DAE2FD</color>
-    <color name="on_secondary_container">#5C647A</color>
+    <color name="secondary_container">#F4F7F5</color>
+    <color name="on_secondary_container">#111713</color>
     <color name="debt_amber">#D97706</color>
     <color name="debt_amber_bg">#FEF3C7</color>
 
-    <color name="badge_paid_bg">#85F8C4</color>
-    <color name="badge_paid_text">#002114</color>
+    <color name="badge_paid_bg">#E6F7EC</color>
+    <color name="badge_paid_text">#00873D</color>
     <color name="badge_pending_bg">#FEF3C7</color>
     <color name="badge_pending_text">#92400E</color>
 
-    <!-- Colores Modo Oscuro -->
-    <color name="dark_surface_bg">#0B1C30</color>
-    <color name="dark_surface_card">#13243A</color>
-    <color name="dark_surface_container">#1C304A</color>
-    <color name="dark_primary_emerald">#68DBA9</color>
-    <color name="dark_text_primary">#F8F9FF</color>
-    <color name="dark_text_secondary">#BEC6E0</color>
+    <!-- Paleta Engineered Obsidian (Modo Oscuro) -->
+    <color name="dark_surface_bg">#0A0C0A</color>
+    <color name="dark_surface_card">#121612</color>
+    <color name="dark_surface_container">#181E18</color>
+    <color name="dark_border_subtle">#222A22</color>
+    <color name="dark_primary_emerald">#00C853</color>
+    <color name="dark_primary_container">#004D25</color>
+    <color name="dark_emerald_deep">#002811</color>
+    <color name="dark_telemetry_mint">#B9F6CA</color>
+    <color name="dark_text_primary">#F2F5F2</color>
+    <color name="dark_text_secondary">#8A998A</color>
+    <color name="dark_text_muted">#5A6B5A</color>
 
     <!-- Aliases para compatibilidad con código legado -->
-    <color name="verde_oscuro">#006948</color>
-    <color name="verde_brillante">#00855D</color>
-    <color name="verde_claro">#85F8C4</color>
-    <color name="verde_negro">#0B1C30</color>
-    <color name="verde_gris">#565E74</color>
+    <color name="verde_oscuro">#007334</color>
+    <color name="verde_brillante">#00873D</color>
+    <color name="verde_claro">#E6F7EC</color>
+    <color name="verde_negro">#111713</color>
+    <color name="verde_gris">#3D4D41</color>
     <color name="rojo_alerta">#BA1A1A</color>
     <color name="rojo_transparente">#1ABA1A1A</color>
-    <color name="verde_transparente">#1A006948</color>
+    <color name="verde_transparente">#1A00873D</color>
     <color name="verde_blanco_transparente">#FFFFFF</color>
-    <color name="verde">#006948</color>
-    <color name="verde_oscuro_transparente">#1A006948</color>
+    <color name="verde">#00873D</color>
+    <color name="verde_oscuro_transparente">#1A007334</color>
     <color name="negro_transparente">#80000000</color>
 </resources>

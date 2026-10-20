@@ -16,6 +16,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Adaptadores.DeudasAdapter
 import com.example.mylittlefinancontrol.Constantes
@@ -56,7 +60,7 @@ class FragmentBalance : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        db = NotasDatabaseHelper(mContext)
+        db = NotasDatabaseHelper.getInstance(mContext)
 
         setupRecyclerView()
         setupFiltros()
@@ -149,8 +153,10 @@ class FragmentBalance : Fragment() {
         }
 
         val dialogBinding = DialogAgregarDeudaBinding.inflate(layoutInflater)
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
-        bottomSheetDialog.setContentView(dialogBinding.root)
+        val dialog = AlertDialog.Builder(mContext)
+            .setView(dialogBinding.root)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         var tipoSeleccionado = "Tarjeta de Crédito"
         var cuotasSeleccionadas = 12
@@ -317,8 +323,8 @@ class FragmentBalance : Fragment() {
         }
         actualizarCalculos()
 
-        dialogBinding.btnCerrar.setOnClickListener { bottomSheetDialog.dismiss() }
-        dialogBinding.btnCancelar.setOnClickListener { bottomSheetDialog.dismiss() }
+        dialogBinding.btnCerrar.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnGuardar.setOnClickListener {
             val tipo = tipoSeleccionado
@@ -349,13 +355,13 @@ class FragmentBalance : Fragment() {
                     db.updateDeuda(deudaExistente)
                 }
                 cargarDeudas()
-                bottomSheetDialog.dismiss()
+                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese el concepto y el monto total", Toast.LENGTH_SHORT).show()
             }
         }
 
-        bottomSheetDialog.show()
+        dialog.show()
     }
 
     private fun mostrarDialogoAbonarCuota(deuda: Deuda) {
@@ -393,35 +399,40 @@ class FragmentBalance : Fragment() {
     }
 
     private fun cargarDeudas() {
-        listaDeudasTodas = db.getAllDeudas().toMutableList()
-        val deudasPendientes = listaDeudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
-        aplicarFiltro()
-        
-        val totalDeudaSum = deudasPendientes.sumOf { it.totalDeuda }
-        val totalPagadoSum = deudasPendientes.sumOf { it.totalPagado }
-        val totalRestante = deudasPendientes.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) }
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        lifecycleScope.launch(Dispatchers.IO) {
+            val lista = db.getAllDeudas().toMutableList()
+            withContext(Dispatchers.Main) {
+                listaDeudasTodas = lista
+                val deudasPendientes = listaDeudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
+                aplicarFiltro()
+                
+                val totalDeudaSum = deudasPendientes.sumOf { it.totalDeuda }
+                val totalPagadoSum = deudasPendientes.sumOf { it.totalPagado }
+                val totalRestante = deudasPendientes.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) }
+                val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
-        saldoRealTexto = format.format(totalRestante).replace("$", "").trim()
-        if (!esSaldoOculto) {
-            binding.tvTotalDeudasMonto.text = saldoRealTexto
-        }
-        
-        val progreso = if (totalDeudaSum > 0) {
-            ((totalPagadoSum / totalDeudaSum) * 100).toInt().coerceIn(0, 100)
-        } else {
-            0
-        }
-        binding.pbAmortizacionTotal.progress = progreso
-        binding.tvAmortizacionPagada.text = "$progreso% (${format.format(totalPagadoSum)} pagado)"
-        binding.tvBadgeDeudas.text = "${deudasPendientes.size} pendientes"
-        binding.tvResumenAbonado.text = "Abonado: ${format.format(totalPagadoSum)}"
-        binding.tvResumenPendiente.text = "Pendiente: ${format.format(totalRestante)}"
+                saldoRealTexto = format.format(totalRestante).replace("$", "").trim()
+                if (!esSaldoOculto) {
+                    binding.tvTotalDeudasMonto.text = saldoRealTexto
+                }
 
-        binding.chipTodasDeudas.text = "Todas (${listaDeudasTodas.size})"
-        binding.chipTarjetas.text = "Tarjetas (${listaDeudasTodas.count { it.tipo.contains("tarjeta", true) }})"
-        binding.chipPrestamos.text = "Préstamos (${listaDeudasTodas.count { it.tipo.contains("préstamo", true) || it.tipo.contains("prestamo", true) || it.tipo.contains("bancario", true) }})"
-        binding.chipPersonales.text = "Personales (${listaDeudasTodas.count { it.tipo.contains("personal", true) }})"
+                val progreso = if (totalDeudaSum > 0) {
+                    ((totalPagadoSum / totalDeudaSum) * 100).toInt().coerceIn(0, 100)
+                } else {
+                    0
+                }
+                binding.pbAmortizacionTotal.progress = progreso
+                binding.tvAmortizacionPagada.text = "$progreso% (${format.format(totalPagadoSum)} pagado)"
+                binding.tvBadgeDeudas.text = "${deudasPendientes.size} pendientes"
+                binding.tvResumenAbonado.text = "Abonado: ${format.format(totalPagadoSum)}"
+                binding.tvResumenPendiente.text = "Pendiente: ${format.format(totalRestante)}"
+
+                binding.chipTodasDeudas.text = "Todas (${listaDeudasTodas.size})"
+                binding.chipTarjetas.text = "Tarjetas (${listaDeudasTodas.count { it.tipo.contains("tarjeta", true) }})"
+                binding.chipPrestamos.text = "Préstamos (${listaDeudasTodas.count { it.tipo.contains("préstamo", true) || it.tipo.contains("prestamo", true) || it.tipo.contains("bancario", true) }})"
+                binding.chipPersonales.text = "Personales (${listaDeudasTodas.count { it.tipo.contains("personal", true) }})"
+            }
+        }
     }
 
     private fun eliminarDeuda(deuda: Deuda) {

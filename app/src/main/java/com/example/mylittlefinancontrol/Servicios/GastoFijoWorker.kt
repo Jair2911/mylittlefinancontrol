@@ -42,7 +42,7 @@ class GastoFijoWorker(context: Context, params: WorkerParameters) : CoroutineWor
     }
 
     private fun verificarYNotificarGastosFijos(context: Context) {
-        val db = NotasDatabaseHelper(context)
+        val db = NotasDatabaseHelper.getInstance(context)
         val gastosFijos = db.getAllGastosFijos()
 
         val cal = Calendar.getInstance()

@@ -15,6 +15,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -65,7 +69,7 @@ class FragmentGastosFijos : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        db = NotasDatabaseHelper(mContext)
+        db = NotasDatabaseHelper.getInstance(mContext)
 
         setupRecyclerView()
         setupFiltros()
@@ -224,9 +228,11 @@ class FragmentGastosFijos : Fragment() {
     }
 
     private fun mostrarDialogoGastoFijo(gastoExistente: GastoFijo?) {
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
         val dialogBinding = DialogAgregarGastoFijoBinding.inflate(layoutInflater)
-        bottomSheetDialog.setContentView(dialogBinding.root)
+        val dialog = AlertDialog.Builder(mContext)
+            .setView(dialogBinding.root)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         var categoriaSeleccionada = "Telecom"
 
@@ -309,8 +315,8 @@ class FragmentGastosFijos : Fragment() {
             actualizarSeleccionCategoria("Telecom")
         }
 
-        dialogBinding.btnCerrar.setOnClickListener { bottomSheetDialog.dismiss() }
-        dialogBinding.btnCancelar.setOnClickListener { bottomSheetDialog.dismiss() }
+        dialogBinding.btnCerrar.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnGuardar.setOnClickListener {
             val concepto = dialogBinding.etConcepto.text.toString().trim()
@@ -340,19 +346,24 @@ class FragmentGastosFijos : Fragment() {
                 }
                 programarVerificacionGastoFijoWorker(mContext)
                 cargarGastosFijos()
-                bottomSheetDialog.dismiss()
+                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor complete el concepto y un monto válido", Toast.LENGTH_SHORT).show()
             }
         }
 
-        bottomSheetDialog.show()
+        dialog.show()
     }
 
     private fun cargarGastosFijos() {
-        listaGastosTodos = db.getAllGastosFijos().toMutableList()
-        aplicarFiltro()
-        actualizarResumenVisual()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val lista = db.getAllGastosFijos().toMutableList()
+            withContext(Dispatchers.Main) {
+                listaGastosTodos = lista
+                aplicarFiltro()
+                actualizarResumenVisual()
+            }
+        }
     }
 
     private fun actualizarResumenVisual() {

@@ -1,8 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--    dimencion para el logo en el home y las demas pantallas-->
+    <!-- DABA Design System Radios de Curvatura (16dp Cards, 24dp Modales, 12dp Inputs/Icons, 9999dp Chips) -->
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="card_corner_radius_large">16dp</dimen>
+    <dimen name="dialog_corner_radius">24dp</dimen>
+    <dimen name="input_corner_radius">12dp</dimen>
+    <dimen name="category_button_corner_radius">12dp</dimen>
+    <dimen name="icon_container_corner_radius">12dp</dimen>
+    <dimen name="chip_corner_radius">9999dp</dimen>
+    <dimen name="button_corner_radius">12dp</dimen>
+
+    <!-- Padding interno de tarjetas -->
+    <dimen name="card_padding_standard">18dp</dimen>
+
+    <!-- Grosor de borde de precisión sutil (1dp #D6DFD8) -->
+    <dimen name="border_width_precision">1dp</dimen>
+
+    <!-- Ritmo de Espaciado Base-4 -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">16dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+
+    <!-- Dimensión para logo e imágenes -->
     <dimen name="d_logo_home">250dp</dimen>
-    <!-- Default screen margins, per the Android Design guidelines. -->
+
+    <!-- Margenes estándar -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 </resources>

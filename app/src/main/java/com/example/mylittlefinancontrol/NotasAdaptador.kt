@@ -7,9 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -20,26 +21,153 @@ sealed class MovimientoListItem {
     data class Item(val movimiento: Movimiento) : MovimientoListItem()
 }
 
+object MovimientoDiffCallback : DiffUtil.ItemCallback<MovimientoListItem>() {
+    override fun areItemsTheSame(oldItem: MovimientoListItem, newItem: MovimientoListItem): Boolean {
+        return when {
+            oldItem is MovimientoListItem.Header && newItem is MovimientoListItem.Header ->
+                oldItem.fechaTitulo == newItem.fechaTitulo
+            oldItem is MovimientoListItem.Item && newItem is MovimientoListItem.Item ->
+                oldItem.movimiento.id == newItem.movimiento.id
+            else -> false
+        }
+    }
+
+    override fun areContentsTheSame(oldItem: MovimientoListItem, newItem: MovimientoListItem): Boolean {
+        return oldItem == newItem
+    }
+}
+
 class NotasAdaptador(
-    private var listaOriginal: List<Movimiento>,
     private val context: Context,
     private val onEditarClick: (Movimiento) -> Unit,
     private val onEliminarClick: (Movimiento) -> Unit
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) : ListAdapter<MovimientoListItem, RecyclerView.ViewHolder>(MovimientoDiffCallback) {
+
+    // Constructor secundario para compatibilidad con código existente que pasa lista inicial
+    constructor(
+        listaOriginal: List<Movimiento>,
+        context: Context,
+        onEditarClick: (Movimiento) -> Unit,
+        onEliminarClick: (Movimiento) -> Unit
+    ) : this(context, onEditarClick, onEliminarClick) {
+        submitList(procesarGrupos(listaOriginal))
+    }
 
     companion object {
         private const val TYPE_HEADER = 0
         private const val TYPE_ITEM = 1
-    }
 
-    private val displayItems = mutableListOf<MovimientoListItem>()
+        private val formatMoneda = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        private val formatHora = SimpleDateFormat("HH:mm 'hrs'", Locale("es", "ES"))
 
-    init {
-        procesarGrupos(listaOriginal)
+        fun normalizarFechaClave(fechaRaw: String): String {
+            if (fechaRaw.isBlank()) return "Sin Fecha"
+            val timestamp = fechaRaw.trim().toLongOrNull()
+            if (timestamp != null && timestamp > 100000000000L) {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                return sdf.format(Date(timestamp))
+            }
+            val clean = if (fechaRaw.length >= 10) fechaRaw.substring(0, 10) else fechaRaw.split(" ")[0]
+            val delimiters = charArrayOf('-', '/', '.')
+            for (d in delimiters) {
+                if (clean.contains(d)) {
+                    val parts = clean.split(d)
+                    if (parts.size >= 3) {
+                        val p0 = parts[0].toIntOrNull()
+                        val p1 = parts[1].toIntOrNull()
+                        val p2 = parts[2].toIntOrNull()
+                        if (p0 != null && p1 != null && p2 != null) {
+                            if (p0 > 1000) {
+                                return String.format(Locale.US, "%04d-%02d-%02d", p0, p1, p2)
+                            } else if (p2 > 1000) {
+                                return String.format(Locale.US, "%04d-%02d-%02d", p2, p1, p0)
+                            }
+                        }
+                    }
+                }
+            }
+            return clean
+        }
+
+        fun obtenerHoraFormateada(movimiento: Movimiento): String {
+            val fechaCompleta = if (movimiento.fecha.isNotBlank()) movimiento.fecha else movimiento.fechaCreacion
+            return try {
+                val ts = fechaCompleta.trim().toLongOrNull()
+                if (ts != null && ts > 100000000000L) {
+                    return formatHora.format(Date(ts))
+                }
+                if (fechaCompleta.contains(" ")) {
+                    val partes = fechaCompleta.split(" ")
+                    val horaPartes = partes[1].split(":")
+                    "${horaPartes[0]}:${horaPartes[1]} hrs"
+                } else {
+                    "12:00 hrs"
+                }
+            } catch (e: Exception) {
+                "12:00 hrs"
+            }
+        }
+
+        fun procesarGrupos(movimientos: List<Movimiento>): List<MovimientoListItem> {
+            val result = mutableListOf<MovimientoListItem>()
+            if (movimientos.isEmpty()) return result
+
+            val movimientosOrdenados = movimientos.sortedWith(
+                compareByDescending<Movimiento> { NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(it) }
+                    .thenByDescending { it.id }
+            )
+
+            val sdfParser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val calHoy = Calendar.getInstance()
+            val strHoy = sdfParser.format(calHoy.time)
+
+            val calAyer = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+            val strAyer = sdfParser.format(calAyer.time)
+
+            val sdfHeader = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
+
+            val agrupados = LinkedHashMap<String, MutableList<Movimiento>>()
+            for (mov in movimientosOrdenados) {
+                val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+                val keyFecha = normalizarFechaClave(fechaEfectiva)
+                agrupados.getOrPut(keyFecha) { mutableListOf() }.add(mov)
+            }
+
+            for ((fechaKey, lista) in agrupados) {
+                val tituloHeader = when (fechaKey) {
+                    strHoy -> {
+                        try {
+                            val d = sdfParser.parse(fechaKey)
+                            "HOY • ${sdfHeader.format(d ?: Date()).uppercase()}"
+                        } catch (e: Exception) { "HOY" }
+                    }
+                    strAyer -> {
+                        try {
+                            val d = sdfParser.parse(fechaKey)
+                            "AYER • ${sdfHeader.format(d ?: Date()).uppercase()}"
+                        } catch (e: Exception) { "AYER" }
+                    }
+                    else -> {
+                        try {
+                            val d = sdfParser.parse(fechaKey)
+                            sdfHeader.format(d ?: Date()).uppercase()
+                        } catch (e: Exception) { fechaKey }
+                    }
+                }
+
+                val conteoTexto = if (lista.size == 1) "1 Movimiento" else "${lista.size} Movimientos"
+                result.add(MovimientoListItem.Header(tituloHeader, conteoTexto))
+
+                for (mov in lista) {
+                    result.add(MovimientoListItem.Item(mov))
+                }
+            }
+            return result
+        }
     }
 
     override fun getItemViewType(position: Int): Int {
-        return when (displayItems[position]) {
+        return when (getItem(position)) {
             is MovimientoListItem.Header -> TYPE_HEADER
             is MovimientoListItem.Item -> TYPE_ITEM
         }
@@ -55,10 +183,8 @@ class NotasAdaptador(
         }
     }
 
-    override fun getItemCount(): Int = displayItems.size
-
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (val item = displayItems[position]) {
+        when (val item = getItem(position)) {
             is MovimientoListItem.Header -> {
                 val headerHolder = holder as HeaderViewHolder
                 headerHolder.tvFecha.text = item.fechaTitulo
@@ -67,18 +193,13 @@ class NotasAdaptador(
             is MovimientoListItem.Item -> {
                 val itemHolder = holder as ItemViewHolder
                 val movimiento = item.movimiento
-                val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
                 itemHolder.itemDescripcion.text = movimiento.descripcion
-
-                // Parsear hora de la fecha si existe
-                val horaStr = obtenerHoraFormateada(movimiento)
-                itemHolder.itemFecha.text = horaStr
+                itemHolder.itemFecha.text = obtenerHoraFormateada(movimiento)
 
                 val descUpper = movimiento.descripcion.uppercase()
                 val tipoUpper = movimiento.tipo_reg.uppercase()
 
-                // Determinar icono, badges, métodos de pago y colores
                 when {
                     tipoUpper.contains("GASTO FIJO") || descUpper.contains("GASTO FIJO") || descUpper.startsWith("PAGO:") -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_autorenew)
@@ -128,15 +249,15 @@ class NotasAdaptador(
                 }
 
                 if (movimiento.fechaCreacion.isNotBlank() && movimiento.fechaCreacion != movimiento.fecha) {
-                    val fcLimpia = movimiento.fechaCreacion.split(" ")[0]
+                    val fcLimpia = if (movimiento.fechaCreacion.length >= 10) movimiento.fechaCreacion.substring(0, 10) else movimiento.fechaCreacion.split(" ")[0]
                     itemHolder.tvMetodoPagoSub.text = "${itemHolder.tvMetodoPagoSub.text} (Reg: $fcLimpia)"
                 }
 
                 if (tipoUpper.contains("INGRESO")) {
-                    itemHolder.itemValor.text = "+${format.format(movimiento.valor)}"
+                    itemHolder.itemValor.text = "+${formatMoneda.format(movimiento.valor)}"
                     itemHolder.itemValor.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
                 } else {
-                    itemHolder.itemValor.text = "-${format.format(movimiento.valor)}"
+                    itemHolder.itemValor.text = "-${formatMoneda.format(movimiento.valor)}"
                     itemHolder.itemValor.setTextColor(ContextCompat.getColor(context, R.color.expense_red))
                 }
 
@@ -151,120 +272,8 @@ class NotasAdaptador(
         }
     }
 
-    private fun normalizarFechaClave(fechaRaw: String): String {
-        if (fechaRaw.isBlank()) return "Sin Fecha"
-        val timestamp = fechaRaw.trim().toLongOrNull()
-        if (timestamp != null && timestamp > 100000000000L) {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            return sdf.format(Date(timestamp))
-        }
-        val clean = fechaRaw.trim().split(" ")[0]
-        val delimiters = charArrayOf('-', '/', '.')
-        for (d in delimiters) {
-            if (clean.contains(d)) {
-                val parts = clean.split(d)
-                if (parts.size >= 3) {
-                    val p0 = parts[0].toIntOrNull()
-                    val p1 = parts[1].toIntOrNull()
-                    val p2 = parts[2].toIntOrNull()
-                    if (p0 != null && p1 != null && p2 != null) {
-                        if (p0 > 1000) {
-                            return String.format(Locale.US, "%04d-%02d-%02d", p0, p1, p2)
-                        } else if (p2 > 1000) {
-                            return String.format(Locale.US, "%04d-%02d-%02d", p2, p1, p0)
-                        }
-                    }
-                }
-            }
-        }
-        return clean
-    }
-
-    private fun obtenerHoraFormateada(movimiento: Movimiento): String {
-        val fechaCompleta = if (movimiento.fecha.isNotBlank()) movimiento.fecha else movimiento.fechaCreacion
-        return try {
-            val ts = fechaCompleta.trim().toLongOrNull()
-            if (ts != null && ts > 100000000000L) {
-                val sdf = SimpleDateFormat("HH:mm 'hrs'", Locale("es", "ES"))
-                return sdf.format(Date(ts))
-            }
-            if (fechaCompleta.contains(" ")) {
-                val partes = fechaCompleta.split(" ")
-                val horaPartes = partes[1].split(":")
-                "${horaPartes[0]}:${horaPartes[1]} hrs"
-            } else {
-                "12:00 hrs"
-            }
-        } catch (e: Exception) {
-            "12:00 hrs"
-        }
-    }
-
-    private fun procesarGrupos(movimientos: List<Movimiento>) {
-        displayItems.clear()
-        if (movimientos.isEmpty()) {
-            notifyDataSetChanged()
-            return
-        }
-
-        // Ordenar dando prioridad a la Fecha de Movimiento, fallback a Fecha de Creación
-        val movimientosOrdenados = movimientos.sortedWith(
-            compareByDescending<Movimiento> { NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(it) }
-                .thenByDescending { it.id }
-        )
-
-        val sdfParser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val calHoy = Calendar.getInstance()
-        val strHoy = sdfParser.format(calHoy.time)
-
-        val calAyer = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-        val strAyer = sdfParser.format(calAyer.time)
-
-        val sdfHeader = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
-
-        // Agrupar por clave de fecha normalizada 'yyyy-MM-dd'
-        val agrupados = LinkedHashMap<String, MutableList<Movimiento>>()
-        for (mov in movimientosOrdenados) {
-            val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
-            val keyFecha = normalizarFechaClave(fechaEfectiva)
-            agrupados.getOrPut(keyFecha) { mutableListOf() }.add(mov)
-        }
-
-        for ((fechaKey, lista) in agrupados) {
-            val tituloHeader = when (fechaKey) {
-                strHoy -> {
-                    try {
-                        val d = sdfParser.parse(fechaKey)
-                        "HOY • ${sdfHeader.format(d ?: Date()).uppercase()}"
-                    } catch (e: Exception) { "HOY" }
-                }
-                strAyer -> {
-                    try {
-                        val d = sdfParser.parse(fechaKey)
-                        "AYER • ${sdfHeader.format(d ?: Date()).uppercase()}"
-                    } catch (e: Exception) { "AYER" }
-                }
-                else -> {
-                    try {
-                        val d = sdfParser.parse(fechaKey)
-                        sdfHeader.format(d ?: Date()).uppercase()
-                    } catch (e: Exception) { fechaKey }
-                }
-            }
-
-            val conteoTexto = if (lista.size == 1) "1 Movimiento" else "${lista.size} Movimientos"
-            displayItems.add(MovimientoListItem.Header(tituloHeader, conteoTexto))
-
-            for (mov in lista) {
-                displayItems.add(MovimientoListItem.Item(mov))
-            }
-        }
-    }
-
     fun refrescarLista(nuevosMovimientos: List<Movimiento>) {
-        listaOriginal = nuevosMovimientos
-        procesarGrupos(listaOriginal)
-        notifyDataSetChanged()
+        submitList(procesarGrupos(nuevosMovimientos))
     }
 
     class HeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

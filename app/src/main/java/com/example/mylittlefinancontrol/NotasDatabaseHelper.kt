@@ -5,16 +5,42 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import com.example.mylittlefinancontrol.Modelos.Ahorro
 import com.example.mylittlefinancontrol.Modelos.CategoriaGastoItem
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.Modelos.ResumenPeriodoData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
-class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
-    context, DATABASE_NAME, null, DATABASE_VERSION
+data class ResumenFinancieroOptimizado(
+    val totalIngresos: Double,
+    val totalGastos: Double,
+    val balanceTotal: Double
+)
+
+data class DashboardCache(
+    val balanceTotal: Double,
+    val ingresosTotales: Double,
+    val gastosTotales: Double,
+    val ingresosMes: Double,
+    val gastosMes: Double,
+    val totalGastosFijos: Double,
+    val totalDeudasRestante: Double,
+    val countGastosMes: Int,
+    val countGF: Int,
+    val countDeudas: Int,
+    val periodosResumen: Map<String, Pair<Double, String>>
+)
+
+class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelper(
+    context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION
 ) {
 
     companion object {
@@ -67,40 +93,47 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_A_ICONO = "icono"
         private const val COLUMN_A_DESC = "descripcion"
 
+        @Volatile
+        private var INSTANCE: NotasDatabaseHelper? = null
+
+        @JvmStatic
+        fun getInstance(context: Context): NotasDatabaseHelper {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: NotasDatabaseHelper(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
         fun obtenerTimestampParaOrdenamiento(mov: Movimiento): Long {
-            val fechaEfectiva = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
-            if (fechaEfectiva.isBlank()) return 0L
-
-            val ts = fechaEfectiva.trim().toLongOrNull()
-            if (ts != null && ts > 100000000000L) {
-                return ts
-            }
-
-            val formatos = arrayOf(
-                "yyyy-MM-dd HH:mm:ss",
-                "yyyy-MM-dd HH:mm",
-                "yyyy-MM-dd",
-                "dd/MM/yyyy HH:mm:ss",
-                "dd/MM/yyyy HH:mm",
-                "dd/MM/yyyy"
-            )
-            for (fmt in formatos) {
-                try {
-                    val sdf = SimpleDateFormat(fmt, Locale.US)
-                    val date = sdf.parse(fechaEfectiva.trim())
-                    if (date != null) return date.time
-                } catch (_: Exception) {}
-            }
-
-            if (mov.fechaCreacion.isNotBlank() && mov.fechaCreacion != fechaEfectiva) {
-                val tsCreacion = mov.fechaCreacion.trim().toLongOrNull()
-                if (tsCreacion != null && tsCreacion > 100000000000L) {
-                    return tsCreacion
+            val fechaCreacionStr = mov.fechaCreacion.trim()
+            if (fechaCreacionStr.isNotBlank()) {
+                val formatosCreacion = arrayOf(
+                    "yyyy-MM-dd HH:mm:ss",
+                    "dd/MM/yyyy hh:mm a",
+                    "dd/MM/yyyy HH:mm:ss",
+                    "yyyy-MM-dd"
+                )
+                for (fmt in formatosCreacion) {
+                    try {
+                        val sdf = SimpleDateFormat(fmt, Locale.US)
+                        val date = sdf.parse(fechaCreacionStr)
+                        if (date != null) return date.time
+                    } catch (_: Exception) {}
                 }
+            }
+
+            val fechaStr = mov.fecha.trim()
+            if (fechaStr.isNotBlank()) {
+                val formatos = arrayOf(
+                    "dd/MM/yyyy hh:mm a",
+                    "dd/MM/yyyy HH:mm:ss",
+                    "dd/MM/yyyy",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-dd"
+                )
                 for (fmt in formatos) {
                     try {
                         val sdf = SimpleDateFormat(fmt, Locale.US)
-                        val date = sdf.parse(mov.fechaCreacion.trim())
+                        val date = sdf.parse(fechaStr)
                         if (date != null) return date.time
                     } catch (_: Exception) {}
                 }
@@ -110,11 +143,61 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    // --- SISTEMA DE CACHÉ EN MEMORIA RAM ---
+    @Volatile
+    private var cachedDashboard: DashboardCache? = null
+
+    @Volatile
+    private var cachedNotas: List<Movimiento>? = null
+
+    @Volatile
+    private var cachedGastosFijos: List<GastoFijo>? = null
+
+    @Volatile
+    private var cachedDeudas: List<Deuda>? = null
+
+    @Volatile
+    private var cachedAhorros: List<Ahorro>? = null
+
+    fun invalidateCache() {
+        cachedDashboard = null
+        cachedNotas = null
+        cachedGastosFijos = null
+        cachedDeudas = null
+        cachedAhorros = null
+    }
+
+    fun getCachedDashboardImmediate(): DashboardCache? = cachedDashboard
+    fun getCachedNotasImmediate(): List<Movimiento>? = cachedNotas
+    fun getCachedGastosFijosImmediate(): List<GastoFijo>? = cachedGastosFijos
+    fun getCachedDeudasImmediate(): List<Deuda>? = cachedDeudas
+    fun getCachedAhorrosImmediate(): List<Ahorro>? = cachedAhorros
+
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        try {
+            db.enableWriteAheadLogging()
+        } catch (e: Exception) {
+            Log.e("NotasDatabaseHelper", "Error al activar WAL mode", e)
+        }
+    }
+
     override fun onCreate(db: SQLiteDatabase?) {
         db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT, $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1)")
         db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT, $COLUMN_D_TASA_INTERES REAL DEFAULT 0, $COLUMN_D_TIPO_INTERES TEXT DEFAULT 'Anual', $COLUMN_D_CUOTAS INTEGER DEFAULT 12, $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0)")
         db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
+
+        crearIndices(db)
+    }
+
+    private fun crearIndices(db: SQLiteDatabase?) {
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_fecha ON $TABLE_MOVIMIENTO($COLUMN_MOV_FECHA)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_fecha_creacion ON $TABLE_MOVIMIENTO($COLUMN_MOV_FECHA_CREACION)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_tipo ON $TABLE_MOVIMIENTO($COLUMN_MOV_TIPO)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_categoria ON $TABLE_MOVIMIENTO($COLUMN_MOV_CATEGORIA)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_gf_id ON $TABLE_MOVIMIENTO($COLUMN_MOV_GF_ID)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_gf_dia ON $TABLE_GASTOS_FIJOS($COLUMN_GF_DIA)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
@@ -143,6 +226,20 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_TIPO_INTERES TEXT DEFAULT 'Anual'")
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_CUOTAS INTEGER DEFAULT 12")
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0")
+        }
+
+        crearIndices(db)
+    }
+
+    fun performWalCheckpoint() {
+        try {
+            val db = writableDatabase
+            val cursor = db.rawQuery("PRAGMA wal_checkpoint(FULL)", null)
+            cursor.moveToFirst()
+            cursor.close()
+            Log.d("NotasDatabaseHelper", "WAL Checkpoint completado")
+        } catch (e: Exception) {
+            Log.e("NotasDatabaseHelper", "Error ejecutando WAL Checkpoint", e)
         }
     }
 
@@ -182,6 +279,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
 
     // --- MÉTODOS MOVIMIENTOS ---
     fun insertNota(mov: Movimiento) {
+        invalidateCache()
         val db = writableDatabase
         val fechaCreacionFinal: String = if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD())
         val v = ContentValues().apply {
@@ -195,22 +293,24 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
         }
         db.insert(TABLE_MOVIMIENTO, null, v)
-        db.close()
     }
 
     fun getAllNotas(): List<Movimiento> {
+        cachedNotas?.let { return it }
         val lista = mutableListOf<Movimiento>()
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO", null)
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_MOVIMIENTO ORDER BY $COLUMN_MOV_ID DESC", null)
         while (cursor.moveToNext()) {
             lista.add(cursorToMovimiento(cursor))
         }
         cursor.close()
 
-        return lista.sortedWith(
+        val sorted = lista.sortedWith(
             compareByDescending<Movimiento> { obtenerTimestampParaOrdenamiento(it) }
                 .thenByDescending { it.id }
         )
+        cachedNotas = sorted
+        return sorted
     }
 
     fun getIdMovimiento(id: Int): Movimiento {
@@ -223,6 +323,7 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     }
 
     fun updateMovimiento(mov: Movimiento) {
+        invalidateCache()
         val db = writableDatabase
         val fechaCreacionFinal: String = if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD())
         val v = ContentValues().apply {
@@ -236,18 +337,17 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
         }
         db.update(TABLE_MOVIMIENTO, v, "$COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
-        db.close()
     }
 
     fun deleteMovimiento(id: Int): Int {
+        invalidateCache()
         val db = writableDatabase
-        val result = db.delete(TABLE_MOVIMIENTO, "$COLUMN_MOV_ID = ?", arrayOf(id.toString()))
-        db.close()
-        return result
+        return db.delete(TABLE_MOVIMIENTO, "$COLUMN_MOV_ID = ?", arrayOf(id.toString()))
     }
 
     // --- MÉTODOS GASTOS FIJOS ---
     fun insertGastoFijo(gf: GastoFijo) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
@@ -256,10 +356,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_GF_RECORDATORIO, if (gf.recordatorio) 1 else 0)
         }
         db.insert(TABLE_GASTOS_FIJOS, null, v)
-        db.close()
     }
 
     fun updateGastoFijo(gf: GastoFijo) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_GF_CONCEPTO, gf.concepto); put(COLUMN_GF_CATEGORIA, gf.categoria)
@@ -268,10 +368,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_GF_RECORDATORIO, if (gf.recordatorio) 1 else 0)
         }
         db.update(TABLE_GASTOS_FIJOS, v, "$COLUMN_GF_ID = ?", arrayOf(gf.id))
-        db.close()
     }
 
     fun getAllGastosFijos(): List<GastoFijo> {
+        cachedGastosFijos?.let { return it }
         val lista = mutableListOf<GastoFijo>()
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_GASTOS_FIJOS", null)
@@ -292,17 +392,19 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             ))
         }
         cursor.close()
+        cachedGastosFijos = lista
         return lista
     }
 
     fun deleteGastoFijo(id: String) {
+        invalidateCache()
         val db = writableDatabase
         db.delete(TABLE_GASTOS_FIJOS, "$COLUMN_GF_ID = ?", arrayOf(id))
-        db.close()
     }
 
     // --- MÉTODOS DEUDAS ---
     fun insertDeuda(d: Deuda) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
@@ -314,10 +416,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_D_VALOR_CUOTA, d.valorCuota)
         }
         db.insert(TABLE_DEUDAS, null, v)
-        db.close()
     }
 
     fun updateDeuda(d: Deuda) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_D_TIPO, d.tipo); put(COLUMN_D_CONCEPTO, d.concepto)
@@ -329,10 +431,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_D_VALOR_CUOTA, d.valorCuota)
         }
         db.update(TABLE_DEUDAS, v, "$COLUMN_D_ID = ?", arrayOf(d.id))
-        db.close()
     }
 
     fun getAllDeudas(): List<Deuda> {
+        cachedDeudas?.let { return it }
         val lista = mutableListOf<Deuda>()
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_DEUDAS", null)
@@ -364,17 +466,19 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             ))
         }
         cursor.close()
+        cachedDeudas = lista
         return lista
     }
 
     fun deleteDeuda(id: String) {
+        invalidateCache()
         val db = writableDatabase
         db.delete(TABLE_DEUDAS, "$COLUMN_D_ID = ?", arrayOf(id))
-        db.close()
     }
 
     // --- MÉTODOS AHORROS ---
     fun insertAhorro(a: Ahorro) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_A_TITULO, a.titulo)
@@ -386,10 +490,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_A_DESC, a.descripcion)
         }
         db.insert(TABLE_AHORROS, null, v)
-        db.close()
     }
 
     fun updateAhorro(a: Ahorro) {
+        invalidateCache()
         val db = writableDatabase
         val v = ContentValues().apply {
             put(COLUMN_A_TITULO, a.titulo)
@@ -401,10 +505,10 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_A_DESC, a.descripcion)
         }
         db.update(TABLE_AHORROS, v, "$COLUMN_A_ID = ?", arrayOf(a.id))
-        db.close()
     }
 
     fun getAllAhorros(): List<Ahorro> {
+        cachedAhorros?.let { return it }
         val lista = mutableListOf<Ahorro>()
         val db = readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TABLE_AHORROS ORDER BY $COLUMN_A_ID DESC", null)
@@ -421,35 +525,42 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
             ))
         }
         cursor.close()
+        cachedAhorros = lista
         return lista
     }
 
     fun deleteAhorro(id: String) {
+        invalidateCache()
         val db = writableDatabase
         db.delete(TABLE_AHORROS, "$COLUMN_A_ID = ?", arrayOf(id))
-        db.close()
+    }
+
+    // --- CONSULTAS SQL AGREGADAS Y OPTIMIZADAS ---
+    fun getResumenFinancieroOptimizado(): ResumenFinancieroOptimizado {
+        val db = readableDatabase
+        var ingresos = 0.0
+        var gastos = 0.0
+        val query = "SELECT " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END), " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) NOT LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END) " +
+                "FROM $TABLE_MOVIMIENTO"
+        val cursor = db.rawQuery(query, null)
+        if (cursor.moveToFirst()) {
+            ingresos = cursor.getDouble(0)
+            gastos = cursor.getDouble(1)
+        }
+        cursor.close()
+        return ResumenFinancieroOptimizado(
+            totalIngresos = Constantes.redondearMonto(ingresos),
+            totalGastos = Constantes.redondearMonto(gastos),
+            balanceTotal = Constantes.redondearMonto(ingresos - gastos)
+        )
     }
 
     fun getResumenFinanciero(): com.example.mylittlefinancontrol.Modelos.ResumenFinanciero {
-        val db = readableDatabase
-        
-        // 1. Balance Total (Ingresos - Gastos de movimientos)
-        var ingresos = 0.0
-        var gastos = 0.0
-        val cursorMov = db.rawQuery("SELECT $COLUMN_MOV_VALOR, $COLUMN_MOV_TIPO FROM $TABLE_MOVIMIENTO", null)
-        while (cursorMov.moveToNext()) {
-            val valor = cursorMov.getDouble(0)
-            val tipo = cursorMov.getString(1)
-            if (tipo.equals("Ingreso", ignoreCase = true)) {
-                ingresos += valor
-            } else {
-                gastos += valor
-            }
-        }
-        cursorMov.close()
-        val balance = ingresos - gastos
+        val opt = getResumenFinancieroOptimizado()
 
-        // 2. Total Gastos Fijos
+        val db = readableDatabase
         var totalGF = 0.0
         val cursorGF = db.rawQuery("SELECT SUM($COLUMN_GF_MONTO) FROM $TABLE_GASTOS_FIJOS", null)
         if (cursorGF.moveToFirst()) {
@@ -457,7 +568,6 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         }
         cursorGF.close()
 
-        // 3. Total Deudas Pendientes (Total - Pagado)
         var totalDeudas = 0.0
         val cursorD = db.rawQuery("SELECT SUM($COLUMN_D_TOTAL - $COLUMN_D_PAGADO) FROM $TABLE_DEUDAS", null)
         if (cursorD.moveToFirst()) {
@@ -465,21 +575,123 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
         }
         cursorD.close()
 
-        return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(balance, totalGF, totalDeudas)
+        return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(opt.balanceTotal, totalGF, totalDeudas)
+    }
+
+    fun getResumenPorRangoFechasSQL(startDate: String, endDate: String): ResumenPeriodoData {
+        val db = readableDatabase
+        var ingresos = 0.0
+        var gastos = 0.0
+
+        val querySum = "SELECT " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END), " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) NOT LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END) " +
+                "FROM $TABLE_MOVIMIENTO " +
+                "WHERE SUBSTR(COALESCE(NULLIF($COLUMN_MOV_FECHA, ''), $COLUMN_MOV_FECHA_CREACION), 1, 10) BETWEEN ? AND ?"
+
+        val cursor = db.rawQuery(querySum, arrayOf(startDate, endDate))
+        if (cursor.moveToFirst()) {
+            ingresos = cursor.getDouble(0)
+            gastos = cursor.getDouble(1)
+        }
+        cursor.close()
+
+        val balance = ingresos - gastos
+        return ResumenPeriodoData(
+            totalIngresos = Constantes.redondearMonto(ingresos),
+            totalGastos = Constantes.redondearMonto(gastos),
+            balanceNeto = Constantes.redondearMonto(balance),
+            listaCategorias = emptyList()
+        )
+    }
+
+    suspend fun getDashboardDataCached(
+        calcularFechasPeriodo: (String) -> Pair<Pair<String, String>, Pair<String, String>>
+    ): DashboardCache = withContext(Dispatchers.IO) {
+        cachedDashboard?.let { return@withContext it }
+
+        val deferredGF = async { getAllGastosFijos() }
+        val deferredDeudas = async { getAllDeudas() }
+        val deferredNotas = async { getAllNotas() }
+        val deferredResumenFin = async { getResumenFinancieroOptimizado() }
+
+        val periodos = listOf("SEMANAL", "MENSUAL", "SEMESTRAL", "ANUAL")
+        val deferredPeriodos = periodos.map { p ->
+            async {
+                val (rangeAct, rangeAnt) = calcularFechasPeriodo(p)
+                val resAct = getResumenPorRangoFechasSQL(rangeAct.first, rangeAct.second)
+                val resAnt = getResumenPorRangoFechasSQL(rangeAnt.first, rangeAnt.second)
+
+                val varPct = if (resAnt.totalGastos > 0) {
+                    ((resAct.totalGastos - resAnt.totalGastos) / resAnt.totalGastos) * 100.0
+                } else 0.0
+
+                val varTxt = if (varPct > 0) "+${varPct.toInt()}% vs ant." else if (varPct < 0) "${varPct.toInt()}% vs ant." else "0% vs ant."
+                p to Pair(resAct.balanceNeto, varTxt)
+            }
+        }
+
+        val listaGF = deferredGF.await()
+        val listaDeudas = deferredDeudas.await()
+        val todosMovs = deferredNotas.await()
+        val resumenFin = deferredResumenFin.await()
+        val periodosRes = deferredPeriodos.awaitAll().toMap()
+
+        val cal = Calendar.getInstance()
+        val mesActual = cal.get(Calendar.MONTH)
+        val anioActual = cal.get(Calendar.YEAR)
+        var ingMes = 0.0
+        var gastMes = 0.0
+        var cantGastosMes = 0
+
+        for (mov in todosMovs) {
+            val isIngreso = mov.tipo_reg.contains("INGRESO", true)
+            if (!isIngreso) cantGastosMes++
+
+            try {
+                val f = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
+                val fClean = if (f.length >= 10) f.substring(0, 10) else f.split(" ")[0]
+                val partes = fClean.split("-")
+                if (partes.size >= 2) {
+                    val anio = partes[0].toInt()
+                    val mes = partes[1].toInt() - 1
+                    if (anio == anioActual && mes == mesActual) {
+                        if (isIngreso) ingMes += mov.valor else gastMes += mov.valor
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        val newCache = DashboardCache(
+            balanceTotal = resumenFin.balanceTotal,
+            ingresosTotales = resumenFin.totalIngresos,
+            gastosTotales = resumenFin.totalGastos,
+            ingresosMes = ingMes,
+            gastosMes = gastMes,
+            totalGastosFijos = listaGF.sumOf { it.monto },
+            totalDeudasRestante = listaDeudas.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) },
+            countGastosMes = cantGastosMes,
+            countGF = listaGF.size,
+            countDeudas = listaDeudas.size,
+            periodosResumen = periodosRes
+        )
+
+        cachedDashboard = newCache
+        return@withContext newCache
     }
 
     // --- CONSULTAS DE PERIODOS Y ANALÍTICA ---
-    fun getMovimientosPorRangoFechas(startDate: String, endDate: String): List<Movimiento> {
-        val todos = getAllNotas()
-        return todos.filter { mov ->
+    fun getMovimientosPorRangoFechas(startDate: String, endDate: String, todos: List<Movimiento>? = null): List<Movimiento> {
+        val lista = todos ?: getAllNotas()
+        return lista.filter { mov ->
             val f = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
-            val fClean = f.split(" ")[0]
+            val fClean = if (f.length >= 10) f.substring(0, 10) else f.split(" ")[0]
             fClean >= startDate && fClean <= endDate
         }
     }
 
-    fun getResumenPorRangoFechas(startDate: String, endDate: String): ResumenPeriodoData {
-        val movs = getMovimientosPorRangoFechas(startDate, endDate)
+    fun getResumenPorRangoFechas(startDate: String, endDate: String, todos: List<Movimiento>? = null): ResumenPeriodoData {
+        val movs = getMovimientosPorRangoFechas(startDate, endDate, todos)
         
         var ingresos = 0.0
         var gastos = 0.0
@@ -520,11 +732,17 @@ class NotasDatabaseHelper(context: Context) : SQLiteOpenHelper(
     }
 
     fun clearAllData() {
+        invalidateCache()
         val db = writableDatabase
-        db.delete(TABLE_MOVIMIENTO, null, null)
-        db.delete(TABLE_GASTOS_FIJOS, null, null)
-        db.delete(TABLE_DEUDAS, null, null)
-        db.delete(TABLE_AHORROS, null, null)
-        db.close()
+        db.beginTransaction()
+        try {
+            db.delete(TABLE_MOVIMIENTO, null, null)
+            db.delete(TABLE_GASTOS_FIJOS, null, null)
+            db.delete(TABLE_DEUDAS, null, null)
+            db.delete(TABLE_AHORROS, null, null)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
     }
 }

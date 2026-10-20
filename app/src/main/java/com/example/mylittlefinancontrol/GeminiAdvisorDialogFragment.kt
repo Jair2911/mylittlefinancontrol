@@ -34,7 +34,7 @@ class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        dbHelper = NotasDatabaseHelper(requireContext())
+        dbHelper = NotasDatabaseHelper.getInstance(requireContext())
         adapter = ChatAdapter(mensajes)
         binding.rvChat.adapter = adapter
 

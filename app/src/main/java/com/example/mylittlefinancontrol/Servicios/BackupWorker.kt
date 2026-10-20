@@ -14,8 +14,8 @@ class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker
         val sp = applicationContext.getSharedPreferences("BackupPrefs", Context.MODE_PRIVATE)
         val accountName = sp.getString("GoogleAccount", null)
 
-        if (accountName == null) {
-            Log.w("BackupWorker", "Respaldo cancelado: No hay cuenta de Google vinculada")
+        if (accountName.isNullOrBlank() || accountName == "null") {
+            Log.w("BackupWorker", "Respaldo cancelado: No hay cuenta de Google válida vinculada")
             return@withContext Result.failure()
         }
 

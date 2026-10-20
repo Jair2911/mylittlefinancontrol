@@ -1,8 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme: Modern Financial Balance (Emerald / Tailwind) -->
+    <!-- Base application theme: DABA Design System (Light Mode) -->
     <style name="Base.Theme.MyLittleFinanControl" parent="Theme.Material3.DayNight.NoActionBar">
 
-        <!-- Marca Primaria: Verde Esmeralda -->
+        <!-- Marca Primaria: Verde Esmeralda (#00873D) -->
         <item name="colorPrimary">@color/primary_emerald</item>
         <item name="colorOnPrimary">@android:color/white</item>
 
@@ -21,23 +21,23 @@
         <item name="colorTertiary">@color/income_green_bg</item>
         <item name="colorOnTertiary">@color/badge_paid_text</item>
 
-        <!-- Bordes y Separadores -->
+        <!-- Bordes y Separadores Sutiles (#D6DFD8) -->
         <item name="colorOutline">@color/border_subtle</item>
 
-        <!-- Fondos y Superficies Elevadas -->
+        <!-- Fondos y Superficies (#F8FAF9 Canvas / #FFFFFF Card) -->
         <item name="android:windowBackground">@color/surface_bg</item>
         <item name="colorSurface">@color/surface_card</item>
         <item name="colorSurfaceVariant">@color/surface_variant</item>
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
 
-        <!-- Alertas y Pasivos -->
+        <!-- Alertas y Errores -->
         <item name="colorError">@color/expense_red</item>
         <item name="colorErrorContainer">@color/expense_red_bg</item>
         <item name="colorOnError">@android:color/white</item>
         <item name="colorOnErrorContainer">@color/on_expense_red</item>
 
-        <!-- Status Bar Limpia -->
+        <!-- Status Bar Limpia (#F8FAF9) -->
         <item name="android:statusBarColor">@color/surface_bg</item>
         <item name="android:windowLightStatusBar">true</item>
 
@@ -49,6 +49,24 @@
         <item name="colorSurfaceContainerLow">@color/surface_container_low</item>
         <item name="colorSurfaceContainerHigh">@color/surface_container_high</item>
         <item name="colorSurfaceContainerHighest">@color/surface_container_highest</item>
+
+        <!-- Formas DABA Design System (16dp Cards, 12dp Inputs, 9999dp Chips) -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.DABA.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.DABA.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.DABA.Large</item>
+    </style>
+
+    <!-- Estilos de Formas DABA Design System -->
+    <style name="ShapeAppearance.DABA.Small" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.DABA.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.DABA.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">16dp</item>
     </style>
 
     <style name="BottomSheetDialogTheme" parent="Theme.Design.Light.BottomSheetDialog">

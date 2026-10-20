@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.R
@@ -13,12 +15,29 @@ import com.example.mylittlefinancontrol.databinding.ItemDeudaBinding
 import java.text.NumberFormat
 import java.util.Locale
 
+object DeudaDiffCallback : DiffUtil.ItemCallback<Deuda>() {
+    override fun areItemsTheSame(oldItem: Deuda, newItem: Deuda): Boolean = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: Deuda, newItem: Deuda): Boolean = oldItem == newItem
+}
+
 class DeudasAdapter(
-    private var listaDeudas: List<Deuda>,
     private val onEditarClick: (Deuda) -> Unit,
     private val onEliminarClick: (Deuda) -> Unit,
     private val onAbonarClick: (Deuda) -> Unit
-) : RecyclerView.Adapter<DeudasAdapter.ViewHolder>() {
+) : ListAdapter<Deuda, DeudasAdapter.ViewHolder>(DeudaDiffCallback) {
+
+    constructor(
+        listaInicial: List<Deuda>,
+        onEditarClick: (Deuda) -> Unit,
+        onEliminarClick: (Deuda) -> Unit,
+        onAbonarClick: (Deuda) -> Unit
+    ) : this(onEditarClick, onEliminarClick, onAbonarClick) {
+        submitList(listaInicial)
+    }
+
+    companion object {
+        private val formatMoneda = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+    }
 
     class ViewHolder(val binding: ItemDeudaBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -28,8 +47,7 @@ class DeudasAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val deuda = listaDeudas[position]
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        val deuda = getItem(position)
         val context = holder.itemView.context
 
         holder.binding.apply {
@@ -37,7 +55,7 @@ class DeudasAdapter(
 
             val infoInteres = if (deuda.tasaInteres > 0) " · ${deuda.tasaInteres}% ${deuda.tipoInteres}" else ""
             val infoCuota = if (deuda.valorCuota > 0) {
-                " (${deuda.cuotas}x · ${format.format(deuda.valorCuota)}/mes)"
+                " (${deuda.cuotas}x · ${formatMoneda.format(deuda.valorCuota)}/mes)"
             } else if (deuda.cuotas > 0) {
                 " (${deuda.cuotas} cuotas)"
             } else ""
@@ -84,10 +102,9 @@ class DeudasAdapter(
                 0
             }
 
-            // Muestra en la esquina superior el monto contratado/total si está pagada, o el saldo pendiente si está activa
             if (esPagadaCompletamente) {
                 tvLabelMontoTop.text = "Deuda Total"
-                tvValorRestanteTop.text = format.format(deuda.totalDeuda)
+                tvValorRestanteTop.text = formatMoneda.format(deuda.totalDeuda)
                 tvBadgeEstado.text = "✓ PAGADA"
                 tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
                 tvBadgeEstado.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
@@ -95,7 +112,7 @@ class DeudasAdapter(
                 ivEditar.alpha = 0.3f
             } else {
                 tvLabelMontoTop.text = "Pendiente"
-                tvValorRestanteTop.text = format.format(restante)
+                tvValorRestanteTop.text = formatMoneda.format(restante)
                 tvBadgeEstado.text = if (progresoPct > 0) "AL DÍA" else "EN CURSO"
                 tvBadgeEstado.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, if (progresoPct > 0) R.color.surface_container_low else R.color.debt_amber_bg))
                 tvBadgeEstado.setTextColor(ContextCompat.getColor(context, if (progresoPct > 0) R.color.primary_emerald else R.color.debt_amber))
@@ -103,8 +120,8 @@ class DeudasAdapter(
                 ivEditar.alpha = 1.0f
             }
 
-            tvPagadoLabel.text = "Pagado: ${format.format(deuda.totalPagado)} ($progresoPct%)"
-            tvRestanteLabel.text = "Restante: ${format.format(restante)}"
+            tvPagadoLabel.text = "Pagado: ${formatMoneda.format(deuda.totalPagado)} ($progresoPct%)"
+            tvRestanteLabel.text = "Restante: ${formatMoneda.format(restante)}"
             
             if (deuda.fechaInicio.isNotEmpty() || deuda.fechaFin.isNotEmpty()) {
                 tvFechas.visibility = View.VISIBLE
@@ -132,10 +149,7 @@ class DeudasAdapter(
         }
     }
 
-    override fun getItemCount() = listaDeudas.size
-
     fun actualizarLista(nuevaLista: List<Deuda>) {
-        listaDeudas = nuevaLista
-        notifyDataSetChanged()
+        submitList(nuevaLista)
     }
 }

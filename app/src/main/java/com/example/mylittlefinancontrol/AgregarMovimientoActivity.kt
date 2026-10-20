@@ -11,6 +11,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
 import com.example.mylittlefinancontrol.databinding.ActivityAgregarMovimientoBinding
@@ -37,7 +41,7 @@ class AgregarMovimientoActivity : AppCompatActivity() {
         binding = ActivityAgregarMovimientoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        db = NotasDatabaseHelper(this)
+        db = NotasDatabaseHelper.getInstance(this)
         firebaseAuth = FirebaseAuth.getInstance()
 
         setupSegmentedTabs()
@@ -205,16 +209,23 @@ class AgregarMovimientoActivity : AppCompatActivity() {
     }
 
     private fun cargarDeudasLocales() {
-        listaDeudas.clear()
-        val deudasTodas = db.getAllDeudas()
-        listaDeudas.addAll(deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 })
-        val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
-        binding.autoDeudas.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, nombresDeudas))
+        lifecycleScope.launch(Dispatchers.IO) {
+            val deudasTodas = db.getAllDeudas()
+            val deudasPendientes = deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
+            val gfTodas = db.getAllGastosFijos()
+            
+            withContext(Dispatchers.Main) {
+                listaDeudas.clear()
+                listaDeudas.addAll(deudasPendientes)
+                val nombresDeudas = listaDeudas.map { "${it.concepto} (Resta: $${it.totalDeuda - it.totalPagado})" }
+                binding.autoDeudas.setAdapter(ArrayAdapter(this@AgregarMovimientoActivity, android.R.layout.simple_list_item_1, nombresDeudas))
 
-        listaGastosFijos.clear()
-        listaGastosFijos.addAll(db.getAllGastosFijos())
-        val nombresGastos = listaGastosFijos.map { "${it.concepto} ($${it.monto})" }
-        binding.autoGastosFijos.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, nombresGastos))
+                listaGastosFijos.clear()
+                listaGastosFijos.addAll(gfTodas)
+                val nombresGastos = listaGastosFijos.map { "${it.concepto} ($${it.monto})" }
+                binding.autoGastosFijos.setAdapter(ArrayAdapter(this@AgregarMovimientoActivity, android.R.layout.simple_list_item_1, nombresGastos))
+            }
+        }
     }
 
     private fun validarYGuardar() {
@@ -231,23 +242,27 @@ class AgregarMovimientoActivity : AppCompatActivity() {
 
         val valor = valorStr.toIntOrNull() ?: 0
 
-        if (esPagoDeuda) {
-            if (deudaSeleccionada == null) {
-                Toast.makeText(this, "Seleccione una deuda", Toast.LENGTH_SHORT).show()
-                return
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (esPagoDeuda) {
+                if (deudaSeleccionada == null) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@AgregarMovimientoActivity, "Seleccione una deuda", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                deudaSeleccionada!!.totalPagado += valor
+                db.updateDeuda(deudaSeleccionada!!)
+                actualizarDeudaEnFirebase(deudaSeleccionada!!, valor)
+                guardarMovimento(descripcion.uppercase(), valor, "PAGO DEUDA", fecha)
+            } else if (esGastoFijo && gastoFijoSeleccionado != null) {
+                val gf = gastoFijoSeleccionado!!
+                val mesAnio = fecha.substring(0, 7)
+                gf.ultimoPagoQ1 = mesAnio
+                db.updateGastoFijo(gf)
+                guardarMovimento(descripcion.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), 0)
+            } else {
+                guardarMovimento(descripcion.uppercase(), valor, tipoSeleccionado.uppercase(), fecha)
             }
-            deudaSeleccionada!!.totalPagado += valor
-            db.updateDeuda(deudaSeleccionada!!)
-            actualizarDeudaEnFirebase(deudaSeleccionada!!, valor)
-            guardarMovimento(descripcion.uppercase(), valor, "PAGO DEUDA", fecha)
-        } else if (esGastoFijo && gastoFijoSeleccionado != null) {
-            val gf = gastoFijoSeleccionado!!
-            val mesAnio = fecha.substring(0, 7)
-            gf.ultimoPagoQ1 = mesAnio
-            db.updateGastoFijo(gf)
-            guardarMovimento(descripcion.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), 0)
-        } else {
-            guardarMovimento(descripcion.uppercase(), valor, tipoSeleccionado.uppercase(), fecha)
         }
     }
 
@@ -265,7 +280,9 @@ class AgregarMovimientoActivity : AppCompatActivity() {
         val fc = Constantes.formatoFecha(System.currentTimeMillis())
         val movimiento = Movimiento(0, descripcion, valor, tipo_reg, fecha, gastoFijoId, quincena, categoria = "Varios", fechaCreacion = fc)
         db.insertNota(movimiento)
-        Toast.makeText(this, "Movimiento guardado", Toast.LENGTH_SHORT).show()
-        finish()
+        runOnUiThread {
+            Toast.makeText(this, "Movimiento guardado", Toast.LENGTH_SHORT).show()
+            finish()
+        }
     }
 }

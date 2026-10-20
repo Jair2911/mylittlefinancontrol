@@ -71,9 +71,10 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "No tienes notificaciones pendientes", Toast.LENGTH_SHORT).show()
         }
 
-        // Navegación Inferior (Bottom Navigation con 4 Secciones)
+        // Navegación Inferior (Bottom Navigation con 5 Secciones)
         binding.navMovimientos.setOnClickListener { verFragmentoMovimientos() }
         binding.navGastosFijos.setOnClickListener { verFragmentoGastosFijos() }
+        binding.navInicio.setOnClickListener { verFragmentoInicio() }
         binding.navAhorros.setOnClickListener { verFragmentoAhorros() }
         binding.navDeudas.setOnClickListener { verFragmentoDeudas() }
 
@@ -107,7 +108,7 @@ class MainActivity : AppCompatActivity() {
 
         val uid = firebaseAuth.uid ?: return
         val ref = com.google.firebase.database.FirebaseDatabase.getInstance().getReference("usuarios")
-        ref.child(uid).addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+        ref.child(uid).addListenerForSingleValueEvent(object : com.google.firebase.database.ValueEventListener {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
                 val nombres = snapshot.child("nombres").value?.toString()
                 val nombreFinal = if (!nombres.isNullOrBlank() && nombres != "null") nombres else userName
@@ -145,35 +146,48 @@ class MainActivity : AppCompatActivity() {
         val account = sp.getString("GoogleAccount", null)
         val frecuencia = sp.getString("Frecuencia", "Desactivado")
 
-        if (account != null && frecuencia != "Desactivado") {
+        if (!account.isNullOrBlank() && account != "null" && frecuencia != "Desactivado") {
             val workManager = WorkManager.getInstance(this)
             
-            val workInfo = workManager.getWorkInfosForUniqueWork("AutoBackup").get()
-            val isScheduled = workInfo.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING }
+            workManager.getWorkInfosForUniqueWorkLiveData("AutoBackup")
+                .observe(this) { workInfoList ->
+                    val isScheduled = workInfoList.any { 
+                        it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING 
+                    }
 
-            if (!isScheduled) {
-                val interval = when (frecuencia) {
-                    "Diario" -> 1L to TimeUnit.DAYS
-                    "Semanal" -> 7L to TimeUnit.DAYS
-                    "Mensual" -> 30L to TimeUnit.DAYS
-                    else -> return
+                    if (!isScheduled) {
+                        val interval = when (frecuencia) {
+                            "Diario" -> 1L to TimeUnit.DAYS
+                            "Semanal" -> 7L to TimeUnit.DAYS
+                            "Mensual" -> 30L to TimeUnit.DAYS
+                            else -> return@observe
+                        }
+
+                        val constraints = Constraints.Builder()
+                            .setRequiredNetworkType(NetworkType.CONNECTED)
+                            .build()
+
+                        val request = PeriodicWorkRequestBuilder<BackupWorker>(interval.first, interval.second)
+                            .setConstraints(constraints)
+                            .build()
+
+                        workManager.enqueueUniquePeriodicWork(
+                            "AutoBackup",
+                            ExistingPeriodicWorkPolicy.KEEP,
+                            request
+                        )
+                    }
                 }
-
-                val constraints = Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-
-                val request = PeriodicWorkRequestBuilder<BackupWorker>(interval.first, interval.second)
-                    .setConstraints(constraints)
-                    .build()
-
-                workManager.enqueueUniquePeriodicWork(
-                    "AutoBackup",
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    request
-                )
-            }
         }
+    }
+
+    companion object {
+        private const val TAG_INICIO = "TAG_INICIO"
+        private const val TAG_MOVIMIENTOS = "TAG_MOVIMIENTOS"
+        private const val TAG_GASTOS_FIJOS = "TAG_GASTOS_FIJOS"
+        private const val TAG_AHORROS = "TAG_AHORROS"
+        private const val TAG_DEUDAS = "TAG_DEUDAS"
+        private const val TAG_PERFIL = "TAG_PERFIL"
     }
 
     private fun actualizarEstadoNavegacion(tabActivo: Int) {
@@ -188,44 +202,59 @@ class MainActivity : AppCompatActivity() {
 
         aplicarColorTab(binding.ivNavMovimientos, binding.tvNavMovimientos, tabActivo == 0)
         aplicarColorTab(binding.ivNavGastosFijos, binding.tvNavGastosFijos, tabActivo == 1)
-        aplicarColorTab(binding.ivNavAhorros, binding.tvNavAhorros, tabActivo == 2)
-        aplicarColorTab(binding.ivNavDeudas, binding.tvNavDeudas, tabActivo == 3)
+        aplicarColorTab(binding.ivNavInicio, binding.tvNavInicio, tabActivo == 2)
+        aplicarColorTab(binding.ivNavAhorros, binding.tvNavAhorros, tabActivo == 3)
+        aplicarColorTab(binding.ivNavDeudas, binding.tvNavDeudas, tabActivo == 4)
     }
 
-    private fun reemplazarFragmento(fragment: Fragment, titulo: String) {
-        supportFragmentManager.beginTransaction()
-            .replace(binding.fragmentoFL.id, fragment)
-            .commit()
+    private fun mostrarFragmentoPorTag(tag: String, factory: () -> Fragment) {
+        val transaction = supportFragmentManager.beginTransaction()
+        
+        for (fragment in supportFragmentManager.fragments) {
+            if (fragment.isVisible) {
+                transaction.hide(fragment)
+            }
+        }
+
+        val targetFragment = supportFragmentManager.findFragmentByTag(tag)
+        if (targetFragment == null) {
+            val newFragment = factory()
+            transaction.add(binding.fragmentoFL.id, newFragment, tag)
+        } else {
+            transaction.show(targetFragment)
+        }
+
+        transaction.commitAllowingStateLoss()
     }
 
     fun verFragmentoPerfil() {
         actualizarEstadoNavegacion(-1)
-        reemplazarFragmento(FragmentPerfil(), "Perfil")
+        mostrarFragmentoPorTag(TAG_PERFIL) { FragmentPerfil() }
     }
     
     fun verFragmentoMovimientos() {
         actualizarEstadoNavegacion(0)
-        reemplazarFragmento(FragmentMovimiento(), "Movimientos")
+        mostrarFragmentoPorTag(TAG_MOVIMIENTOS) { FragmentMovimiento() }
     }
 
     fun verFragmentoGastosFijos() {
         actualizarEstadoNavegacion(1)
-        reemplazarFragmento(FragmentGastosFijos(), "Gastos Fijos")
+        mostrarFragmentoPorTag(TAG_GASTOS_FIJOS) { FragmentGastosFijos() }
     }
 
     fun verFragmentoAhorros() {
-        actualizarEstadoNavegacion(2)
-        reemplazarFragmento(FragmentAhorros(), "Ahorros")
+        actualizarEstadoNavegacion(3)
+        mostrarFragmentoPorTag(TAG_AHORROS) { FragmentAhorros() }
     }
     
     fun verFragmentoDeudas() {
-        actualizarEstadoNavegacion(3)
-        reemplazarFragmento(FragmentBalance(), "Deudas")
+        actualizarEstadoNavegacion(4)
+        mostrarFragmentoPorTag(TAG_DEUDAS) { FragmentBalance() }
     }
 
     fun verFragmentoInicio() {
-        actualizarEstadoNavegacion(-1)
-        reemplazarFragmento(FragmentInicio(), "Inicio")
+        actualizarEstadoNavegacion(2)
+        mostrarFragmentoPorTag(TAG_INICIO) { FragmentInicio() }
     }
 
     private fun solicitarPermisosSmsYNotificaciones() {

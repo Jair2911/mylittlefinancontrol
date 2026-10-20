@@ -8,12 +8,17 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.example.mylittlefinancontrol.DashboardCache
 import com.example.mylittlefinancontrol.DetallePeriodoActivity
 import com.example.mylittlefinancontrol.GeminiAdvisorDialogFragment
 import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.FragmentInicioBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,6 +37,9 @@ class FragmentInicio : Fragment() {
     private var gastosMes = 0.0
     private var ingresosTotales = 0.0
     private var gastosTotales = 0.0
+    private var countGastosMes = 0
+    private var countGF = 0
+    private var countDeudas = 0
     
     private var esIncognito: Boolean = false
 
@@ -47,7 +55,13 @@ class FragmentInicio : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        db = NotasDatabaseHelper(mContext)
+        db = NotasDatabaseHelper.getInstance(mContext)
+
+        // 1. PINTAR INMEDIATAMENTE SI YA EXISTE LA CACHÉ EN RAM (0ms)
+        val cacheInmediata = db.getCachedDashboardImmediate()
+        if (cacheInmediata != null) {
+            aplicarDashboardCacheEnUI(cacheInmediata)
+        }
 
         cargarDatosLocales()
         setupClickListeners()
@@ -55,18 +69,60 @@ class FragmentInicio : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        val cacheInmediata = db.getCachedDashboardImmediate()
+        if (cacheInmediata != null) {
+            aplicarDashboardCacheEnUI(cacheInmediata)
+        }
         cargarDatosLocales()
     }
 
     private fun cargarDatosLocales() {
-        val listaGF = db.getAllGastosFijos()
-        totalGastosFijos = listaGF.sumOf { it.monto }
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            val cacheData = db.getDashboardDataCached { p -> calcularFechasPeriodo(p) }
+            withContext(Dispatchers.Main) {
+                if (_binding == null) return@withContext
+                aplicarDashboardCacheEnUI(cacheData)
+            }
+        }
+    }
 
-        val listaD = db.getAllDeudas()
-        totalDeudasRestante = listaD.sumOf { (it.totalDeuda - it.totalPagado).coerceAtLeast(0.0) }
+    private fun aplicarDashboardCacheEnUI(cache: DashboardCache) {
+        totalGastosFijos = cache.totalGastosFijos
+        totalDeudasRestante = cache.totalDeudasRestante
+        ingresosMes = cache.ingresosMes
+        gastosMes = cache.gastosMes
+        ingresosTotales = cache.ingresosTotales
+        gastosTotales = cache.gastosTotales
+        countGastosMes = cache.countGastosMes
+        countGF = cache.countGF
+        countDeudas = cache.countDeudas
 
-        calcularMovimientosDelMes()
-        cargarPanelResumenesGrid()
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+
+        for ((p, data) in cache.periodosResumen) {
+            val balanceTxt = format.format(data.first)
+            val varTxt = data.second
+            when (p) {
+                "SEMANAL" -> {
+                    binding.tvBalanceSemanal.text = balanceTxt
+                    binding.tvTendenciaSemanal.text = varTxt
+                }
+                "MENSUAL" -> {
+                    binding.tvBalanceMensual.text = balanceTxt
+                    binding.tvTendenciaMensual.text = varTxt
+                }
+                "SEMESTRAL" -> {
+                    binding.tvBalanceSemestral.text = balanceTxt
+                    binding.tvTendenciaSemestral.text = varTxt
+                }
+                "ANUAL" -> {
+                    binding.tvBalanceAnual.text = balanceTxt
+                    binding.tvTendenciaAnual.text = varTxt
+                }
+            }
+        }
+
+        actualizarInterfaz()
     }
 
     private fun setupClickListeners() {
@@ -77,10 +133,6 @@ class FragmentInicio : Fragment() {
         binding.cardGastos.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
         binding.cardGastosFijos.setOnClickListener { mainActivity?.verFragmentoGastosFijos() }
         binding.cardDeudas.setOnClickListener { mainActivity?.verFragmentoDeudas() }
-
-        binding.cardSaludFinanciera.setOnClickListener {
-            GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
-        }
 
         binding.btnIncognitoToggle.setOnClickListener {
             esIncognito = !esIncognito
@@ -107,87 +159,6 @@ class FragmentInicio : Fragment() {
             putExtra("TIPO_PERIODO", tipoPeriodo)
         }
         startActivity(intent)
-    }
-
-    private fun calcularMovimientosDelMes() {
-        val calendar = Calendar.getInstance()
-        val mesActual = calendar.get(Calendar.MONTH)
-        val anioActual = calendar.get(Calendar.YEAR)
-
-        val todosLosMovimientos = db.getAllNotas()
-        ingresosMes = 0.0
-        gastosMes = 0.0
-        ingresosTotales = 0.0
-        gastosTotales = 0.0
-
-        for (mov in todosLosMovimientos) {
-            if (mov.tipo_reg.contains("INGRESO", true)) {
-                ingresosTotales += mov.valor
-            } else {
-                gastosTotales += mov.valor
-            }
-
-            try {
-                val f = if (mov.fecha.isNotBlank()) mov.fecha else mov.fechaCreacion
-                val partes = f.split(" ")[0].split("-")
-                val anio = partes[0].toInt()
-                val mes = partes[1].toInt() - 1
-                
-                if (anio == anioActual && mes == mesActual) {
-                    if (mov.tipo_reg.contains("INGRESO", true)) {
-                        ingresosMes += mov.valor
-                    } else {
-                        gastosMes += mov.valor
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-
-        actualizarInterfaz()
-    }
-
-    private fun cargarPanelResumenesGrid() {
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-
-        val periodos = listOf("SEMANAL", "MENSUAL", "SEMESTRAL", "ANUAL")
-        for (p in periodos) {
-            val rangos = calcularFechasPeriodo(p)
-            val rangeActual = rangos.first
-            val rangeAnt = rangos.second
-
-            val resAct = db.getResumenPorRangoFechas(rangeActual.first, rangeActual.second)
-            val resAnt = db.getResumenPorRangoFechas(rangeAnt.first, rangeAnt.second)
-
-            val gastosAct = resAct.totalGastos
-            val gastosAnt = resAnt.totalGastos
-
-            val varPct = if (gastosAnt > 0) {
-                ((gastosAct - gastosAnt) / gastosAnt) * 100.0
-            } else {
-                0.0
-            }
-
-            val varTxt = if (varPct > 0) "📈 +${varPct.toInt()}% vs ant." else if (varPct < 0) "📉 ${varPct.toInt()}% vs ant." else "📊 Estables vs ant."
-
-            when (p) {
-                "SEMANAL" -> {
-                    binding.tvBalanceSemanal.text = format.format(resAct.balanceNeto)
-                    binding.tvTendenciaSemanal.text = varTxt
-                }
-                "MENSUAL" -> {
-                    binding.tvBalanceMensual.text = format.format(resAct.balanceNeto)
-                    binding.tvTendenciaMensual.text = varTxt
-                }
-                "SEMESTRAL" -> {
-                    binding.tvBalanceSemestral.text = format.format(resAct.balanceNeto)
-                    binding.tvTendenciaSemestral.text = varTxt
-                }
-                "ANUAL" -> {
-                    binding.tvBalanceAnual.text = format.format(resAct.balanceNeto)
-                    binding.tvTendenciaAnual.text = varTxt
-                }
-            }
-        }
     }
 
     private fun calcularFechasPeriodo(tipo: String): Pair<Pair<String, String>, Pair<String, String>> {
@@ -286,22 +257,9 @@ class FragmentInicio : Fragment() {
         // Subtextos de las tarjetas Bento
         binding.tvSubtextIngresos.text = if (ingresosMes > 0) "1 depósito activo" else "Sin depósitos aún"
         
-        val cantGastosMes = db.getAllNotas().count { !it.tipo_reg.contains("INGRESO", true) }
-        binding.tvSubtextGastos.text = if (cantGastosMes == 1) "1 registro activo" else "$cantGastosMes registros activos"
-
-        val countGF = db.getAllGastosFijos().size
+        binding.tvSubtextGastos.text = if (countGastosMes == 1) "1 registro activo" else "$countGastosMes registros activos"
         binding.tvSubtextGastosFijos.text = "$countGF recurrentes"
-
-        val countDeudas = db.getAllDeudas().size
         binding.tvSubtextDeudas.text = if (countDeudas > 0) "$countDeudas activas" else "Bajo control"
-
-        // Cálculo dinámico de salud financiera
-        val pctFijos = if (ingresosMes > 0) {
-            ((totalGastosFijos / ingresosMes) * 100).toInt().coerceIn(10, 95)
-        } else {
-            60
-        }
-        binding.tvSaludSubtitulo.text = "Tus compromisos fijos representan el $pctFijos%"
     }
 
     override fun onDestroyView() {

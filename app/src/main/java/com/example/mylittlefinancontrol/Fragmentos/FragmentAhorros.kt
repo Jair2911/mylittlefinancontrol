@@ -14,6 +14,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mylittlefinancontrol.Adaptadores.AhorrosAdapter
 import com.example.mylittlefinancontrol.Modelos.Ahorro
@@ -58,7 +62,7 @@ class FragmentAhorros : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        db = NotasDatabaseHelper(mContext)
+        db = NotasDatabaseHelper.getInstance(mContext)
 
         setupRecyclerView()
         setupFiltros()
@@ -180,9 +184,11 @@ class FragmentAhorros : Fragment() {
     }
 
     private fun mostrarDialogoAhorro(ahorroExistente: Ahorro?) {
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
         val dialogBinding = DialogAgregarAhorroBinding.inflate(layoutInflater)
-        bottomSheetDialog.setContentView(dialogBinding.root)
+        val dialog = AlertDialog.Builder(mContext)
+            .setView(dialogBinding.root)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         var categoriaSeleccionada = "Emergencia"
 
@@ -244,8 +250,8 @@ class FragmentAhorros : Fragment() {
             actualizarSeleccionCategoria("Emergencia")
         }
 
-        dialogBinding.btnCerrar.setOnClickListener { bottomSheetDialog.dismiss() }
-        dialogBinding.btnCancelar.setOnClickListener { bottomSheetDialog.dismiss() }
+        dialogBinding.btnCerrar.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnGuardar.setOnClickListener {
             val titulo = dialogBinding.etTituloAhorro.text.toString().trim()
@@ -272,26 +278,28 @@ class FragmentAhorros : Fragment() {
                     db.updateAhorro(ahorroExistente)
                 }
                 cargarAhorros()
-                bottomSheetDialog.dismiss()
+                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese el nombre de la meta y un monto objetivo válido", Toast.LENGTH_SHORT).show()
             }
         }
 
-        bottomSheetDialog.show()
+        dialog.show()
     }
 
     private fun mostrarDialogoAbono(ahorro: Ahorro) {
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
         val dialogBinding = DialogAbonarAhorroBinding.inflate(layoutInflater)
-        bottomSheetDialog.setContentView(dialogBinding.root)
+        val dialog = AlertDialog.Builder(mContext)
+            .setView(dialogBinding.root)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         dialogBinding.tvSubtituloMetaAbono.text = ahorro.titulo
         dialogBinding.tvEstadoActualAbono.text = "Progreso actual: ${format.format(ahorro.montoActual)} de ${format.format(ahorro.montoObjetivo)}"
 
-        dialogBinding.btnCerrarAbono.setOnClickListener { bottomSheetDialog.dismiss() }
-        dialogBinding.btnCancelarAbono.setOnClickListener { bottomSheetDialog.dismiss() }
+        dialogBinding.btnCerrarAbono.setOnClickListener { dialog.dismiss() }
+        dialogBinding.btnCancelarAbono.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnConfirmarAbono.setOnClickListener {
             val rawAbono = dialogBinding.etMontoAbono.text.toString()
@@ -302,14 +310,14 @@ class FragmentAhorros : Fragment() {
                 ahorro.montoActual += abono
                 db.updateAhorro(ahorro)
                 cargarAhorros()
-                bottomSheetDialog.dismiss()
+                dialog.dismiss()
                 Toast.makeText(mContext, "Aporte de ${format.format(abono)} registrado con éxito", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese un monto de aporte válido", Toast.LENGTH_SHORT).show()
             }
         }
 
-        bottomSheetDialog.show()
+        dialog.show()
     }
 
     override fun onResume() {
@@ -318,9 +326,14 @@ class FragmentAhorros : Fragment() {
     }
 
     private fun cargarAhorros() {
-        listaAhorrosTodos = db.getAllAhorros().toMutableList()
-        aplicarFiltro()
-        actualizarResumenVisual()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val lista = db.getAllAhorros().toMutableList()
+            withContext(Dispatchers.Main) {
+                listaAhorrosTodos = lista
+                aplicarFiltro()
+                actualizarResumenVisual()
+            }
+        }
     }
 
     private fun actualizarResumenVisual() {

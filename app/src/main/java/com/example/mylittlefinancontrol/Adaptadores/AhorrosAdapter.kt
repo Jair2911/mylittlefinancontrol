@@ -4,6 +4,8 @@ import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mylittlefinancontrol.Modelos.Ahorro
 import com.example.mylittlefinancontrol.R
@@ -11,12 +13,29 @@ import com.example.mylittlefinancontrol.databinding.ItemAhorroBinding
 import java.text.NumberFormat
 import java.util.*
 
+object AhorroDiffCallback : DiffUtil.ItemCallback<Ahorro>() {
+    override fun areItemsTheSame(oldItem: Ahorro, newItem: Ahorro): Boolean = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: Ahorro, newItem: Ahorro): Boolean = oldItem == newItem
+}
+
 class AhorrosAdapter(
-    private var listaAhorros: List<Ahorro>,
     private val onEditarClick: (Ahorro) -> Unit,
     private val onEliminarClick: (Ahorro) -> Unit,
     private val onAbonarClick: (Ahorro) -> Unit
-) : RecyclerView.Adapter<AhorrosAdapter.ViewHolder>() {
+) : ListAdapter<Ahorro, AhorrosAdapter.ViewHolder>(AhorroDiffCallback) {
+
+    constructor(
+        listaInicial: List<Ahorro>,
+        onEditarClick: (Ahorro) -> Unit,
+        onEliminarClick: (Ahorro) -> Unit,
+        onAbonarClick: (Ahorro) -> Unit
+    ) : this(onEditarClick, onEliminarClick, onAbonarClick) {
+        submitList(listaInicial)
+    }
+
+    companion object {
+        private val formatMoneda = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+    }
 
     class ViewHolder(val binding: ItemAhorroBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -26,16 +45,15 @@ class AhorrosAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val ahorro = listaAhorros[position]
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+        val ahorro = getItem(position)
         val context = holder.itemView.context
 
         holder.binding.apply {
             tvTituloAhorro.text = ahorro.titulo
             tvCategoriaTagAhorro.text = ahorro.categoria.uppercase()
             tvMetaFecha.text = if (ahorro.fechaMeta.isNotEmpty()) "Meta: ${ahorro.fechaMeta}" else "Sin fecha límite"
-            tvMontoActualAhorro.text = format.format(ahorro.montoActual)
-            tvMontoObjetivoAhorro.text = "de ${format.format(ahorro.montoObjetivo)}"
+            tvMontoActualAhorro.text = formatMoneda.format(ahorro.montoActual)
+            tvMontoObjetivoAhorro.text = "de ${formatMoneda.format(ahorro.montoObjetivo)}"
 
             val porcentaje = if (ahorro.montoObjetivo > 0) {
                 ((ahorro.montoActual / ahorro.montoObjetivo) * 100).toInt().coerceIn(0, 100)
@@ -46,7 +64,6 @@ class AhorrosAdapter(
             tvPorcentajeAhorro.text = "$porcentaje%"
             pbProgresoAhorro.progress = porcentaje
 
-            // Iconos y colores temáticos según categoría
             val catLower = ahorro.categoria.lowercase()
             when {
                 catLower.contains("emerg") || catLower.contains("salud") || catLower.contains("segur") -> {
@@ -87,10 +104,7 @@ class AhorrosAdapter(
         }
     }
 
-    override fun getItemCount() = listaAhorros.size
-
     fun actualizarLista(nuevaLista: List<Ahorro>) {
-        listaAhorros = nuevaLista
-        notifyDataSetChanged()
+        submitList(nuevaLista)
     }
 }

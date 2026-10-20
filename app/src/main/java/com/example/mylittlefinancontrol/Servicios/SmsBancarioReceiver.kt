@@ -19,6 +19,9 @@ import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.Movimiento
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 import java.util.regex.Pattern
@@ -32,16 +35,25 @@ class SmsBancarioReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
-            val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            for (sms in messages) {
-                val sender = sms.originatingAddress ?: ""
-                val body = sms.messageBody ?: ""
+            val pendingResult = goAsync()
+            val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent) ?: emptyArray()
 
-                Log.d(TAG, "SMS Recibido de: $sender -> $body")
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    for (sms in messages) {
+                        val sender = sms.originatingAddress ?: ""
+                        val body = sms.messageBody ?: ""
 
-                // Verificar si el mensaje proviene de Bancolombia u otro banco
-                if (esMensajeBancario(sender, body)) {
-                    procesarSmsBancario(context, body)
+                        Log.d(TAG, "SMS Recibido de: $sender -> $body")
+
+                        if (esMensajeBancario(sender, body)) {
+                            procesarSmsBancario(context, body)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error en procesamiento asíncrono de SMS: ${e.message}", e)
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }
@@ -124,7 +136,6 @@ class SmsBancarioReceiver : BroadcastReceiver() {
                 val fStr = matcherFecha.group(1)
                 val hStr = matcherFecha.group(2)
                 if (fStr != null && hStr != null) {
-                    // Convertir DD/MM/YYYY a YYYY-MM-DD para consistencia
                     val partesF = fStr.split("/")
                     if (partesF.size == 3) {
                         fechaFinal = "${partesF[2]}-${partesF[1]}-${partesF[0]} $hStr:00"
@@ -132,8 +143,8 @@ class SmsBancarioReceiver : BroadcastReceiver() {
                 }
             }
 
-            // 5. Guardar en Base de Datos Local
-            val db = NotasDatabaseHelper(context)
+            // 5. Guardar en Base de Datos Local (SQLite) en hilo I/O
+            val db = NotasDatabaseHelper.getInstance(context)
             val movimiento = Movimiento(
                 id = 0,
                 descripcion = concepto,

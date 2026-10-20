@@ -104,7 +104,7 @@ class FragmentMovimiento : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        db = NotasDatabaseHelper(mContext)
+        db = NotasDatabaseHelper.getInstance(mContext)
 
         setupFiltros()
         setupRecyclerView()
@@ -130,8 +130,13 @@ class FragmentMovimiento : Fragment() {
         if (cantidadAMostrar < listaTotalFiltrada.size) {
             cantidadAMostrar += PASO_PAGINACION
             val sublista = listaTotalFiltrada.take(cantidadAMostrar)
-            notasAdaptador.refrescarLista(sublista)
-            actualizarPaginacionUI(sublista)
+            lifecycleScope.launch(Dispatchers.IO) {
+                val displayList = NotasAdaptador.procesarGrupos(sublista)
+                withContext(Dispatchers.Main) {
+                    notasAdaptador.submitList(displayList)
+                    actualizarPaginacionUI(sublista)
+                }
+            }
         }
     }
 
@@ -315,21 +320,21 @@ class FragmentMovimiento : Fragment() {
 
     private fun setupRecyclerView() {
         notasAdaptador = NotasAdaptador(
-            mutableListOf(),
             mContext,
             onEditarClick = { mov -> mostrarDialogoMovimiento(mov) },
             onEliminarClick = { mov -> eliminarMovimiento(mov) }
         )
         binding.notasRv.layoutManager = LinearLayoutManager(mContext)
         binding.notasRv.adapter = notasAdaptador
-        actualizarListaFiltrada()
     }
 
-    private fun evaluarCoincideCategoria(mov: Movimiento, categoria: String): Boolean {
-        val tipoUpper = mov.tipo_reg.uppercase()
-        val descUpper = mov.descripcion.uppercase()
-        val catUpper = mov.categoria.uppercase()
-
+    private fun evaluarCoincideCategoria(
+        mov: Movimiento,
+        categoria: String,
+        tipoUpper: String = mov.tipo_reg.uppercase(),
+        descUpper: String = mov.descripcion.uppercase(),
+        catUpper: String = mov.categoria.uppercase()
+    ): Boolean {
         if (categoria == "TODOS") return true
 
         // Coincidencia directa si la categoría fue elegida explícitamente al crear el movimiento
@@ -365,86 +370,108 @@ class FragmentMovimiento : Fragment() {
             cantidadAMostrar = PASO_PAGINACION
         }
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        val todos = db.getAllNotas()
 
-        val baseFechaBusqueda = todos.filter { mov ->
-            try {
-                val parsed = extraerAnioYMes(mov.fecha)
-                val coincideFecha = when {
-                    mesSeleccionado == -1 && anioSeleccionado == -1 -> true
-                    mesSeleccionado == -1 && anioSeleccionado != -1 -> (parsed == null || parsed.first == anioSeleccionado)
-                    mesSeleccionado != -1 && anioSeleccionado == -1 -> (parsed != null && parsed.second == mesSeleccionado)
-                    else -> (parsed != null && parsed.first == anioSeleccionado && parsed.second == mesSeleccionado)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val todos = db.getAllNotas()
+
+            val baseFechaBusqueda = todos.filter { mov ->
+                try {
+                    val parsed = extraerAnioYMes(mov.fecha)
+                    val coincideFecha = when {
+                        mesSeleccionado == -1 && anioSeleccionado == -1 -> true
+                        mesSeleccionado == -1 && anioSeleccionado != -1 -> (parsed == null || parsed.first == anioSeleccionado)
+                        mesSeleccionado != -1 && anioSeleccionado == -1 -> (parsed != null && parsed.second == mesSeleccionado)
+                        else -> (parsed != null && parsed.first == anioSeleccionado && parsed.second == mesSeleccionado)
+                    }
+                    val coincideBusqueda = searchQuery.isEmpty() || mov.descripcion.contains(searchQuery, ignoreCase = true)
+                    coincideFecha && coincideBusqueda
+                } catch (e: Exception) { true }
+            }
+
+            // Conteo dinámico optimizado
+            val categoriasList = arrayOf("GASTOS FIJOS", "SUPERMERCADO", "INGRESOS", "DEUDAS", "SERVICIOS", "COMIDA", "TRANSPORTE", "SALUD", "STREAMING", "EDUCACION", "OTROS")
+            val conteosMap = mutableMapOf<String, Int>()
+
+            for (mov in baseFechaBusqueda) {
+                val tUpper = mov.tipo_reg.uppercase()
+                val dUpper = mov.descripcion.uppercase()
+                val cUpper = mov.categoria.uppercase()
+
+                for (cat in categoriasList) {
+                    if (evaluarCoincideCategoria(mov, cat, tUpper, dUpper, cUpper)) {
+                        conteosMap[cat] = (conteosMap[cat] ?: 0) + 1
+                    }
                 }
-                val coincideBusqueda = searchQuery.isEmpty() || mov.descripcion.contains(searchQuery, ignoreCase = true)
-                coincideFecha && coincideBusqueda
-            } catch (e: Exception) { true }
+            }
+
+            val filtrados = baseFechaBusqueda.filter { evaluarCoincideCategoria(it, categoriaFiltro) }
+
+            val ordenados = when (criterioOrden) {
+                "ANTIGUOS" -> filtrados.reversed()
+                "MAYOR_MONTO" -> filtrados.sortedByDescending { it.valor }
+                "MENOR_MONTO" -> filtrados.sortedBy { it.valor }
+                "ALFABETICO" -> filtrados.sortedBy { it.descripcion }
+                else -> filtrados
+            }
+
+            val totalIngresos = filtrados.filter { it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
+            val totalEgresos = filtrados.filter { !it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
+
+            val montoAMostrar = when (categoriaFiltro) {
+                "INGRESOS" -> totalIngresos
+                "TODOS" -> if (totalEgresos > 0) totalEgresos else totalIngresos
+                else -> totalEgresos
+            }
+
+            listaTotalFiltrada = ordenados
+            val sublista = listaTotalFiltrada.take(cantidadAMostrar)
+            val displayList = NotasAdaptador.procesarGrupos(sublista)
+
+            withContext(Dispatchers.Main) {
+                fun conteo(cat: String) = conteosMap[cat] ?: 0
+                binding.chipFiltroTodos.text = "Todos (${baseFechaBusqueda.size})"
+                binding.chipFiltroGastosFijos.text = "Gastos Fijos (${conteo("GASTOS FIJOS")})"
+                binding.chipFiltroSupermercado.text = "Supermercado (${conteo("SUPERMERCADO")})"
+                binding.chipFiltroIngresos.text = "Ingresos (${conteo("INGRESOS")})"
+                binding.chipFiltroDeudas.text = "Deudas (${conteo("DEUDAS")})"
+                binding.chipFiltroServicios.text = "Servicios (${conteo("SERVICIOS")})"
+                binding.chipFiltroComida.text = "Comida (${conteo("COMIDA")})"
+                binding.chipFiltroTransporte.text = "Transporte (${conteo("TRANSPORTE")})"
+                binding.chipFiltroSalud.text = "Salud (${conteo("SALUD")})"
+                binding.chipFiltroStreaming.text = "Streaming (${conteo("STREAMING")})"
+                binding.chipFiltroEducacion.text = "Educación (${conteo("EDUCACION")})"
+                binding.chipFiltroOtros.text = "Otros (${conteo("OTROS")})"
+
+                binding.tvTituloBalanceMov.text = when (categoriaFiltro) {
+                    "TODOS" -> "TOTAL DE MOVIMIENTOS"
+                    "GASTOS FIJOS" -> "TOTAL GASTOS FIJOS"
+                    "SUPERMERCADO" -> "TOTAL SUPERMERCADO"
+                    "INGRESOS" -> "TOTAL INGRESOS"
+                    "DEUDAS" -> "TOTAL PAGOS DEUDAS"
+                    "SERVICIOS" -> "TOTAL SERVICIOS"
+                    "COMIDA" -> "TOTAL COMIDA Y RESTAURANTES"
+                    "TRANSPORTE" -> "TOTAL TRANSPORTE"
+                    "SALUD" -> "TOTAL SALUD Y FARMACIA"
+                    "STREAMING" -> "TOTAL STREAMING"
+                    "EDUCACION" -> "TOTAL EDUCACIÓN"
+                    "OTROS" -> "TOTAL OTROS GASTOS"
+                    else -> "TOTAL DE MOVIMIENTOS"
+                }
+
+                listaTotalFiltrada = ordenados
+                val sublista = listaTotalFiltrada.take(cantidadAMostrar)
+                notasAdaptador.submitList(displayList)
+                actualizarPaginacionUI(sublista)
+
+                saldoRealTexto = format.format(montoAMostrar)
+                if (!esSaldoOculto) {
+                    binding.tvTotalMovMonto.text = saldoRealTexto
+                }
+
+                binding.tvTotalIngresosMonto.text = "+${format.format(totalIngresos)}"
+                binding.tvTotalEgresosMonto.text = "-${format.format(totalEgresos)}"
+            }
         }
-
-        // Conteo dinámico en tiempo real en los chips
-        fun conteo(cat: String) = baseFechaBusqueda.count { evaluarCoincideCategoria(it, cat) }
-        binding.chipFiltroTodos.text = "Todos (${baseFechaBusqueda.size})"
-        binding.chipFiltroGastosFijos.text = "Gastos Fijos (${conteo("GASTOS FIJOS")})"
-        binding.chipFiltroSupermercado.text = "Supermercado (${conteo("SUPERMERCADO")})"
-        binding.chipFiltroIngresos.text = "Ingresos (${conteo("INGRESOS")})"
-        binding.chipFiltroDeudas.text = "Deudas (${conteo("DEUDAS")})"
-        binding.chipFiltroServicios.text = "Servicios (${conteo("SERVICIOS")})"
-        binding.chipFiltroComida.text = "Comida (${conteo("COMIDA")})"
-        binding.chipFiltroTransporte.text = "Transporte (${conteo("TRANSPORTE")})"
-        binding.chipFiltroSalud.text = "Salud (${conteo("SALUD")})"
-        binding.chipFiltroStreaming.text = "Streaming (${conteo("STREAMING")})"
-        binding.chipFiltroEducacion.text = "Educación (${conteo("EDUCACION")})"
-        binding.chipFiltroOtros.text = "Otros (${conteo("OTROS")})"
-
-        // Título dinámico de la tarjeta superior
-        binding.tvTituloBalanceMov.text = when (categoriaFiltro) {
-            "TODOS" -> "TOTAL DE MOVIMIENTOS"
-            "GASTOS FIJOS" -> "TOTAL GASTOS FIJOS"
-            "SUPERMERCADO" -> "TOTAL SUPERMERCADO"
-            "INGRESOS" -> "TOTAL INGRESOS"
-            "DEUDAS" -> "TOTAL PAGOS DEUDAS"
-            "SERVICIOS" -> "TOTAL SERVICIOS"
-            "COMIDA" -> "TOTAL COMIDA Y RESTAURANTES"
-            "TRANSPORTE" -> "TOTAL TRANSPORTE"
-            "SALUD" -> "TOTAL SALUD Y FARMACIA"
-            "STREAMING" -> "TOTAL STREAMING"
-            "EDUCACION" -> "TOTAL EDUCACIÓN"
-            "OTROS" -> "TOTAL OTROS GASTOS"
-            else -> "TOTAL DE MOVIMIENTOS"
-        }
-
-        val filtrados = baseFechaBusqueda.filter { evaluarCoincideCategoria(it, categoriaFiltro) }
-
-        val ordenados = when (criterioOrden) {
-            "ANTIGUOS" -> filtrados.reversed()
-            "MAYOR_MONTO" -> filtrados.sortedByDescending { it.valor }
-            "MENOR_MONTO" -> filtrados.sortedBy { it.valor }
-            "ALFABETICO" -> filtrados.sortedBy { it.descripcion }
-            else -> filtrados
-        }
-
-        listaTotalFiltrada = ordenados
-        val sublista = listaTotalFiltrada.take(cantidadAMostrar)
-        notasAdaptador.refrescarLista(sublista)
-        actualizarPaginacionUI(sublista)
-
-        val totalIngresos = filtrados.filter { it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
-        val totalEgresos = filtrados.filter { !it.tipo_reg.contains("INGRESO", ignoreCase = true) }.sumOf { it.valor.toDouble() }
-        val balancePeriodo = totalIngresos - totalEgresos
-
-        val montoAMostrar = when (categoriaFiltro) {
-            "INGRESOS" -> totalIngresos
-            "TODOS" -> if (totalEgresos > 0) totalEgresos else totalIngresos
-            else -> totalEgresos
-        }
-
-        saldoRealTexto = format.format(montoAMostrar)
-        if (!esSaldoOculto) {
-            binding.tvTotalMovMonto.text = saldoRealTexto
-        }
-
-        binding.tvTotalIngresosMonto.text = "+${format.format(totalIngresos)}"
-        binding.tvTotalEgresosMonto.text = "-${format.format(totalEgresos)}"
     }
 
     private fun mostrarDialogoFiltroAvanzado() {
@@ -482,19 +509,27 @@ class FragmentMovimiento : Fragment() {
     }
 
     private fun cargarDeudasLocales() {
-        listaDeudas.clear()
-        val deudasTodas = db.getAllDeudas()
-        listaDeudas.addAll(deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 })
-        listaGastosFijos.clear()
-        listaGastosFijos.addAll(db.getAllGastosFijos())
+        lifecycleScope.launch(Dispatchers.IO) {
+            val deudasTodas = db.getAllDeudas()
+            val gfTodas = db.getAllGastosFijos()
+            val deudasPendientes = deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
+            withContext(Dispatchers.Main) {
+                listaDeudas.clear()
+                listaDeudas.addAll(deudasPendientes)
+                listaGastosFijos.clear()
+                listaGastosFijos.addAll(gfTodas)
+            }
+        }
     }
 
     private fun mostrarDialogoMovimiento(movimientoExistente: Movimiento?) {
         val dialogBinding = DialogAgregarMovimientoBinding.inflate(layoutInflater)
         currentDialogBinding = dialogBinding
 
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
-        bottomSheetDialog.setContentView(dialogBinding.root)
+        val dialog = AlertDialog.Builder(mContext)
+            .setView(dialogBinding.root)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         cargarDeudasLocales()
         deudaSeleccionada = null
@@ -687,59 +722,63 @@ class FragmentMovimiento : Fragment() {
             val fechaMovimiento = Constantes.formatoFecha(fechaSeleccionadaTimestamp)
             val mesAnio = fechaMovimiento.substring(0, 7)
 
-            if (movimientoExistente == null) {
-                // CREAR
-                val fc = Constantes.formatoFecha(System.currentTimeMillis())
+            lifecycleScope.launch(Dispatchers.IO) {
+                if (movimientoExistente == null) {
+                    // CREAR
+                    val fc = Constantes.formatoFecha(System.currentTimeMillis())
 
-                if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
-                    deudaSeleccionada!!.totalPagado += valor
-                    db.updateDeuda(deudaSeleccionada!!)
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
-                } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
-                    val gf = gastoFijoSeleccionado!!
-                    var quincena: Int? = null
-                    if (gf.periodo == "Quincenal") {
-                        val qPos = dialogBinding.autoQuincena.text.toString()
-                        if (qPos == "1ª Quincena") {
+                    if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
+                        deudaSeleccionada!!.totalPagado += valor
+                        db.updateDeuda(deudaSeleccionada!!)
+                        db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
+                    } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
+                        val gf = gastoFijoSeleccionado!!
+                        var quincena: Int? = null
+                        if (gf.periodo == "Quincenal") {
+                            val qPos = dialogBinding.autoQuincena.text.toString()
+                            if (qPos == "1ª Quincena") {
+                                gf.ultimoPagoQ1 = mesAnio
+                                quincena = 1
+                            } else if (qPos == "2ª Quincena") {
+                                gf.ultimoPagoQ2 = mesAnio
+                                quincena = 2
+                            }
+                        } else {
                             gf.ultimoPagoQ1 = mesAnio
-                            quincena = 1
-                        } else if (qPos == "2ª Quincena") {
-                            gf.ultimoPagoQ2 = mesAnio
-                            quincena = 2
+                            quincena = 0
                         }
+                        db.updateGastoFijo(gf)
+                        db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fechaMovimiento, gf.id.toInt(), quincena, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                     } else {
-                        gf.ultimoPagoQ1 = mesAnio
-                        quincena = 0
+                        val tipo = tipoSeleccionado
+                        db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                     }
-                    db.updateGastoFijo(gf)
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fechaMovimiento, gf.id.toInt(), quincena, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                 } else {
-                    val tipo = tipoSeleccionado
-                    db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
+                    // EDITAR
+                    val fc = if (movimientoExistente.fechaCreacion.isNotBlank()) movimientoExistente.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
+                    val nuevoMov = Movimiento(
+                        id = movimientoExistente.id,
+                        descripcion = desc.uppercase(),
+                        valor = valor,
+                        tipo_reg = if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
+                        fecha = fechaMovimiento,
+                        gastoFijoId = movimientoExistente.gastoFijoId,
+                        quincenaPagada = movimientoExistente.quincenaPagada,
+                        categoria = categoriaSeleccionadaEnDialogo,
+                        fechaCreacion = fc
+                    )
+                    db.updateMovimiento(nuevoMov)
                 }
-            } else {
-                // EDITAR
-                val fc = if (movimientoExistente.fechaCreacion.isNotBlank()) movimientoExistente.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
-                val nuevoMov = Movimiento(
-                    id = movimientoExistente.id,
-                    descripcion = desc.uppercase(),
-                    valor = valor,
-                    tipo_reg = if (movimientoExistente.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
-                    fecha = fechaMovimiento,
-                    gastoFijoId = movimientoExistente.gastoFijoId,
-                    quincenaPagada = movimientoExistente.quincenaPagada,
-                    categoria = categoriaSeleccionadaEnDialogo,
-                    fechaCreacion = fc
-                )
-                db.updateMovimiento(nuevoMov)
+
+                withContext(Dispatchers.Main) {
+                    dialog.dismiss()
+                    actualizarListaFiltrada()
+                }
             }
-            
-            bottomSheetDialog.dismiss()
-            actualizarListaFiltrada()
         }
 
-        dialogBinding.btnCancelar.setOnClickListener { bottomSheetDialog.dismiss() }
-        bottomSheetDialog.show()
+        dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     private fun mostrarOpcionesImagen() {
@@ -933,8 +972,12 @@ class FragmentMovimiento : Fragment() {
             .setTitle("Eliminar Movimiento")
             .setMessage("¿Estás seguro de eliminar este movimiento?")
             .setPositiveButton("Eliminar") { _, _ ->
-                db.deleteMovimiento(movimiento.id)
-                actualizarListaFiltrada()
+                lifecycleScope.launch(Dispatchers.IO) {
+                    db.deleteMovimiento(movimiento.id)
+                    withContext(Dispatchers.Main) {
+                        actualizarListaFiltrada()
+                    }
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
