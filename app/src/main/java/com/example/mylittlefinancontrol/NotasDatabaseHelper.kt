@@ -45,7 +45,7 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
 
     companion object {
         private const val DATABASE_NAME = "finanzas.db"
-        private const val DATABASE_VERSION = 11
+        private const val DATABASE_VERSION = 14
 
         private const val TABLE_MOVIMIENTO = "movimiento"
         private const val COLUMN_MOV_ID = "id"
@@ -57,6 +57,22 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         private const val COLUMN_MOV_Q_PAGADA = "quincena_pagada"
         private const val COLUMN_MOV_CATEGORIA = "categoria"
         private const val COLUMN_MOV_FECHA_CREACION = "fecha_creacion"
+        private const val COLUMN_MOV_METODO_PAGO = "metodo_pago"
+        private const val COLUMN_MOV_DEUDA_ID = "deuda_id"
+        private const val COLUMN_MOV_AHORRO_ID = "ahorro_id"
+
+        private const val TABLE_CONTROL_ANUAL = "control_anual_gastos_fijos"
+        private const val COLUMN_CA_GF_ID = "gasto_fijo_id"
+        private const val COLUMN_CA_ANIO_MES = "anio_mes"
+        private const val COLUMN_CA_QUINCENA = "quincena"
+        private const val COLUMN_CA_PAGADO_MANUAL = "pagado_manual"
+
+        private const val TABLE_METODOS_PAGO = "metodos_pago"
+        private const val COLUMN_MP_ID = "id"
+        private const val COLUMN_MP_NOMBRE = "nombre"
+        private const val COLUMN_MP_TIPO = "tipo"
+        private const val COLUMN_MP_ULTIMOS4 = "ultimos4"
+        private const val COLUMN_MP_PREDETERMINADO = "es_predeterminado"
 
         private const val TABLE_GASTOS_FIJOS = "gastos_fijos"
         private const val COLUMN_GF_ID = "id"
@@ -92,6 +108,13 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         private const val COLUMN_A_FECHA_META = "fecha_meta"
         private const val COLUMN_A_ICONO = "icono"
         private const val COLUMN_A_DESC = "descripcion"
+        private const val COLUMN_A_UBICACION = "ubicacion"
+
+        private const val TABLE_CATEGORIAS = "categorias"
+        private const val COLUMN_CAT_ID = "id"
+        private const val COLUMN_CAT_NOMBRE = "nombre"
+        private const val COLUMN_CAT_MODULO = "modulo"
+        private const val COLUMN_CAT_ICONO = "icono"
 
         @Volatile
         private var INSTANCE: NotasDatabaseHelper? = null
@@ -159,12 +182,17 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
     @Volatile
     private var cachedAhorros: List<Ahorro>? = null
 
+    @Volatile
+    private var cachedCategorias: MutableMap<String, List<String>> = mutableMapOf()
+
     fun invalidateCache() {
         cachedDashboard = null
         cachedNotas = null
         cachedGastosFijos = null
         cachedDeudas = null
         cachedAhorros = null
+        cachedCategorias.clear()
+        invalidateMetodosPagoCache()
     }
 
     fun getCachedDashboardImmediate(): DashboardCache? = cachedDashboard
@@ -183,12 +211,21 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT)")
+        db?.execSQL("CREATE TABLE $TABLE_MOVIMIENTO ($COLUMN_MOV_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_MOV_DESC TEXT, $COLUMN_MOV_VALOR INTEGER, $COLUMN_MOV_TIPO TEXT, $COLUMN_MOV_FECHA TEXT, $COLUMN_MOV_GF_ID INTEGER, $COLUMN_MOV_Q_PAGADA INTEGER, $COLUMN_MOV_CATEGORIA TEXT DEFAULT 'Varios', $COLUMN_MOV_FECHA_CREACION TEXT, $COLUMN_MOV_METODO_PAGO TEXT DEFAULT 'Efectivo', $COLUMN_MOV_DEUDA_ID TEXT, $COLUMN_MOV_AHORRO_ID TEXT)")
         db?.execSQL("CREATE TABLE $TABLE_GASTOS_FIJOS ($COLUMN_GF_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_GF_CONCEPTO TEXT, $COLUMN_GF_CATEGORIA TEXT, $COLUMN_GF_MONTO REAL, $COLUMN_GF_DIA TEXT, $COLUMN_GF_PERIODO TEXT, $COLUMN_GF_U_PAGO_Q1 TEXT, $COLUMN_GF_U_PAGO_Q2 TEXT, $COLUMN_GF_RECORDATORIO INTEGER DEFAULT 1)")
         db?.execSQL("CREATE TABLE $TABLE_DEUDAS ($COLUMN_D_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_D_TIPO TEXT, $COLUMN_D_CONCEPTO TEXT, $COLUMN_D_DESC TEXT, $COLUMN_D_TOTAL REAL, $COLUMN_D_PAGADO REAL, $COLUMN_D_FECHA_INI TEXT, $COLUMN_D_FECHA_FIN TEXT, $COLUMN_D_TASA_INTERES REAL DEFAULT 0, $COLUMN_D_TIPO_INTERES TEXT DEFAULT 'Anual', $COLUMN_D_CUOTAS INTEGER DEFAULT 12, $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0)")
-        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT)")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_AHORROS ($COLUMN_A_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_A_TITULO TEXT, $COLUMN_A_CATEGORIA TEXT, $COLUMN_A_MONTO_ACTUAL REAL, $COLUMN_A_MONTO_OBJETIVO REAL, $COLUMN_A_FECHA_META TEXT, $COLUMN_A_ICONO TEXT, $COLUMN_A_DESC TEXT, $COLUMN_A_UBICACION TEXT DEFAULT 'Cuenta / Bolsillo')")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_CATEGORIAS ($COLUMN_CAT_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_CAT_NOMBRE TEXT NOT NULL, $COLUMN_CAT_MODULO TEXT NOT NULL, $COLUMN_CAT_ICONO TEXT DEFAULT 'category', UNIQUE($COLUMN_CAT_NOMBRE, $COLUMN_CAT_MODULO) ON CONFLICT IGNORE)")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_METODOS_PAGO ($COLUMN_MP_ID TEXT PRIMARY KEY, $COLUMN_MP_NOMBRE TEXT NOT NULL, $COLUMN_MP_TIPO TEXT NOT NULL, $COLUMN_MP_ULTIMOS4 TEXT, $COLUMN_MP_PREDETERMINADO INTEGER DEFAULT 0)")
+        db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_CONTROL_ANUAL ($COLUMN_CA_GF_ID TEXT, $COLUMN_CA_ANIO_MES TEXT, $COLUMN_CA_QUINCENA INTEGER, $COLUMN_CA_PAGADO_MANUAL INTEGER, PRIMARY KEY($COLUMN_CA_GF_ID, $COLUMN_CA_ANIO_MES, $COLUMN_CA_QUINCENA))")
 
+        insertarCategoriasDefecto(db)
+        insertarMetodoPagoPorDefecto(db)
         crearIndices(db)
+    }
+
+    private fun insertarMetodoPagoPorDefecto(db: SQLiteDatabase?) {
+        db?.execSQL("INSERT OR IGNORE INTO $TABLE_METODOS_PAGO ($COLUMN_MP_ID, $COLUMN_MP_NOMBRE, $COLUMN_MP_TIPO, $COLUMN_MP_ULTIMOS4, $COLUMN_MP_PREDETERMINADO) VALUES ('efectivo_default', 'Efectivo', 'EFECTIVO', '', 1)")
     }
 
     private fun crearIndices(db: SQLiteDatabase?) {
@@ -198,6 +235,28 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_categoria ON $TABLE_MOVIMIENTO($COLUMN_MOV_CATEGORIA)")
         db?.execSQL("CREATE INDEX IF NOT EXISTS idx_mov_gf_id ON $TABLE_MOVIMIENTO($COLUMN_MOV_GF_ID)")
         db?.execSQL("CREATE INDEX IF NOT EXISTS idx_gf_dia ON $TABLE_GASTOS_FIJOS($COLUMN_GF_DIA)")
+        db?.execSQL("CREATE INDEX IF NOT EXISTS idx_cat_modulo ON $TABLE_CATEGORIAS($COLUMN_CAT_MODULO)")
+    }
+
+    private fun insertarCategoriasDefecto(db: SQLiteDatabase?) {
+        val categoriasMovimiento = listOf(
+            "Vivienda", "Servicios", "Comida", "Supermercado", "Tienda",
+            "Ocio", "Hobbies", "Ahorro", "Transporte", "Cine",
+            "Préstamo", "Gasto Fijo", "Pago Deuda"
+        )
+        for (cat in categoriasMovimiento) {
+            db?.execSQL("INSERT OR IGNORE INTO $TABLE_CATEGORIAS ($COLUMN_CAT_NOMBRE, $COLUMN_CAT_MODULO) VALUES (?, 'MOVIMIENTO')", arrayOf(cat))
+        }
+
+        val categoriasGastoFijo = listOf("Vivienda", "Servicios", "Telecom", "Educación", "Streaming", "Otros")
+        for (cat in categoriasGastoFijo) {
+            db?.execSQL("INSERT OR IGNORE INTO $TABLE_CATEGORIAS ($COLUMN_CAT_NOMBRE, $COLUMN_CAT_MODULO) VALUES (?, 'GASTO_FIJO')", arrayOf(cat))
+        }
+
+        val categoriasDeuda = listOf("Tarjeta de Crédito", "Préstamo Bancario", "Préstamo Personal", "Crédito Automotriz", "Préstamo")
+        for (cat in categoriasDeuda) {
+            db?.execSQL("INSERT OR IGNORE INTO $TABLE_CATEGORIAS ($COLUMN_CAT_NOMBRE, $COLUMN_CAT_MODULO) VALUES (?, 'DEUDA')", arrayOf(cat))
+        }
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
@@ -227,8 +286,126 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_CUOTAS INTEGER DEFAULT 12")
             db?.execSQL("ALTER TABLE $TABLE_DEUDAS ADD COLUMN $COLUMN_D_VALOR_CUOTA REAL DEFAULT 0")
         }
+        if (oldVersion < 12) {
+            db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_CATEGORIAS ($COLUMN_CAT_ID INTEGER PRIMARY KEY AUTOINCREMENT, $COLUMN_CAT_NOMBRE TEXT NOT NULL, $COLUMN_CAT_MODULO TEXT NOT NULL, $COLUMN_CAT_ICONO TEXT DEFAULT 'category', UNIQUE($COLUMN_CAT_NOMBRE, $COLUMN_CAT_MODULO) ON CONFLICT IGNORE)")
+            insertarCategoriasDefecto(db)
+        }
+        if (oldVersion < 13) {
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_METODO_PAGO TEXT DEFAULT 'Efectivo'")
+            db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_METODOS_PAGO ($COLUMN_MP_ID TEXT PRIMARY KEY, $COLUMN_MP_NOMBRE TEXT NOT NULL, $COLUMN_MP_TIPO TEXT NOT NULL, $COLUMN_MP_ULTIMOS4 TEXT, $COLUMN_MP_PREDETERMINADO INTEGER DEFAULT 0)")
+            insertarMetodoPagoPorDefecto(db)
+        }
+        if (oldVersion < 14) {
+            db?.execSQL("ALTER TABLE $TABLE_AHORROS ADD COLUMN $COLUMN_A_UBICACION TEXT DEFAULT 'Cuenta / Bolsillo'")
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_DEUDA_ID TEXT DEFAULT NULL")
+            db?.execSQL("ALTER TABLE $TABLE_MOVIMIENTO ADD COLUMN $COLUMN_MOV_AHORRO_ID TEXT DEFAULT NULL")
+            db?.execSQL("CREATE TABLE IF NOT EXISTS $TABLE_CONTROL_ANUAL ($COLUMN_CA_GF_ID TEXT, $COLUMN_CA_ANIO_MES TEXT, $COLUMN_CA_QUINCENA INTEGER, $COLUMN_CA_PAGADO_MANUAL INTEGER, PRIMARY KEY($COLUMN_CA_GF_ID, $COLUMN_CA_ANIO_MES, $COLUMN_CA_QUINCENA))")
+        }
 
         crearIndices(db)
+    }
+
+    // --- MÉTODOS PARA MÉTODOS DE PAGO ---
+    @Volatile
+    private var cachedMetodosPago: List<com.example.mylittlefinancontrol.Modelos.MetodoPago>? = null
+
+    fun invalidateMetodosPagoCache() {
+        cachedMetodosPago = null
+    }
+
+    fun obtenerMetodosPago(): List<com.example.mylittlefinancontrol.Modelos.MetodoPago> {
+        cachedMetodosPago?.let { return it }
+        val lista = mutableListOf<com.example.mylittlefinancontrol.Modelos.MetodoPago>()
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_METODOS_PAGO ORDER BY $COLUMN_MP_PREDETERMINADO DESC, $COLUMN_MP_NOMBRE ASC", null)
+        if (cursor.moveToFirst()) {
+            do {
+                val mp = com.example.mylittlefinancontrol.Modelos.MetodoPago(
+                    id = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MP_ID)),
+                    nombre = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MP_NOMBRE)),
+                    tipo = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MP_TIPO)),
+                    ultimos4 = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_MP_ULTIMOS4)),
+                    esPredeterminado = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MP_PREDETERMINADO)) == 1
+                )
+                lista.add(mp)
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        // Fallback safety
+        if (lista.isEmpty()) {
+            lista.add(com.example.mylittlefinancontrol.Modelos.MetodoPago("efectivo_default", "Efectivo", "EFECTIVO", "", true))
+        }
+        cachedMetodosPago = lista
+        return lista
+    }
+
+    fun insertarOActualizarMetodoPago(mp: com.example.mylittlefinancontrol.Modelos.MetodoPago): Boolean {
+        val db = writableDatabase
+        if (mp.esPredeterminado) {
+            db.execSQL("UPDATE $TABLE_METODOS_PAGO SET $COLUMN_MP_PREDETERMINADO = 0")
+        }
+        val values = ContentValues().apply {
+            put(COLUMN_MP_ID, mp.id)
+            put(COLUMN_MP_NOMBRE, mp.nombre)
+            put(COLUMN_MP_TIPO, mp.tipo)
+            put(COLUMN_MP_ULTIMOS4, mp.ultimos4)
+            put(COLUMN_MP_PREDETERMINADO, if (mp.esPredeterminado) 1 else 0)
+        }
+        val result = db.insertWithOnConflict(TABLE_METODOS_PAGO, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        invalidateMetodosPagoCache()
+        return result != -1L
+    }
+
+    fun eliminarMetodoPago(id: String): Boolean {
+        if (id == "efectivo_default") return false // Prevent deleting default
+        val db = writableDatabase
+        val result = db.delete(TABLE_METODOS_PAGO, "$COLUMN_MP_ID = ?", arrayOf(id))
+        invalidateMetodosPagoCache()
+        return result > 0
+    }
+
+    // --- MÉTODOS PARA CATEGORÍAS DINÁMICAS ---
+    fun obtenerCategoriasPorModulo(modulo: String): List<String> {
+        if (cachedCategorias.containsKey(modulo)) {
+            return cachedCategorias[modulo]!!
+        }
+
+        val lista = mutableListOf<String>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT $COLUMN_CAT_NOMBRE FROM $TABLE_CATEGORIAS WHERE $COLUMN_CAT_MODULO = ? ORDER BY $COLUMN_CAT_NOMBRE ASC",
+            arrayOf(modulo)
+        )
+
+        if (cursor.moveToFirst()) {
+            do {
+                val nombre = cursor.getString(0)
+                if (nombre.isNotBlank() && nombre != "Otra...") {
+                    lista.add(nombre)
+                }
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+
+        lista.add("Otra...")
+        cachedCategorias[modulo] = lista
+        return lista
+    }
+
+    fun insertarCategoria(nombre: String, modulo: String): Boolean {
+        val nombreLimpio = nombre.trim().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        if (nombreLimpio.isBlank() || nombreLimpio.equals("Otra...", ignoreCase = true)) return false
+
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_CAT_NOMBRE, nombreLimpio)
+            put(COLUMN_CAT_MODULO, modulo)
+            put(COLUMN_CAT_ICONO, "category")
+        }
+
+        val id = db.insertWithOnConflict(TABLE_CATEGORIAS, null, values, SQLiteDatabase.CONFLICT_IGNORE)
+        cachedCategorias.remove(modulo) // Invalidar caché de este módulo
+        return id != -1L
     }
 
     fun performWalCheckpoint() {
@@ -253,6 +430,7 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         val qIdx = cursor.getColumnIndex(COLUMN_MOV_Q_PAGADA)
         val catIdx = cursor.getColumnIndex(COLUMN_MOV_CATEGORIA)
         val fcIdx = cursor.getColumnIndex(COLUMN_MOV_FECHA_CREACION)
+        val mpIdx = cursor.getColumnIndex(COLUMN_MOV_METODO_PAGO)
 
         val id = if (idIdx != -1) cursor.getInt(idIdx) else 0
         val desc = if (descIdx != -1) cursor.getString(descIdx) ?: "" else ""
@@ -263,6 +441,7 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         val qPag = if (qIdx != -1 && !cursor.isNull(qIdx)) cursor.getInt(qIdx) else null
         val cat = if (catIdx != -1 && !cursor.isNull(catIdx)) cursor.getString(catIdx) ?: "Varios" else "Varios"
         val fc = if (fcIdx != -1 && !cursor.isNull(fcIdx)) cursor.getString(fcIdx) ?: fecha else fecha
+        val mp = if (mpIdx != -1 && !cursor.isNull(mpIdx)) cursor.getString(mpIdx) ?: "Efectivo" else "Efectivo"
 
         return Movimiento(
             id = id,
@@ -273,7 +452,8 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
             gastoFijoId = gfId,
             quincenaPagada = qPag,
             categoria = cat,
-            fechaCreacion = fc
+            fechaCreacion = fc,
+            metodoPago = mp
         )
     }
 
@@ -291,6 +471,7 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
             put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
             put(COLUMN_MOV_CATEGORIA, mov.categoria)
             put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
+            put(COLUMN_MOV_METODO_PAGO, mov.metodoPago)
         }
         db.insert(TABLE_MOVIMIENTO, null, v)
     }
@@ -335,6 +516,7 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
             put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
             put(COLUMN_MOV_CATEGORIA, mov.categoria)
             put(COLUMN_MOV_FECHA_CREACION, fechaCreacionFinal)
+            put(COLUMN_MOV_METODO_PAGO, mov.metodoPago)
         }
         db.update(TABLE_MOVIMIENTO, v, "$COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
     }
@@ -346,26 +528,21 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
     }
 
     /**
-     * Busca si ya existe un movimiento con el mismo valor, tipo_reg y cuya fecha
-     * coincida exactamente en día y hora/minuto (con una tolerancia de ±5 minutos).
+     * Busca si ya existe un movimiento con el mismo valor y cuya fecha
+     * coincida en día y hora/minuto (con una tolerancia de ±5 minutos).
      */
-    fun buscarMovimientoDuplicado(valor: Int, tipoReg: String, fechaHora: String): Movimiento? {
+    fun buscarMovimientoDuplicado(valor: Int, fechaHora: String): Movimiento? {
         if (valor <= 0 || fechaHora.isBlank()) return null
+        
+        android.util.Log.d("DUPLICADO_CHECK", "Buscando valor=$valor, fechaNormalizada=$fechaHora vs DB")
 
         val targetTs = parsearFechaTimestamp(fechaHora)
         val db = readableDatabase
 
-        val cursor = if (tipoReg.equals("GASTO", ignoreCase = true)) {
-            db.rawQuery(
-                "SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_VALOR = ? AND UPPER($COLUMN_MOV_TIPO) IN ('GASTO', 'GASTO FIJO', 'PAGO DEUDA') ORDER BY $COLUMN_MOV_ID DESC",
-                arrayOf(valor.toString())
-            )
-        } else {
-            db.rawQuery(
-                "SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_VALOR = ? AND UPPER($COLUMN_MOV_TIPO) = UPPER(?) ORDER BY $COLUMN_MOV_ID DESC",
-                arrayOf(valor.toString(), tipoReg.trim())
-            )
-        }
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_VALOR = ? ORDER BY $COLUMN_MOV_ID DESC",
+            arrayOf(valor.toString())
+        )
 
         try {
             while (cursor.moveToNext()) {
@@ -620,20 +797,23 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         val db = readableDatabase
         var ingresos = 0.0
         var gastos = 0.0
+        var ahorrosMovimientos = 0.0
         val query = "SELECT " +
                 "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END), " +
-                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) NOT LIKE '%ingreso%' THEN $COLUMN_MOV_VALOR ELSE 0 END) " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) NOT LIKE '%ingreso%' AND LOWER($COLUMN_MOV_TIPO) != 'ahorro' AND LOWER($COLUMN_MOV_CATEGORIA) != 'ahorro' AND $COLUMN_MOV_AHORRO_ID IS NULL THEN $COLUMN_MOV_VALOR ELSE 0 END), " +
+                "SUM(CASE WHEN LOWER($COLUMN_MOV_TIPO) = 'ahorro' OR LOWER($COLUMN_MOV_CATEGORIA) = 'ahorro' OR $COLUMN_MOV_AHORRO_ID IS NOT NULL THEN $COLUMN_MOV_VALOR ELSE 0 END) " +
                 "FROM $TABLE_MOVIMIENTO"
         val cursor = db.rawQuery(query, null)
         if (cursor.moveToFirst()) {
             ingresos = cursor.getDouble(0)
             gastos = cursor.getDouble(1)
+            ahorrosMovimientos = cursor.getDouble(2)
         }
         cursor.close()
         return ResumenFinancieroOptimizado(
             totalIngresos = Constantes.redondearMonto(ingresos),
-            totalGastos = Constantes.redondearMonto(gastos),
-            balanceTotal = Constantes.redondearMonto(ingresos - gastos)
+            totalGastos = Constantes.redondearMonto(gastos + ahorrosMovimientos), // Para mantener compatibilidad si se usa totalGastos en otros lados
+            balanceTotal = Constantes.redondearMonto(ingresos - gastos - ahorrosMovimientos)
         )
     }
 
@@ -655,7 +835,31 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         }
         cursorD.close()
 
-        return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(opt.balanceTotal, totalGF, totalDeudas)
+        var totalAhorros = 0.0
+        var ahorroCuenta = 0.0
+        var ahorroAlcancia = 0.0
+        
+        val cursorA = db.rawQuery("SELECT $COLUMN_A_UBICACION, SUM($COLUMN_A_MONTO_ACTUAL) FROM $TABLE_AHORROS GROUP BY $COLUMN_A_UBICACION", null)
+        while (cursorA.moveToNext()) {
+            val ubicacion = cursorA.getString(0) ?: ""
+            val monto = cursorA.getDouble(1)
+            totalAhorros += monto
+            if (ubicacion.contains("Alcancía", ignoreCase = true) || ubicacion.contains("Efectivo", ignoreCase = true)) {
+                ahorroAlcancia += monto
+            } else {
+                ahorroCuenta += monto
+            }
+        }
+        cursorA.close()
+
+        return com.example.mylittlefinancontrol.Modelos.ResumenFinanciero(
+            balanceTotal = opt.balanceTotal, 
+            totalGastosFijos = totalGF, 
+            totalDeudasPendientes = totalDeudas,
+            totalAhorros = totalAhorros,
+            ahorroEnCuenta = ahorroCuenta,
+            ahorroEnAlcancia = ahorroAlcancia
+        )
     }
 
     fun getResumenPorRangoFechasSQL(startDate: String, endDate: String): ResumenPeriodoData {
@@ -683,6 +887,26 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
             balanceNeto = Constantes.redondearMonto(balance),
             listaCategorias = emptyList()
         )
+    }
+
+    /**
+     * Consulta SQL rápida e indexada para obtener el total de gastos de un rango de fechas.
+     */
+    fun getTotalGastosPeriodoSQL(startDate: String, endDate: String): Double {
+        val db = readableDatabase
+        var gastos = 0.0
+
+        val query = "SELECT SUM($COLUMN_MOV_VALOR) FROM $TABLE_MOVIMIENTO " +
+                "WHERE LOWER($COLUMN_MOV_TIPO) NOT LIKE '%ingreso%' " +
+                "AND SUBSTR(COALESCE(NULLIF($COLUMN_MOV_FECHA, ''), $COLUMN_MOV_FECHA_CREACION), 1, 10) BETWEEN ? AND ?"
+
+        val cursor = db.rawQuery(query, arrayOf(startDate, endDate))
+        if (cursor.moveToFirst() && !cursor.isNull(0)) {
+            gastos = cursor.getDouble(0)
+        }
+        cursor.close()
+
+        return Constantes.redondearMonto(gastos)
     }
 
     suspend fun getDashboardDataCached(
@@ -824,5 +1048,138 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         } finally {
             db.endTransaction()
         }
+    }
+
+    // --- TRANSACCIONES ACID ---
+
+    fun insertarAbonoDeudaTransaccional(mov: Movimiento, deudaId: String) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            // Actualizar deuda
+            db.execSQL("UPDATE $TABLE_DEUDAS SET $COLUMN_D_PAGADO = $COLUMN_D_PAGADO + ? WHERE $COLUMN_D_ID = ?", arrayOf(mov.valor.toDouble(), deudaId))
+            // Insertar movimiento
+            val v = ContentValues().apply {
+                put(COLUMN_MOV_DESC, mov.descripcion)
+                put(COLUMN_MOV_VALOR, mov.valor)
+                put(COLUMN_MOV_TIPO, mov.tipo_reg)
+                put(COLUMN_MOV_FECHA, mov.fecha)
+                put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
+                put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
+                put(COLUMN_MOV_CATEGORIA, mov.categoria)
+                put(COLUMN_MOV_FECHA_CREACION, if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD()))
+                put(COLUMN_MOV_METODO_PAGO, mov.metodoPago)
+                put(COLUMN_MOV_DEUDA_ID, deudaId)
+            }
+            db.insert(TABLE_MOVIMIENTO, null, v)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+            invalidateCache()
+        }
+    }
+
+    fun actualizarAbonoDeudaTransaccional(movViejo: Movimiento, movNuevo: Movimiento, deudaId: String) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val diferencia = movNuevo.valor - movViejo.valor
+            if (diferencia != 0) {
+                db.execSQL("UPDATE $TABLE_DEUDAS SET $COLUMN_D_PAGADO = $COLUMN_D_PAGADO + ? WHERE $COLUMN_D_ID = ?", arrayOf(diferencia.toDouble(), deudaId))
+            }
+            
+            val v = ContentValues().apply {
+                put(COLUMN_MOV_DESC, movNuevo.descripcion)
+                put(COLUMN_MOV_VALOR, movNuevo.valor)
+                put(COLUMN_MOV_TIPO, movNuevo.tipo_reg)
+                put(COLUMN_MOV_FECHA, movNuevo.fecha)
+                put(COLUMN_MOV_GF_ID, movNuevo.gastoFijoId)
+                put(COLUMN_MOV_Q_PAGADA, movNuevo.quincenaPagada)
+                put(COLUMN_MOV_CATEGORIA, movNuevo.categoria)
+                put(COLUMN_MOV_FECHA_CREACION, if (movNuevo.fechaCreacion.isNotBlank()) movNuevo.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD()))
+                put(COLUMN_MOV_METODO_PAGO, movNuevo.metodoPago)
+                put(COLUMN_MOV_DEUDA_ID, deudaId)
+            }
+            db.update(TABLE_MOVIMIENTO, v, "$COLUMN_MOV_ID = ?", arrayOf(movNuevo.id.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+            invalidateCache()
+        }
+    }
+
+    fun insertarAbonoAhorroTransaccional(mov: Movimiento, ahorroId: Int) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.execSQL("UPDATE $TABLE_AHORROS SET $COLUMN_A_MONTO_ACTUAL = $COLUMN_A_MONTO_ACTUAL + ? WHERE $COLUMN_A_ID = ?", arrayOf(mov.valor.toDouble(), ahorroId))
+            
+            val v = ContentValues().apply {
+                put(COLUMN_MOV_DESC, mov.descripcion)
+                put(COLUMN_MOV_VALOR, mov.valor)
+                put(COLUMN_MOV_TIPO, mov.tipo_reg)
+                put(COLUMN_MOV_FECHA, mov.fecha)
+                put(COLUMN_MOV_GF_ID, mov.gastoFijoId)
+                put(COLUMN_MOV_Q_PAGADA, mov.quincenaPagada)
+                put(COLUMN_MOV_CATEGORIA, mov.categoria)
+                put(COLUMN_MOV_FECHA_CREACION, if (mov.fechaCreacion.isNotBlank()) mov.fechaCreacion else Constantes.formatoFecha(Constantes.obtenerTiempoD()))
+                put(COLUMN_MOV_METODO_PAGO, mov.metodoPago)
+                put(COLUMN_MOV_AHORRO_ID, ahorroId.toString())
+            }
+            db.insert(TABLE_MOVIMIENTO, null, v)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+            invalidateCache()
+        }
+    }
+
+    fun eliminarMovimientoTransaccional(mov: Movimiento) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            // Revertir efectos contables según el origen del movimiento
+            val cursor = db.rawQuery("SELECT $COLUMN_MOV_DEUDA_ID, $COLUMN_MOV_AHORRO_ID FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
+            if (cursor.moveToFirst()) {
+                val deudaId = cursor.getString(0)
+                val ahorroId = cursor.getString(1)
+                
+                if (deudaId != null) {
+                    db.execSQL("UPDATE $TABLE_DEUDAS SET $COLUMN_D_PAGADO = $COLUMN_D_PAGADO - ? WHERE $COLUMN_D_ID = ?", arrayOf(mov.valor.toDouble(), deudaId))
+                } else if (ahorroId != null) {
+                    db.execSQL("UPDATE $TABLE_AHORROS SET $COLUMN_A_MONTO_ACTUAL = $COLUMN_A_MONTO_ACTUAL - ? WHERE $COLUMN_A_ID = ?", arrayOf(mov.valor.toDouble(), ahorroId))
+                }
+            }
+            cursor.close()
+            
+            db.delete(TABLE_MOVIMIENTO, "$COLUMN_MOV_ID = ?", arrayOf(mov.id.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+            invalidateCache()
+        }
+    }
+
+    fun marcarPagoManualControlAnual(gastoFijoId: String, anioMes: String, quincena: Int, esPagado: Boolean) {
+        val db = writableDatabase
+        if (esPagado) {
+            val v = ContentValues().apply {
+                put(COLUMN_CA_GF_ID, gastoFijoId)
+                put(COLUMN_CA_ANIO_MES, anioMes)
+                put(COLUMN_CA_QUINCENA, quincena)
+                put(COLUMN_CA_PAGADO_MANUAL, 1)
+            }
+            db.insertWithOnConflict(TABLE_CONTROL_ANUAL, null, v, SQLiteDatabase.CONFLICT_REPLACE)
+        } else {
+            db.delete(TABLE_CONTROL_ANUAL, "$COLUMN_CA_GF_ID = ? AND $COLUMN_CA_ANIO_MES = ? AND $COLUMN_CA_QUINCENA = ?", arrayOf(gastoFijoId, anioMes, quincena.toString()))
+        }
+    }
+
+    fun esPagoManualControlAnual(gastoFijoId: String, anioMes: String, quincena: Int): Boolean {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT 1 FROM $TABLE_CONTROL_ANUAL WHERE $COLUMN_CA_GF_ID = ? AND $COLUMN_CA_ANIO_MES = ? AND $COLUMN_CA_QUINCENA = ?", arrayOf(gastoFijoId, anioMes, quincena.toString()))
+        val exists = cursor.moveToFirst()
+        cursor.close()
+        return exists
     }
 }

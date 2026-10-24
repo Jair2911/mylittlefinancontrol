@@ -9,5 +9,7 @@ class Movimiento (
     val gastoFijoId: Int? = null,
     val quincenaPagada: Int? = null, // 0 para mensual, 1 para Q1, 2 para Q2
     val categoria: String = "Varios", // Categoría elegida (ej. Supermercado, Ocio, Películas, Préstamo, etc.)
-    val fechaCreacion: String = "" // Fecha en la que se guardó el registro en la app
+    val fechaCreacion: String = "", // Fecha en la que se guardó el registro en la app
+    val metodoPago: String = "Efectivo",
+    val ahorroId: String? = null // Referencia a un objetivo de ahorro, si aplica
 )

@@ -47,7 +47,6 @@ class AgregarMovimientoActivity : AppCompatActivity() {
         setupSegmentedTabs()
         setupCategoryChips()
         setupDatePicker()
-        setupPaymentMethodSelector()
         cargarDeudasLocales()
 
         binding.cbEsPagoDeuda.setOnCheckedChangeListener { _, isChecked ->
@@ -127,50 +126,22 @@ class AgregarMovimientoActivity : AppCompatActivity() {
     }
 
     private fun setupCategoryChips() {
-        fun pintarChip(categoria: String) {
-            val bgActivo = ContextCompat.getColor(this, R.color.surface_container_low)
-            val bgInactivo = ContextCompat.getColor(this, R.color.surface_card)
-            val colorActivo = ContextCompat.getColor(this, R.color.primary_emerald)
-            val colorInactivo = ContextCompat.getColor(this, R.color.text_secondary)
-
-            fun setChipStyle(container: View, text: TextView, activo: Boolean) {
-                container.backgroundTintList = ColorStateList.valueOf(if (activo) bgActivo else bgInactivo)
-                text.setTextColor(if (activo) colorActivo else colorInactivo)
-            }
-
-            val tvSuper = binding.chipSupermercadoAct.getChildAt(1) as TextView
-            val tvServ = binding.chipServiciosAct.getChildAt(1) as TextView
-            val tvComida = binding.chipComidaAct.getChildAt(1) as TextView
-            val tvTransp = binding.chipTransporteAct.getChildAt(1) as TextView
-
-            setChipStyle(binding.chipSupermercadoAct, tvSuper, categoria == "Supermercado")
-            setChipStyle(binding.chipServiciosAct, tvServ, categoria == "Servicios")
-            setChipStyle(binding.chipComidaAct, tvComida, categoria == "Comida")
-            setChipStyle(binding.chipTransporteAct, tvTransp, categoria == "Transporte")
+        val listaCategorias = db.obtenerCategoriasPorModulo("MOVIMIENTO")
+        val catAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, listaCategorias)
+        binding.autoCategoriaMovimiento.setAdapter(catAdapter)
+        if (listaCategorias.isNotEmpty()) {
+            binding.autoCategoriaMovimiento.setText(listaCategorias.first(), false)
         }
 
-        binding.chipSupermercadoAct.setOnClickListener {
-            pintarChip("Supermercado")
-            if (binding.etDescripcion.text.isNullOrEmpty() || binding.etDescripcion.text.toString().contains("Servicios|Comida|Transporte".toRegex())) {
-                binding.etDescripcion.setText("Supermercado")
-            }
-        }
-        binding.chipServiciosAct.setOnClickListener {
-            pintarChip("Servicios")
-            if (binding.etDescripcion.text.isNullOrEmpty() || binding.etDescripcion.text.toString().contains("Supermercado|Comida|Transporte".toRegex())) {
-                binding.etDescripcion.setText("Servicios")
-            }
-        }
-        binding.chipComidaAct.setOnClickListener {
-            pintarChip("Comida")
-            if (binding.etDescripcion.text.isNullOrEmpty() || binding.etDescripcion.text.toString().contains("Supermercado|Servicios|Transporte".toRegex())) {
-                binding.etDescripcion.setText("Comida")
-            }
-        }
-        binding.chipTransporteAct.setOnClickListener {
-            pintarChip("Transporte")
-            if (binding.etDescripcion.text.isNullOrEmpty() || binding.etDescripcion.text.toString().contains("Supermercado|Servicios|Comida".toRegex())) {
-                binding.etDescripcion.setText("Transporte")
+        binding.autoCategoriaMovimiento.setOnItemClickListener { _, _, position, _ ->
+            val seleccion = catAdapter.getItem(position) ?: ""
+            if (seleccion == "Otra...") {
+                binding.tilNuevaCategoriaMovimiento.visibility = View.VISIBLE
+                binding.etNuevaCategoriaMovimiento.setText("")
+                binding.etNuevaCategoriaMovimiento.requestFocus()
+            } else {
+                binding.tilNuevaCategoriaMovimiento.visibility = View.GONE
+                binding.tilNuevaCategoriaMovimiento.error = null
             }
         }
     }
@@ -196,23 +167,12 @@ class AgregarMovimientoActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupPaymentMethodSelector() {
-        val metodos = arrayOf("Débito •••• 4021", "Tarjeta Visa", "Efectivo", "Banco Estado", "Transferencia")
-        binding.llMetodoPagoAct.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Seleccionar Método de Pago")
-                .setItems(metodos) { _, which ->
-                    binding.tvMetodoPagoAct.text = metodos[which]
-                }
-                .show()
-        }
-    }
-
     private fun cargarDeudasLocales() {
         lifecycleScope.launch(Dispatchers.IO) {
             val deudasTodas = db.getAllDeudas()
             val deudasPendientes = deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
             val gfTodas = db.getAllGastosFijos()
+            val metodosPagoList = db.obtenerMetodosPago()
             
             withContext(Dispatchers.Main) {
                 listaDeudas.clear()
@@ -224,6 +184,12 @@ class AgregarMovimientoActivity : AppCompatActivity() {
                 listaGastosFijos.addAll(gfTodas)
                 val nombresGastos = listaGastosFijos.map { "${it.concepto} ($${it.monto})" }
                 binding.autoGastosFijos.setAdapter(ArrayAdapter(this@AgregarMovimientoActivity, android.R.layout.simple_list_item_1, nombresGastos))
+
+                // Cargar métodos de pago
+                val nombresMetodos = metodosPagoList.map { it.nombreFormateado() }
+                binding.autoMetodoPagoMovimiento.setAdapter(ArrayAdapter(this@AgregarMovimientoActivity, android.R.layout.simple_list_item_1, nombresMetodos))
+                val metodoPorDefecto = metodosPagoList.find { it.esPredeterminado } ?: metodosPagoList.firstOrNull()
+                binding.autoMetodoPagoMovimiento.setText(metodoPorDefecto?.nombreFormateado() ?: "Efectivo", false)
             }
         }
     }
@@ -240,28 +206,84 @@ class AgregarMovimientoActivity : AppCompatActivity() {
             return
         }
 
+        val catSel = binding.autoCategoriaMovimiento.text.toString().trim()
+        var categoriaFinal = catSel
+
+        if (catSel == "Otra...") {
+            val nuevaCatInput = binding.etNuevaCategoriaMovimiento.text.toString().trim()
+            if (nuevaCatInput.isBlank()) {
+                binding.tilNuevaCategoriaMovimiento.error = "Escribe el nombre de la nueva categoría"
+                return
+            }
+            if (nuevaCatInput.equals("Otra...", ignoreCase = true)) {
+                binding.tilNuevaCategoriaMovimiento.error = "Nombre de categoría inválido"
+                return
+            }
+            binding.tilNuevaCategoriaMovimiento.error = null
+            db.insertarCategoria(nuevaCatInput, "MOVIMIENTO")
+            categoriaFinal = nuevaCatInput.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        } else if (catSel.isBlank()) {
+            categoriaFinal = "Varios"
+        }
+
         val valor = valorStr.toIntOrNull() ?: 0
+        val metodoPagoSel = binding.autoMetodoPagoMovimiento.text.toString().ifBlank { "Efectivo" }
+
+        fun ejecutarGuardado() {
+            lifecycleScope.launch(Dispatchers.IO) {
+                if (esPagoDeuda) {
+                    if (deudaSeleccionada == null) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@AgregarMovimientoActivity, "Seleccione una deuda", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
+                    deudaSeleccionada!!.totalPagado += valor
+                    db.updateDeuda(deudaSeleccionada!!)
+                    actualizarDeudaEnFirebase(deudaSeleccionada!!, valor)
+                    guardarMovimento(descripcion.uppercase(), valor, "PAGO DEUDA", fecha, categoria = categoriaFinal, metodoPago = metodoPagoSel)
+                } else if (esGastoFijo && gastoFijoSeleccionado != null) {
+                    val gf = gastoFijoSeleccionado!!
+                    val mesAnio = fecha.substring(0, 7)
+                    gf.ultimoPagoQ1 = mesAnio
+                    db.updateGastoFijo(gf)
+                    guardarMovimento(descripcion.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), 0, categoria = categoriaFinal, metodoPago = metodoPagoSel)
+                } else {
+                    guardarMovimento(descripcion.uppercase(), valor, tipoSeleccionado.uppercase(), fecha, categoria = categoriaFinal, metodoPago = metodoPagoSel)
+                }
+            }
+        }
 
         lifecycleScope.launch(Dispatchers.IO) {
-            if (esPagoDeuda) {
-                if (deudaSeleccionada == null) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(this@AgregarMovimientoActivity, "Seleccione una deuda", Toast.LENGTH_SHORT).show()
+            val duplicado = db.buscarMovimientoDuplicado(valor, fecha)
+            withContext(Dispatchers.Main) {
+                if (duplicado != null) {
+                    val format = java.text.NumberFormat.getCurrencyInstance(Locale("es", "CO"))
+                    val valorFmt = format.format(duplicado.valor)
+                    var fechaDisplay = duplicado.fecha
+                    var horaDisplay = ""
+                    val ts = NotasDatabaseHelper.obtenerTimestampParaOrdenamiento(duplicado)
+                    if (ts > 0L) {
+                        val cal = Calendar.getInstance().apply { timeInMillis = ts }
+                        fechaDisplay = SimpleDateFormat("dd/MM/yyyy", Locale.US).format(cal.time)
+                        horaDisplay = SimpleDateFormat("HH:mm", Locale.US).format(cal.time)
                     }
-                    return@launch
+
+                    val mensaje = if (horaDisplay.isNotBlank()) {
+                        "El día $fechaDisplay a las $horaDisplay ya se registró un movimiento por $valorFmt (${duplicado.descripcion}). ¿Es el mismo movimiento?"
+                    } else {
+                        "El día $fechaDisplay ya se registró un movimiento por $valorFmt (${duplicado.descripcion}). ¿Es el mismo movimiento?"
+                    }
+
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@AgregarMovimientoActivity)
+                        .setTitle("Movimiento Existente Detectado")
+                        .setMessage(mensaje)
+                        .setPositiveButton("Guardar de todos modos") { _, _ -> ejecutarGuardado() }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    ejecutarGuardado()
                 }
-                deudaSeleccionada!!.totalPagado += valor
-                db.updateDeuda(deudaSeleccionada!!)
-                actualizarDeudaEnFirebase(deudaSeleccionada!!, valor)
-                guardarMovimento(descripcion.uppercase(), valor, "PAGO DEUDA", fecha)
-            } else if (esGastoFijo && gastoFijoSeleccionado != null) {
-                val gf = gastoFijoSeleccionado!!
-                val mesAnio = fecha.substring(0, 7)
-                gf.ultimoPagoQ1 = mesAnio
-                db.updateGastoFijo(gf)
-                guardarMovimento(descripcion.uppercase(), valor, "GASTO FIJO", fecha, gf.id.toInt(), 0)
-            } else {
-                guardarMovimento(descripcion.uppercase(), valor, tipoSeleccionado.uppercase(), fecha)
             }
         }
     }
@@ -276,9 +298,9 @@ class AgregarMovimientoActivity : AppCompatActivity() {
             .setValue(nuevoPagado)
     }
 
-    private fun guardarMovimento(descripcion: String, valor: Int, tipo_reg: String, fecha: String, gastoFijoId: Int? = null, quincena: Int? = null) {
+    private fun guardarMovimento(descripcion: String, valor: Int, tipo_reg: String, fecha: String, gastoFijoId: Int? = null, quincena: Int? = null, categoria: String = "Varios", metodoPago: String = "Efectivo") {
         val fc = Constantes.formatoFecha(System.currentTimeMillis())
-        val movimiento = Movimiento(0, descripcion, valor, tipo_reg, fecha, gastoFijoId, quincena, categoria = "Varios", fechaCreacion = fc)
+        val movimiento = Movimiento(0, descripcion, valor, tipo_reg, fecha, gastoFijoId, quincena, categoria = categoria, fechaCreacion = fc, metodoPago = metodoPago)
         db.insertNota(movimiento)
         runOnUiThread {
             Toast.makeText(this, "Movimiento guardado", Toast.LENGTH_SHORT).show()

@@ -133,6 +133,7 @@ class FragmentInicio : Fragment() {
         binding.cardGastos.setOnClickListener { mainActivity?.verFragmentoMovimientos() }
         binding.cardGastosFijos.setOnClickListener { mainActivity?.verFragmentoGastosFijos() }
         binding.cardDeudas.setOnClickListener { mainActivity?.verFragmentoDeudas() }
+        binding.cardAhorrosIntocable.setOnClickListener { mainActivity?.verFragmentoAhorros() }
 
         binding.btnIncognitoToggle.setOnClickListener {
             esIncognito = !esIncognito
@@ -222,10 +223,13 @@ class FragmentInicio : Fragment() {
         if (!isAdded || _binding == null) return
         
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        val balanceTotal = ingresosTotales - gastosTotales
+        val balanceTotal = db.getResumenFinanciero().balanceTotal // Ya tiene restados los ahorros
+        val ahorrosData = db.getResumenFinanciero()
 
         if (esIncognito) {
             binding.tvBalanceGeneral.text = "••••••••"
+            binding.tvTotalAhorros.text = "••••••••"
+            binding.tvDesgloseAhorros.text = "Cuentas: •••• • Alcancía/Efectivo: ••••"
             binding.tvIngresosMes.text = "••••••"
             binding.tvGastosMes.text = "••••••"
             binding.tvTotalGastosFijos.text = "••••••"
@@ -237,9 +241,12 @@ class FragmentInicio : Fragment() {
             binding.btnIncognitoToggle.setImageResource(R.drawable.ic_visibility_off)
         } else {
             val signo = if (balanceTotal < 0) "-$ " else if (balanceTotal > 0) "+$ " else "$ "
-            val valorFormateado = format.format(abs(balanceTotal)).replace("$", "").trim()
+            val valorFormateado = format.format(Math.abs(balanceTotal)).replace("$", "").trim()
             binding.tvBalanceGeneral.text = "$signo$valorFormateado"
             
+            binding.tvTotalAhorros.text = format.format(ahorrosData.totalAhorros)
+            binding.tvDesgloseAhorros.text = "Cuentas: ${format.format(ahorrosData.ahorroEnCuenta)} • Alcancía/Efectivo: ${format.format(ahorrosData.ahorroEnAlcancia)}"
+
             binding.tvIngresosMes.text = format.format(ingresosMes)
             binding.tvGastosMes.text = format.format(gastosMes)
             binding.tvTotalGastosFijos.text = format.format(totalGastosFijos)

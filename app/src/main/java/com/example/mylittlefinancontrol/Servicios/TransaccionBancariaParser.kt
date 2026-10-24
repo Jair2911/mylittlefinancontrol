@@ -110,7 +110,7 @@ object TransaccionBancariaParser {
      */
     fun extraerFecha(texto: String): String {
         // Formato 1: dd/MM/yyyy [a las |,]? HH:mm
-        val p1 = Pattern.compile("([0-3]?[0-9])[/-]([0-1]?[0-9])[/-](20\\d{2}|\\d{2})(?:[\\s,a-zA-Z-]{1,15}?([0-2]?[0-9]):([0-5][0-9])(?::[0-5][0-9])?(?:\\s*(AM|PM|am|pm))?)?")
+        val p1 = Pattern.compile("([0-3]?[0-9])[/-]([0-1]?[0-9])[/-](20\\d{2}|\\d{2})(?:[\\s,a-zA-Z-]{1,15}?([0-2]?[0-9]):([0-5][0-9])(?::[0-5][0-9])?(?:\\s*([aApP][.\\s]*[mM]\\.?))?)?")
         val m1 = p1.matcher(texto)
         if (m1.find()) {
             val dia = m1.group(1)?.toIntOrNull() ?: 1
@@ -120,15 +120,16 @@ object TransaccionBancariaParser {
 
             var hora = m1.group(4)?.toIntOrNull()
             val minuto = m1.group(5)?.toIntOrNull() ?: 0
-            val amPm = m1.group(6)
+            val amPmRaw = m1.group(6)
 
             if (hora == null) {
                 val cal = Calendar.getInstance()
                 hora = cal.get(Calendar.HOUR_OF_DAY)
             } else {
-                if (amPm != null) {
-                    if (amPm.equals("pm", ignoreCase = true) && hora < 12) hora += 12
-                    if (amPm.equals("am", ignoreCase = true) && hora == 12) hora = 0
+                if (amPmRaw != null) {
+                    val amPm = amPmRaw.replace(Regex("[.\\s]"), "").lowercase()
+                    if (amPm == "pm" && hora < 12) hora += 12
+                    if (amPm == "am" && hora == 12) hora = 0
                 }
             }
 
@@ -136,7 +137,7 @@ object TransaccionBancariaParser {
         }
 
         // Formato 2: 19 de octubre de 2026 17:11 / 19 oct 2026 - 17:11
-        val p2 = Pattern.compile("([0-3]?[0-9])\\s+(?:de\\s+)?([a-zA-ZáéíóúÁÉÍÓÚ]{3,10})\\s+(?:de\\s+)?(20\\d{2})(?:[\\s,a-zA-Z-]{1,15}?([0-2]?[0-9]):([0-5][0-9])(?:\\s*(AM|PM|am|pm))?)?", Pattern.CASE_INSENSITIVE)
+        val p2 = Pattern.compile("([0-3]?[0-9])\\s+(?:de\\s+)?([a-zA-ZáéíóúÁÉÍÓÚ]{3,10})\\s+(?:de\\s+)?(20\\d{2})(?:[\\s,a-zA-Z-]{1,15}?([0-2]?[0-9]):([0-5][0-9])(?:\\s*([aApP][.\\s]*[mM]\\.?))?)?", Pattern.CASE_INSENSITIVE)
         val m2 = p2.matcher(texto)
         if (m2.find()) {
             val dia = m2.group(1)?.toIntOrNull() ?: 1
@@ -146,15 +147,16 @@ object TransaccionBancariaParser {
 
             var hora = m2.group(4)?.toIntOrNull()
             val minuto = m2.group(5)?.toIntOrNull() ?: 0
-            val amPm = m2.group(6)
+            val amPmRaw = m2.group(6)
 
             if (hora == null) {
                 val cal = Calendar.getInstance()
                 hora = cal.get(Calendar.HOUR_OF_DAY)
             } else {
-                if (amPm != null) {
-                    if (amPm.equals("pm", ignoreCase = true) && hora < 12) hora += 12
-                    if (amPm.equals("am", ignoreCase = true) && hora == 12) hora = 0
+                if (amPmRaw != null) {
+                    val amPm = amPmRaw.replace(Regex("[.\\s]"), "").lowercase()
+                    if (amPm == "pm" && hora < 12) hora += 12
+                    if (amPm == "am" && hora == 12) hora = 0
                 }
             }
 

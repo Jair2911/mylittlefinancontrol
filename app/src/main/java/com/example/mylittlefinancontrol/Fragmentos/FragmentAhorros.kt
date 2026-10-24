@@ -239,14 +239,19 @@ class FragmentAhorros : Fragment() {
             dp.show()
         }
 
+        val ubicaciones = arrayOf("Cuenta Bancaria / Bolsillo", "Alcancía / Efectivo", "Inversión / CDT")
+        dialogBinding.autoUbicacionAhorro.setAdapter(android.widget.ArrayAdapter(mContext, android.R.layout.simple_list_item_1, ubicaciones))
+
         if (ahorroExistente != null) {
             dialogBinding.tvTituloDialogo.text = "Editar Meta de Ahorro"
             dialogBinding.etTituloAhorro.setText(ahorroExistente.titulo)
             dialogBinding.etMontoObjetivo.setText(String.format(Locale.US, "%.2f", ahorroExistente.montoObjetivo))
             dialogBinding.etMontoActual.setText(String.format(Locale.US, "%.2f", ahorroExistente.montoActual))
             dialogBinding.etFechaMeta.setText(ahorroExistente.fechaMeta)
+            dialogBinding.autoUbicacionAhorro.setText(ahorroExistente.ubicacion, false)
             actualizarSeleccionCategoria(ahorroExistente.categoria)
         } else {
+            dialogBinding.autoUbicacionAhorro.setText(ubicaciones[0], false)
             actualizarSeleccionCategoria("Emergencia")
         }
 
@@ -265,20 +270,37 @@ class FragmentAhorros : Fragment() {
 
             val fechaMeta = dialogBinding.etFechaMeta.text.toString().trim()
             val categoria = categoriaSeleccionada
+            val ubicacion = dialogBinding.autoUbicacionAhorro.text.toString().ifBlank { "Cuenta / Bolsillo" }
 
             if (titulo.isNotEmpty() && montoObjetivo > 0) {
                 if (ahorroExistente == null) {
-                    db.insertAhorro(Ahorro("", titulo, categoria, montoActual, montoObjetivo, fechaMeta))
+                    db.insertAhorro(Ahorro("", titulo, categoria, montoActual, montoObjetivo, fechaMeta, ubicacion = ubicacion))
+                    cargarAhorros()
+                    
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(mContext)
+                        .setTitle("¡Guardado con éxito!")
+                        .setMessage("¿Quieres agregar otra meta o fondo de ahorro?")
+                        .setPositiveButton("Sí, agregar otro") { _, _ ->
+                            dialogBinding.etTituloAhorro.setText("")
+                            dialogBinding.etMontoObjetivo.setText("")
+                            dialogBinding.etMontoActual.setText("")
+                            dialogBinding.etTituloAhorro.requestFocus()
+                        }
+                        .setNegativeButton("No, terminar") { _, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
                 } else {
                     ahorroExistente.titulo = titulo
                     ahorroExistente.montoObjetivo = montoObjetivo
                     ahorroExistente.montoActual = montoActual
                     ahorroExistente.fechaMeta = fechaMeta
                     ahorroExistente.categoria = categoria
+                    ahorroExistente.ubicacion = ubicacion
                     db.updateAhorro(ahorroExistente)
+                    cargarAhorros()
+                    dialog.dismiss()
                 }
-                cargarAhorros()
-                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese el nombre de la meta y un monto objetivo válido", Toast.LENGTH_SHORT).show()
             }
@@ -307,10 +329,30 @@ class FragmentAhorros : Fragment() {
             val abono = rawAbono.toDoubleOrNull() ?: 0.0
 
             if (abono > 0) {
-                ahorro.montoActual += abono
-                db.updateAhorro(ahorro)
+                val fecha = com.example.mylittlefinancontrol.Constantes.formatoFecha(System.currentTimeMillis())
+                val mov = com.example.mylittlefinancontrol.Movimiento(0, "AHORRO: ${ahorro.titulo.uppercase()}", abono.toInt(), "AHORRO", fecha, categoria = "Ahorro")
+                val ahorroIdInt = ahorro.id.toIntOrNull() ?: -1
+                if (ahorroIdInt != -1) {
+                    db.insertarAbonoAhorroTransaccional(mov, ahorroIdInt)
+                } else {
+                    // Fallback just update the savings without linking directly
+                    ahorro.montoActual += abono
+                    db.updateAhorro(ahorro)
+                    db.insertNota(mov)
+                }
                 cargarAhorros()
-                dialog.dismiss()
+                
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(mContext)
+                    .setTitle("¡Aporte exitoso!")
+                    .setMessage("¿Deseas realizar otro aporte a esta u otra meta?")
+                    .setPositiveButton("Sí, realizar otro") { _, _ ->
+                        dialogBinding.etMontoAbono.setText("")
+                        dialogBinding.etMontoAbono.requestFocus()
+                    }
+                    .setNegativeButton("No, terminar") { _, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
                 Toast.makeText(mContext, "Aporte de ${format.format(abono)} registrado con éxito", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese un monto de aporte válido", Toast.LENGTH_SHORT).show()

@@ -55,6 +55,7 @@ class BackupManager(private val context: Context) {
             }
             
             Log.d("BackupManager", "Base de datos restaurada con éxito")
+            NotasDatabaseHelper.getInstance(context).invalidateCache()
             return true
         } catch (e: Exception) {
             Log.e("BackupManager", "Error al restaurar base de datos", e)

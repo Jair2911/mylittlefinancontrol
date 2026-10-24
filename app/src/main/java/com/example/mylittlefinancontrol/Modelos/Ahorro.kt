@@ -8,5 +8,6 @@ data class Ahorro(
     var montoObjetivo: Double = 0.0,
     var fechaMeta: String = "",
     var icono: String = "savings",
-    var descripcion: String = ""
+    var descripcion: String = "",
+    var ubicacion: String = "Cuenta / Bolsillo"
 )

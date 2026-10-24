@@ -140,286 +140,54 @@
                     android:textSize="13sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- 2. Selector de Categoría (Grid 2x3 con MaterialCardViews) -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- 2. Selector de Categoría Dinámica -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_categoria_gasto_fijo"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
-                android:letterSpacing="0.06"
-                android:text="CATEGORÍA"
-                android:textColor="@color/text_secondary"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginBottom="8dp"
+                android:hint="Categoría *"
+                app:boxBackgroundColor="@color/surface_bg"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/border_subtle">
 
-            <LinearLayout
+                <AutoCompleteTextView
+                    android:id="@+id/auto_categoria_gasto_fijo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Campo dinámico para nueva categoría si elige "Otra..." -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_nueva_categoria_gasto_fijo"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="14dp"
-                android:orientation="vertical">
+                android:hint="Escribe la nueva categoría *"
+                android:visibility="gone"
+                app:boxBackgroundColor="@color/surface_bg"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/primary_emerald">
 
-                <!-- Fila 1: Telecom & Vivienda -->
-                <LinearLayout
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_nueva_categoria_gasto_fijo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <!-- Telecom (Activo por defecto) -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_telecom"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_container_low"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/primary_emerald"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_telecom"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_wifi"
-                                app:tint="@color/primary_emerald" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_telecom"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Telecom"
-                                android:textColor="@color/primary_emerald"
-                                android:textSize="11.5sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Vivienda -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_vivienda"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_bg"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/border_subtle"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_vivienda"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_cottage"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_vivienda"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Vivienda"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11.5sp"
-                                android:textStyle="normal" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                </LinearLayout>
-
-                <!-- Fila 2: Servicios & Educación -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <!-- Servicios -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_servicios"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_bg"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/border_subtle"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_servicios"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_bolt"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_servicios"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Servicios"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11.5sp"
-                                android:textStyle="normal" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Educación -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_educacion"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_bg"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/border_subtle"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_educacion"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_school"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_educacion"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Educación"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11.5sp"
-                                android:textStyle="normal" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                </LinearLayout>
-
-                <!-- Fila 3: Streaming & Otros -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                    <!-- Streaming -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_streaming"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_bg"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/border_subtle"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_streaming"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_subscriptions"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_streaming"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Streaming"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11.5sp"
-                                android:textStyle="normal" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Otros -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_cat_otros"
-                        android:layout_width="0dp"
-                        android:layout_height="62dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="@color/surface_bg"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp"
-                        app:strokeColor="@color/border_subtle"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/iv_cat_otros"
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:src="@drawable/ic_more_horiz"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tv_cat_otros"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="Otros"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11.5sp"
-                                android:textStyle="normal" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                </LinearLayout>
-            </LinearLayout>
+                    android:inputType="textCapWords"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- 3. Campo Monto Destacado -->
             <com.google.android.material.card.MaterialCardView

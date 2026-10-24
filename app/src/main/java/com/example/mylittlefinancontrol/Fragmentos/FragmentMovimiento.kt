@@ -59,6 +59,8 @@ class FragmentMovimiento : Fragment() {
     private var deudaSeleccionada: Deuda? = null
     private val listaGastosFijos = mutableListOf<GastoFijo>()
     private var gastoFijoSeleccionado: GastoFijo? = null
+    private val listaAhorros = mutableListOf<com.example.mylittlefinancontrol.Modelos.Ahorro>()
+    private var ahorroSeleccionado: com.example.mylittlefinancontrol.Modelos.Ahorro? = null
 
     // ML Kit y Cámara
     private var currentDialogBinding: DialogAgregarMovimientoBinding? = null
@@ -513,12 +515,15 @@ class FragmentMovimiento : Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             val deudasTodas = db.getAllDeudas()
             val gfTodas = db.getAllGastosFijos()
+            val ahorrosTodos = db.getAllAhorros()
             val deudasPendientes = deudasTodas.filter { (it.totalDeuda - it.totalPagado) > 0.0 }
             withContext(Dispatchers.Main) {
                 listaDeudas.clear()
                 listaDeudas.addAll(deudasPendientes)
                 listaGastosFijos.clear()
                 listaGastosFijos.addAll(gfTodas)
+                listaAhorros.clear()
+                listaAhorros.addAll(ahorrosTodos)
             }
         }
     }
@@ -573,6 +578,23 @@ class FragmentMovimiento : Fragment() {
         val nombresGastos = listaGastosFijos.map { "${it.concepto} ($${it.monto})" }
         dialogBinding.autoGastosFijos.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresGastos))
 
+        val nombresAhorros = mutableListOf<String>()
+        nombresAhorros.addAll(listaAhorros.map { "${it.titulo} (${it.ubicacion})" })
+        nombresAhorros.add("+ Crear nueva caja de ahorro...")
+        dialogBinding.autoAhorros.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresAhorros))
+        
+        dialogBinding.autoAhorros.setOnItemClickListener { _, _, pos, _ ->
+            if (pos == listaAhorros.size) {
+                // Seleccionó "+ Crear nueva caja de ahorro..."
+                ahorroSeleccionado = null
+                dialog.dismiss()
+                (activity as? com.example.mylittlefinancontrol.MainActivity)?.verFragmentoAhorros()
+            } else {
+                ahorroSeleccionado = listaAhorros[pos]
+                dialogBinding.etDescripcion.setText("ABONO: ${ahorroSeleccionado?.titulo}")
+            }
+        }
+
         val opcionesQuincena = arrayOf("1ª Quincena", "2ª Quincena")
         dialogBinding.autoQuincena.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opcionesQuincena))
         
@@ -584,54 +606,48 @@ class FragmentMovimiento : Fragment() {
         dialogBinding.btnTipoIngreso.setOnClickListener { actualizarTabsTipo("INGRESO") }
         dialogBinding.btnTipoTransferencia.setOnClickListener { actualizarTabsTipo("TRANSFERENCIA") }
 
-        // Category Chips Interactivity
-        var categoriaSeleccionadaEnDialogo = movimientoExistente?.categoria ?: "Supermercado"
+        // Configuración de Categoría Dinámica con ExposedDropdownMenu
+        val listaCategorias = db.obtenerCategoriasPorModulo("MOVIMIENTO")
+        val catAdapter = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, listaCategorias)
+        dialogBinding.autoCategoriaMovimiento.setAdapter(catAdapter)
 
-        fun pintarChipCategoria(categoria: String) {
-            categoriaSeleccionadaEnDialogo = categoria
-            val bgActivo = ContextCompat.getColor(mContext, R.color.surface_container_low)
-            val bgInactivo = ContextCompat.getColor(mContext, R.color.surface_bg)
-            val colorActivo = ContextCompat.getColor(mContext, R.color.primary_emerald)
-            val colorInactivo = ContextCompat.getColor(mContext, R.color.text_secondary)
-
-            fun setChipStyle(container: View, icon: View?, text: TextView, activo: Boolean) {
-                container.backgroundTintList = ColorStateList.valueOf(if (activo) bgActivo else bgInactivo)
-                text.setTextColor(if (activo) colorActivo else colorInactivo)
+        val catInicial = movimientoExistente?.categoria ?: if (listaCategorias.isNotEmpty()) listaCategorias.first() else "Varios"
+        dialogBinding.autoCategoriaMovimiento.setText(catInicial, false)
+        
+        fun actualizarDropdownAhorro(seleccion: String) {
+            if (seleccion.equals("Ahorro", ignoreCase = true)) {
+                dialogBinding.tilSeleccionAhorro.visibility = View.VISIBLE
+                dialogBinding.cbEsPagoDeuda.isChecked = false
+                dialogBinding.cbEsGastoFijo.isChecked = false
+            } else {
+                dialogBinding.tilSeleccionAhorro.visibility = View.GONE
+                ahorroSeleccionado = null
             }
+        }
+        actualizarDropdownAhorro(catInicial)
 
-            fun setupChip(container: View, nombreCat: String) {
-                val vg = container as? ViewGroup
-                if ((vg?.childCount ?: 0) >= 2) {
-                    val icon = vg?.getChildAt(0)
-                    val tv = vg?.getChildAt(1) as? TextView
-                    if (tv != null) {
-                        setChipStyle(container, icon, tv, categoria.equals(nombreCat, ignoreCase = true))
-                    }
-                }
+        dialogBinding.autoCategoriaMovimiento.setOnItemClickListener { _, _, position, _ ->
+            val seleccion = catAdapter.getItem(position) ?: ""
+            actualizarDropdownAhorro(seleccion)
+            
+            if (seleccion == "Otra...") {
+                dialogBinding.tilNuevaCategoriaMovimiento.visibility = View.VISIBLE
+                dialogBinding.etNuevaCategoriaMovimiento.setText("")
+                dialogBinding.etNuevaCategoriaMovimiento.requestFocus()
+            } else {
+                dialogBinding.tilNuevaCategoriaMovimiento.visibility = View.GONE
+                dialogBinding.tilNuevaCategoriaMovimiento.error = null
             }
-
-            setupChip(dialogBinding.chipSupermercado, "Supermercado")
-            setupChip(dialogBinding.chipServicios, "Servicios")
-            setupChip(dialogBinding.chipComida, "Comida")
-            setupChip(dialogBinding.chipTransporte, "Transporte")
-            setupChip(dialogBinding.chipVivienda, "Vivienda")
-            setupChip(dialogBinding.chipOcio, "Ocio")
-            setupChip(dialogBinding.chipPeliculas, "Películas")
-            setupChip(dialogBinding.chipPrestamo, "Préstamo")
-            setupChip(dialogBinding.chipSinCategoria, "Sin categoría")
         }
 
-        dialogBinding.chipSupermercado.setOnClickListener { pintarChipCategoria("Supermercado") }
-        dialogBinding.chipServicios.setOnClickListener { pintarChipCategoria("Servicios") }
-        dialogBinding.chipComida.setOnClickListener { pintarChipCategoria("Comida") }
-        dialogBinding.chipTransporte.setOnClickListener { pintarChipCategoria("Transporte") }
-        dialogBinding.chipVivienda.setOnClickListener { pintarChipCategoria("Vivienda") }
-        dialogBinding.chipOcio.setOnClickListener { pintarChipCategoria("Ocio") }
-        dialogBinding.chipPeliculas.setOnClickListener { pintarChipCategoria("Películas") }
-        dialogBinding.chipPrestamo.setOnClickListener { pintarChipCategoria("Préstamo") }
-        dialogBinding.chipSinCategoria.setOnClickListener { pintarChipCategoria("Sin categoría") }
+        // Selector de Método de Pago Dinámico
+        val metodosPagoList = db.obtenerMetodosPago()
+        val nombresMetodos = metodosPagoList.map { it.nombreFormateado() }
+        dialogBinding.autoMetodoPagoMovimiento.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, nombresMetodos))
 
-        pintarChipCategoria(categoriaSeleccionadaEnDialogo)
+        val metodoPorDefecto = metodosPagoList.find { it.esPredeterminado } ?: metodosPagoList.firstOrNull()
+        val mpInicial = movimientoExistente?.metodoPago ?: metodoPorDefecto?.nombreFormateado() ?: "Efectivo"
+        dialogBinding.autoMetodoPagoMovimiento.setText(mpInicial, false)
 
         // Selector de Fecha
         dialogBinding.tvFechaMovimiento.setOnClickListener {
@@ -645,6 +661,8 @@ class FragmentMovimiento : Fragment() {
                     cal.set(Calendar.MINUTE, min)
                     fechaSeleccionadaTimestamp = cal.timeInMillis
                     dialogBinding.tvFechaMovimiento.text = sdfFechaDisplay.format(cal.time)
+                    val qDefault = if (d <= 15) "1ª Quincena" else "2ª Quincena"
+                    dialogBinding.autoQuincena.setText(qDefault, false)
                 }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
         }
@@ -725,7 +743,7 @@ class FragmentMovimiento : Fragment() {
             dialogBinding.etDescripcion.setText(datos.descripcion)
             dialogBinding.etValor.setText(datos.valor.toString())
             actualizarTabsTipo(datos.tipo_reg.uppercase())
-            pintarChipCategoria(datos.categoria)
+            dialogBinding.autoCategoriaMovimiento.setText(datos.categoria, false)
 
             try {
                 val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -739,7 +757,7 @@ class FragmentMovimiento : Fragment() {
 
         onDatosEscaneadosListener = { datos ->
             lifecycleScope.launch(Dispatchers.IO) {
-                val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.tipo_reg, datos.fecha)
+                val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.fecha)
                 withContext(Dispatchers.Main) {
                     dialogBinding.llLoadingAi.visibility = View.GONE
                     if (duplicado == null) {
@@ -747,7 +765,6 @@ class FragmentMovimiento : Fragment() {
                         Toast.makeText(mContext, "Comprobante procesado con éxito (ML Kit Offline)", Toast.LENGTH_SHORT).show()
                     } else {
                         mostrarDialogoDuplicado(
-                            datos = datos,
                             duplicado = duplicado,
                             onActualizar = {
                                 aplicarDatosAlFormulario(datos, comoEdicion = true, movimientoParaEditar = duplicado)
@@ -771,63 +788,129 @@ class FragmentMovimiento : Fragment() {
                 return@setOnClickListener
             }
 
+            val catSel = dialogBinding.autoCategoriaMovimiento.text.toString().trim()
+            var categoriaFinal = catSel
+
+            if (catSel == "Otra...") {
+                val nuevaCatInput = dialogBinding.etNuevaCategoriaMovimiento.text.toString().trim()
+                if (nuevaCatInput.isBlank()) {
+                    dialogBinding.tilNuevaCategoriaMovimiento.error = "Escribe el nombre de la nueva categoría"
+                    return@setOnClickListener
+                }
+                if (nuevaCatInput.equals("Otra...", ignoreCase = true)) {
+                    dialogBinding.tilNuevaCategoriaMovimiento.error = "Nombre de categoría inválido"
+                    return@setOnClickListener
+                }
+                dialogBinding.tilNuevaCategoriaMovimiento.error = null
+                db.insertarCategoria(nuevaCatInput, "MOVIMIENTO")
+                categoriaFinal = nuevaCatInput.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            } else if (catSel.isBlank()) {
+                categoriaFinal = "Varios"
+            }
+
             val valor = valStr.toIntOrNull() ?: 0
             val fechaMovimiento = Constantes.formatoFecha(fechaSeleccionadaTimestamp)
             val mesAnio = fechaMovimiento.substring(0, 7)
+            val metodoPagoSel = dialogBinding.autoMetodoPagoMovimiento.text.toString().ifBlank { "Efectivo" }
 
-            lifecycleScope.launch(Dispatchers.IO) {
-                val edicionActual = movEnEdicion
-                if (edicionActual == null) {
-                    // CREAR
-                    val fc = Constantes.formatoFecha(System.currentTimeMillis())
+            fun ejecutarGuardado(movimientoAEditar: Movimiento?) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    if (movimientoAEditar == null) {
+                        // CREAR NUEVO
+                        val fc = Constantes.formatoFecha(System.currentTimeMillis())
 
-                    if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
-                        deudaSeleccionada!!.totalPagado += valor
-                        db.updateDeuda(deudaSeleccionada!!)
-                        db.insertNota(Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
-                    } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
-                        val gf = gastoFijoSeleccionado!!
-                        var quincena: Int? = null
-                        if (gf.periodo == "Quincenal") {
-                            val qPos = dialogBinding.autoQuincena.text.toString()
-                            if (qPos == "1ª Quincena") {
+                        if (dialogBinding.cbEsPagoDeuda.isChecked && deudaSeleccionada != null) {
+                            val movDeuda = Movimiento(0, desc.uppercase(), valor, "PAGO DEUDA", fechaMovimiento, categoria = categoriaFinal, fechaCreacion = fc, metodoPago = metodoPagoSel)
+                            db.insertarAbonoDeudaTransaccional(movDeuda, deudaSeleccionada!!.id)
+                        } else if (ahorroSeleccionado != null) {
+                            val movAhorro = Movimiento(0, desc.uppercase(), valor, "AHORRO", fechaMovimiento, categoria = categoriaFinal, fechaCreacion = fc, metodoPago = metodoPagoSel)
+                            db.insertarAbonoAhorroTransaccional(movAhorro, ahorroSeleccionado!!.id.toIntOrNull() ?: -1)
+                        } else if (dialogBinding.cbEsGastoFijo.isChecked && gastoFijoSeleccionado != null) {
+                            val gf = gastoFijoSeleccionado!!
+                            var quincena: Int? = null
+                            if (gf.periodo == "Quincenal") {
+                                val qPos = dialogBinding.autoQuincena.text.toString()
+                                if (qPos == "1ª Quincena") {
+                                    gf.ultimoPagoQ1 = mesAnio
+                                    quincena = 1
+                                } else if (qPos == "2ª Quincena") {
+                                    gf.ultimoPagoQ2 = mesAnio
+                                    quincena = 2
+                                }
+                            } else {
                                 gf.ultimoPagoQ1 = mesAnio
-                                quincena = 1
-                            } else if (qPos == "2ª Quincena") {
-                                gf.ultimoPagoQ2 = mesAnio
-                                quincena = 2
+                                quincena = 0
                             }
+                            db.updateGastoFijo(gf)
+                            db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fechaMovimiento, gf.id.toInt(), quincena, categoria = categoriaFinal, fechaCreacion = fc, metodoPago = metodoPagoSel))
                         } else {
-                            gf.ultimoPagoQ1 = mesAnio
-                            quincena = 0
+                            val tipo = tipoSeleccionado
+                            db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaFinal, fechaCreacion = fc, metodoPago = metodoPagoSel))
                         }
-                        db.updateGastoFijo(gf)
-                        db.insertNota(Movimiento(0, desc.uppercase(), valor, "GASTO FIJO", fechaMovimiento, gf.id.toInt(), quincena, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
                     } else {
-                        val tipo = tipoSeleccionado
-                        db.insertNota(Movimiento(0, desc.uppercase(), valor, tipo.uppercase(), fechaMovimiento, categoria = categoriaSeleccionadaEnDialogo, fechaCreacion = fc))
+                        // EDITAR / ACTUALIZAR EXISTENTE
+                        val fc = if (movimientoAEditar.fechaCreacion.isNotBlank()) movimientoAEditar.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
+                        val nuevoMov = Movimiento(
+                            id = movimientoAEditar.id,
+                            descripcion = desc.uppercase(),
+                            valor = valor,
+                            tipo_reg = if (movimientoAEditar.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
+                            fecha = fechaMovimiento,
+                            gastoFijoId = movimientoAEditar.gastoFijoId,
+                            quincenaPagada = movimientoAEditar.quincenaPagada,
+                            categoria = categoriaFinal,
+                            fechaCreacion = fc,
+                            metodoPago = metodoPagoSel
+                        )
+                        // TODO: Refactor transactions for debt updates when editing. For now rely on basic update.
+                        db.updateMovimiento(nuevoMov)
                     }
-                } else {
-                    // EDITAR / ACTUALIZAR
-                    val fc = if (edicionActual.fechaCreacion.isNotBlank()) edicionActual.fechaCreacion else Constantes.formatoFecha(System.currentTimeMillis())
-                    val nuevoMov = Movimiento(
-                        id = edicionActual.id,
-                        descripcion = desc.uppercase(),
-                        valor = valor,
-                        tipo_reg = if (edicionActual.tipo_reg == "PAGO DEUDA") "PAGO DEUDA" else tipoSeleccionado.uppercase(),
-                        fecha = fechaMovimiento,
-                        gastoFijoId = edicionActual.gastoFijoId,
-                        quincenaPagada = edicionActual.quincenaPagada,
-                        categoria = categoriaSeleccionadaEnDialogo,
-                        fechaCreacion = fc
-                    )
-                    db.updateMovimiento(nuevoMov)
-                }
 
-                withContext(Dispatchers.Main) {
-                    dialog.dismiss()
-                    actualizarListaFiltrada()
+                    withContext(Dispatchers.Main) {
+                        actualizarListaFiltrada()
+                        
+                        if (movimientoAEditar == null) {
+                            // Flujo de inserción continua
+                            MaterialAlertDialogBuilder(mContext)
+                                .setTitle("¡Guardado con éxito!")
+                                .setMessage("¿Quieres agregar otro registro?")
+                                .setPositiveButton("Sí, agregar otro") { _, _ ->
+                                    dialogBinding.etDescripcion.setText("")
+                                    dialogBinding.etValor.setText("")
+                                    dialogBinding.etValor.requestFocus()
+                                    dialogBinding.cbEsPagoDeuda.isChecked = false
+                                    dialogBinding.cbEsGastoFijo.isChecked = false
+                                }
+                                .setNegativeButton("No, terminar") { _, _ ->
+                                    dialog.dismiss()
+                                }
+                                .show()
+                        } else {
+                            dialog.dismiss()
+                        }
+                    }
                 }
+            }
+
+            val edicionActual = movEnEdicion
+            if (edicionActual == null) {
+                // Verificar duplicados antes de crear uno nuevo manualmente
+                lifecycleScope.launch(Dispatchers.IO) {
+                    val duplicado = db.buscarMovimientoDuplicado(valor, fechaMovimiento)
+                    withContext(Dispatchers.Main) {
+                        if (duplicado != null) {
+                            mostrarDialogoDuplicado(
+                                duplicado = duplicado,
+                                onActualizar = { ejecutarGuardado(duplicado) },
+                                onGuardarNuevo = { ejecutarGuardado(null) }
+                            )
+                        } else {
+                            ejecutarGuardado(null)
+                        }
+                    }
+                }
+            } else {
+                ejecutarGuardado(edicionActual)
             }
         }
 
@@ -872,7 +955,6 @@ class FragmentMovimiento : Fragment() {
     }
 
     private fun mostrarDialogoDuplicado(
-        datos: DatosTransaccion,
         duplicado: Movimiento,
         onActualizar: () -> Unit,
         onGuardarNuevo: () -> Unit
@@ -961,7 +1043,7 @@ class FragmentMovimiento : Fragment() {
             .setMessage("¿Estás seguro de eliminar este movimiento?")
             .setPositiveButton("Eliminar") { _, _ ->
                 lifecycleScope.launch(Dispatchers.IO) {
-                    db.deleteMovimiento(movimiento.id)
+                    db.eliminarMovimientoTransaccional(movimiento)
                     withContext(Dispatchers.Main) {
                         actualizarListaFiltrada()
                     }

@@ -10,6 +10,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -30,6 +31,7 @@ import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.databinding.DialogAgregarDeudaBinding
 import com.example.mylittlefinancontrol.databinding.FragmentBalanceBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.NumberFormat
 import java.util.*
 import kotlin.math.max
@@ -158,37 +160,27 @@ class FragmentBalance : Fragment() {
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        var tipoSeleccionado = "Tarjeta de Crédito"
         var cuotasSeleccionadas = 12
 
-        // Configuración de Chips de Tipos
-        fun pintarChipTipo(tipo: String) {
-            tipoSeleccionado = tipo
-            val bgActivo = ContextCompat.getColor(mContext, R.color.primary_emerald)
-            val bgInactivo = ContextCompat.getColor(mContext, R.color.surface_card)
-            val colorActivo = ContextCompat.getColor(mContext, android.R.color.white)
-            val colorInactivo = ContextCompat.getColor(mContext, R.color.text_secondary)
+        // Configuración de Tipo de Compromiso Dinámico
+        val listaTiposDeuda = db.obtenerCategoriasPorModulo("DEUDA")
+        val catAdapterDeuda = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, listaTiposDeuda)
+        dialogBinding.autoTipoDeuda.setAdapter(catAdapterDeuda)
 
-            fun setChip(container: View, icon: View?, text: TextView, activo: Boolean) {
-                container.backgroundTintList = ColorStateList.valueOf(if (activo) bgActivo else bgInactivo)
-                text.setTextColor(if (activo) colorActivo else colorInactivo)
-                if (icon is ImageView) {
-                    icon.imageTintList = ColorStateList.valueOf(if (activo) colorActivo else colorInactivo)
-                }
+        val tipoInicial = deudaExistente?.tipo ?: if (listaTiposDeuda.isNotEmpty()) listaTiposDeuda.first() else "Tarjeta de Crédito"
+        dialogBinding.autoTipoDeuda.setText(tipoInicial, false)
+
+        dialogBinding.autoTipoDeuda.setOnItemClickListener { _, _, position, _ ->
+            val seleccion = catAdapterDeuda.getItem(position) ?: ""
+            if (seleccion == "Otra...") {
+                dialogBinding.tilNuevoTipoDeuda.visibility = View.VISIBLE
+                dialogBinding.etNuevoTipoDeuda.setText("")
+                dialogBinding.etNuevoTipoDeuda.requestFocus()
+            } else {
+                dialogBinding.tilNuevoTipoDeuda.visibility = View.GONE
+                dialogBinding.tilNuevoTipoDeuda.error = null
             }
-
-            setChip(dialogBinding.chipTipoTarjeta, dialogBinding.chipTipoTarjeta.getChildAt(0), dialogBinding.chipTipoTarjeta.getChildAt(1) as TextView, tipo == "Tarjeta de Crédito")
-            setChip(dialogBinding.chipTipoBancario, dialogBinding.chipTipoBancario.getChildAt(0), dialogBinding.chipTipoBancario.getChildAt(1) as TextView, tipo == "Préstamo Bancario")
-            setChip(dialogBinding.chipTipoPersonal, dialogBinding.chipTipoPersonal.getChildAt(0), dialogBinding.chipTipoPersonal.getChildAt(1) as TextView, tipo == "Préstamo Personal")
-            setChip(dialogBinding.chipTipoAuto, dialogBinding.chipTipoAuto.getChildAt(0), dialogBinding.chipTipoAuto.getChildAt(1) as TextView, tipo == "Crédito Automotriz")
-
-            dialogBinding.autoTipoDeuda.setText(tipo, false)
         }
-
-        dialogBinding.chipTipoTarjeta.setOnClickListener { pintarChipTipo("Tarjeta de Crédito") }
-        dialogBinding.chipTipoBancario.setOnClickListener { pintarChipTipo("Préstamo Bancario") }
-        dialogBinding.chipTipoPersonal.setOnClickListener { pintarChipTipo("Préstamo Personal") }
-        dialogBinding.chipTipoAuto.setOnClickListener { pintarChipTipo("Crédito Automotriz") }
 
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         var tipoInteres = "Anual"
@@ -313,12 +305,11 @@ class FragmentBalance : Fragment() {
             if (deudaExistente.valorCuota > 0) {
                 dialogBinding.etValorCuotaManual.setText(deudaExistente.valorCuota.toLong().toString())
             }
-            pintarChipTipo(deudaExistente.tipo)
+            dialogBinding.autoTipoDeuda.setText(deudaExistente.tipo, false)
             if (deudaExistente.cuotas > 0) {
                 pintarBotonCuotas(deudaExistente.cuotas)
             }
         } else {
-            pintarChipTipo("Tarjeta de Crédito")
             pintarBotonCuotas(12)
         }
         actualizarCalculos()
@@ -327,7 +318,26 @@ class FragmentBalance : Fragment() {
         dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
 
         dialogBinding.btnGuardar.setOnClickListener {
-            val tipo = tipoSeleccionado
+            val catSel = dialogBinding.autoTipoDeuda.text.toString().trim()
+            var tipoFinal = catSel
+
+            if (catSel == "Otra...") {
+                val nuevoTipoInput = dialogBinding.etNuevoTipoDeuda.text.toString().trim()
+                if (nuevoTipoInput.isBlank()) {
+                    dialogBinding.tilNuevoTipoDeuda.error = "Escribe el nuevo tipo de compromiso"
+                    return@setOnClickListener
+                }
+                if (nuevoTipoInput.equals("Otra...", ignoreCase = true)) {
+                    dialogBinding.tilNuevoTipoDeuda.error = "Tipo de compromiso inválido"
+                    return@setOnClickListener
+                }
+                dialogBinding.tilNuevoTipoDeuda.error = null
+                db.insertarCategoria(nuevoTipoInput, "DEUDA")
+                tipoFinal = nuevoTipoInput.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            } else if (catSel.isBlank()) {
+                tipoFinal = "Préstamo"
+            }
+
             val concepto = dialogBinding.etConcepto.text.toString().trim()
             val descripcion = dialogBinding.etDescripcion.text.toString().trim()
             val capitalInput = Constantes.limpiarYParsearMonto(dialogBinding.etTotalDeuda.text.toString())
@@ -339,9 +349,25 @@ class FragmentBalance : Fragment() {
 
             if (concepto.isNotEmpty() && totalFinal > 0) {
                 if (deudaExistente == null) {
-                    db.insertDeuda(Deuda("", tipo, concepto, descripcion, totalFinal, pagado, fechaIni, fechaFin, tasaNum, tipoInteres, cuotasSeleccionadas, valorCuotaCalculada))
+                    db.insertDeuda(Deuda("", tipoFinal, concepto, descripcion, totalFinal, pagado, fechaIni, fechaFin, tasaNum, tipoInteres, cuotasSeleccionadas, valorCuotaCalculada))
+                    cargarDeudas()
+                    
+                    MaterialAlertDialogBuilder(mContext)
+                        .setTitle("¡Guardado con éxito!")
+                        .setMessage("¿Quieres agregar otro compromiso financiero?")
+                        .setPositiveButton("Sí, agregar otro") { _, _ ->
+                            dialogBinding.etConcepto.setText("")
+                            dialogBinding.etDescripcion.setText("")
+                            dialogBinding.etTotalDeuda.setText("")
+                            dialogBinding.etTotalPagado.setText("")
+                            dialogBinding.etConcepto.requestFocus()
+                        }
+                        .setNegativeButton("No, terminar") { _, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
                 } else {
-                    deudaExistente.tipo = tipo
+                    deudaExistente.tipo = tipoFinal
                     deudaExistente.concepto = concepto
                     deudaExistente.descripcion = descripcion
                     deudaExistente.totalDeuda = totalFinal
@@ -353,9 +379,9 @@ class FragmentBalance : Fragment() {
                     deudaExistente.cuotas = cuotasSeleccionadas
                     deudaExistente.valorCuota = valorCuotaCalculada
                     db.updateDeuda(deudaExistente)
+                    cargarDeudas()
+                    dialog.dismiss()
                 }
-                cargarDeudas()
-                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor ingrese el concepto y el monto total", Toast.LENGTH_SHORT).show()
             }
@@ -365,37 +391,52 @@ class FragmentBalance : Fragment() {
     }
 
     private fun mostrarDialogoAbonarCuota(deuda: Deuda) {
-        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
-        val input = EditText(mContext).apply {
-            hint = "Monto a abonar (Ej: 50000)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setPadding(48, 32, 48, 32)
-        }
+        val dialogBinding = com.example.mylittlefinancontrol.databinding.DialogAbonarDeudaBinding.inflate(layoutInflater)
+        val dialog = android.app.Dialog(mContext)
+        dialog.setContentView(dialogBinding.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
+        val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         val restante = (deuda.totalDeuda - deuda.totalPagado).coerceAtLeast(0.0)
 
-        AlertDialog.Builder(mContext)
-            .setTitle("Abonar a ${deuda.concepto}")
-            .setMessage("Saldo restante actual: ${format.format(restante)}\nIngresa el valor de la cuota pagada:")
-            .setView(input)
-            .setPositiveButton("Registrar Abono") { _, _ ->
-                val abono = input.text.toString().toDoubleOrNull() ?: 0.0
-                if (abono > 0) {
-                    deuda.totalPagado += abono
-                    db.updateDeuda(deuda)
+        dialogBinding.tvTituloAbonar.text = "Abonar a ${deuda.concepto}"
+        dialogBinding.tvSaldoRestante.text = "Saldo restante actual: ${format.format(restante)}"
 
-                    // Insertar también como movimiento financiero
-                    val fecha = Constantes.formatoFecha(System.currentTimeMillis())
-                    db.insertNota(Movimiento(0, "PAGO DEUDA: ${deuda.concepto.uppercase()}", abono.toInt(), "PAGO DEUDA", fecha))
+        dialogBinding.btnCancelarAbono.setOnClickListener {
+            dialog.dismiss()
+        }
 
-                    Toast.makeText(mContext, "Abono registrado con éxito", Toast.LENGTH_SHORT).show()
-                    cargarDeudas()
-                } else {
-                    Toast.makeText(mContext, "Ingresa un monto válido", Toast.LENGTH_SHORT).show()
-                }
+        dialogBinding.btnRegistrarAbono.setOnClickListener {
+            val abonoStr = dialogBinding.etMontoAbono.text.toString()
+            val abono = abonoStr.toDoubleOrNull() ?: 0.0
+
+            if (abono > 0) {
+                // Insertar como movimiento financiero y afectar la deuda transaccionalmente
+                val fecha = Constantes.formatoFecha(System.currentTimeMillis())
+                val mov = Movimiento(0, "PAGO DEUDA: ${deuda.concepto.uppercase()}", abono.toInt(), "PAGO DEUDA", fecha, categoria = "Pago Deuda")
+                db.insertarAbonoDeudaTransaccional(mov, deuda.id)
+
+                Toast.makeText(mContext, "Abono registrado con éxito", Toast.LENGTH_SHORT).show()
+                cargarDeudas()
+                
+                MaterialAlertDialogBuilder(mContext)
+                    .setTitle("¡Guardado con éxito!")
+                    .setMessage("¿Quieres agregar otro registro a esta u otra deuda?")
+                    .setPositiveButton("Sí, agregar otro") { _, _ ->
+                        dialogBinding.etMontoAbono.setText("")
+                        dialogBinding.etMontoAbono.requestFocus()
+                    }
+                    .setNegativeButton("No, terminar") { _, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
+            } else {
+                Toast.makeText(mContext, "Ingresa un monto válido", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        }
+
+        dialog.show()
     }
 
     private fun cargarDeudas() {

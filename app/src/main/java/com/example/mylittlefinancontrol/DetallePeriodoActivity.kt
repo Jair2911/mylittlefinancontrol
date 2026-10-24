@@ -23,17 +23,11 @@ import com.example.mylittlefinancontrol.Modelos.ResumenPeriodoData
 import com.example.mylittlefinancontrol.databinding.ActivityDetallePeriodoBinding
 import com.example.mylittlefinancontrol.databinding.DialogDetalleCategoriaBsBinding
 import com.example.mylittlefinancontrol.databinding.ItemCategoriaResumenBinding
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.BlockThreshold
-import com.google.ai.client.generativeai.type.HarmCategory
-import com.google.ai.client.generativeai.type.SafetySetting
-import com.google.ai.client.generativeai.type.content
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.example.mylittlefinancontrol.Servicios.AnalizadorFinancieroLocal
+import com.example.mylittlefinancontrol.Servicios.DiagnosticoFinanciero
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.text.NumberFormat
@@ -48,10 +42,12 @@ class DetallePeriodoActivity : AppCompatActivity() {
     private var tipoPeriodo: String = "MENSUAL"
     private var startDate: String = ""
     private var endDate: String = ""
+    private var prevStartDate: String = ""
+    private var prevEndDate: String = ""
 
     private var resumenActual: ResumenPeriodoData? = null
     private var listaMovimientosPeriodo: List<Movimiento> = emptyList()
-    private var reporteIAUltimo: String = ""
+    private var diagnosticoActual: DiagnosticoFinanciero? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,21 +71,51 @@ class DetallePeriodoActivity : AppCompatActivity() {
             "SEMANAL" -> {
                 val calStart = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -6) }
                 startDate = sdf.format(calStart.time)
+
+                val calPrevEnd = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
+                val calPrevStart = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -13) }
+                prevEndDate = sdf.format(calPrevEnd.time)
+                prevStartDate = sdf.format(calPrevStart.time)
+
                 binding.tvTituloPeriodo.text = "Resumen Semanal"
             }
             "MENSUAL" -> {
                 val calStart = Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 1) }
                 startDate = sdf.format(calStart.time)
+
+                val calPrevStart = Calendar.getInstance().apply {
+                    add(Calendar.MONTH, -1)
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }
+                val calPrevEnd = Calendar.getInstance().apply {
+                    set(Calendar.DAY_OF_MONTH, 1)
+                    add(Calendar.DAY_OF_YEAR, -1)
+                }
+                prevStartDate = sdf.format(calPrevStart.time)
+                prevEndDate = sdf.format(calPrevEnd.time)
+
                 binding.tvTituloPeriodo.text = "Resumen Mensual"
             }
             "SEMESTRAL" -> {
                 val calStart = Calendar.getInstance().apply { add(Calendar.MONTH, -5); set(Calendar.DAY_OF_MONTH, 1) }
                 startDate = sdf.format(calStart.time)
+
+                val calPrevStart = Calendar.getInstance().apply { add(Calendar.MONTH, -11); set(Calendar.DAY_OF_MONTH, 1) }
+                val calPrevEnd = Calendar.getInstance().apply { add(Calendar.MONTH, -6); set(Calendar.DAY_OF_MONTH, getActualMaximum(Calendar.DAY_OF_MONTH)) }
+                prevStartDate = sdf.format(calPrevStart.time)
+                prevEndDate = sdf.format(calPrevEnd.time)
+
                 binding.tvTituloPeriodo.text = "Resumen Semestral"
             }
             else -> { // ANUAL
                 val calStart = Calendar.getInstance().apply { set(Calendar.DAY_OF_YEAR, 1) }
                 startDate = sdf.format(calStart.time)
+
+                val calPrevStart = Calendar.getInstance().apply { add(Calendar.YEAR, -1); set(Calendar.DAY_OF_YEAR, 1) }
+                val calPrevEnd = Calendar.getInstance().apply { add(Calendar.YEAR, -1); set(Calendar.MONTH, Calendar.DECEMBER); set(Calendar.DAY_OF_MONTH, 31) }
+                prevStartDate = sdf.format(calPrevStart.time)
+                prevEndDate = sdf.format(calPrevEnd.time)
+
                 binding.tvTituloPeriodo.text = "Resumen Anual"
             }
         }
@@ -101,8 +127,26 @@ class DetallePeriodoActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val res = db.getResumenPorRangoFechas(startDate, endDate)
             val movs = db.getMovimientosPorRangoFechas(startDate, endDate)
+            val gastosAnteriores = db.getTotalGastosPeriodoSQL(prevStartDate, prevEndDate)
+            val totalGF = db.getAllGastosFijos().sumOf { it.monto }
+            val totalDeudas = db.getAllDeudas().filter { (it.totalDeuda - it.totalPagado) > 0 }.sumOf { it.valorCuota }
+
+            // Generar Diagnóstico Financiero Local (Determinista, 100% Offline)
+            val diagnostico = withContext(Dispatchers.Default) {
+                AnalizadorFinancieroLocal.generarDiagnostico(
+                    periodo = tipoPeriodo,
+                    ingresosTotales = res.totalIngresos,
+                    gastosTotales = res.totalGastos,
+                    gastosPeriodoAnterior = gastosAnteriores,
+                    categorias = res.listaCategorias,
+                    totalGastosFijos = totalGF,
+                    totalCuotasDeudas = totalDeudas
+                )
+            }
+
             resumenActual = res
             listaMovimientosPeriodo = movs
+            diagnosticoActual = diagnostico
 
             withContext(Dispatchers.Main) {
                 val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
@@ -117,19 +161,13 @@ class DetallePeriodoActivity : AppCompatActivity() {
                     ContextCompat.getColor(this@DetallePeriodoActivity, R.color.primary_emerald)
                 binding.tvBalanceNetoPeriodo.setTextColor(colorBalance)
 
-                // Proyección Inteligente al Cierre
-                if (res.totalIngresos > 0) {
-                    val margenAhorro = ((res.balanceNeto / res.totalIngresos) * 100).toInt()
-                    if (res.balanceNeto >= 0) {
-                        binding.tvProyeccionTexto.text = "🟢 Al ritmo de gasto actual, proyectas cerrar este periodo con un margen positivo del $margenAhorro% sobre tus ingresos."
-                    } else {
-                        binding.tvProyeccionTexto.text = "🔴 Tus gastos superan tus ingresos en este periodo. Alerta de sobregiro estimada de ${format.format(res.balanceNeto)}."
-                    }
-                } else if (res.totalGastos > 0) {
-                    binding.tvProyeccionTexto.text = "⚠️ Se han registrado gastos por ${format.format(res.totalGastos)} sin ingresos reportados aún en este periodo."
-                } else {
-                    binding.tvProyeccionTexto.text = "ℹ️ No se registran movimientos financieros en el rango de fechas seleccionado."
+                // Diagnóstico Financiero Inmediato en Pantalla
+                val iconoEstado = when (diagnostico.estadoGeneral) {
+                    "Excelente", "Saludable" -> "🟢"
+                    "En Riesgo" -> "🟡"
+                    else -> "🔴"
                 }
+                binding.tvProyeccionTexto.text = "$iconoEstado ${diagnostico.estadoGeneral} (${diagnostico.puntajeSalud}/100): ${diagnostico.resumenEjecutivo}"
 
                 // Categorías
                 val categorias = res.listaCategorias
@@ -167,8 +205,10 @@ class DetallePeriodoActivity : AppCompatActivity() {
     private fun mostrarBottomSheetDetalleCategoria(item: CategoriaGastoItem) {
         val format = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
         val bsBinding = DialogDetalleCategoriaBsBinding.inflate(layoutInflater)
-        val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val dialog = android.app.Dialog(this)
         dialog.setContentView(bsBinding.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
         bsBinding.tvTituloCategoriaBs.text = item.nombreCategoria
         bsBinding.tvMontoTotalBs.text = "-${format.format(item.totalMonto)}"
@@ -195,9 +235,10 @@ class DetallePeriodoActivity : AppCompatActivity() {
     private fun setupListeners() {
         binding.btnVolverPeriodo.setOnClickListener { finish() }
 
-        // Botón 1: Analítica IA Gemini
+        // Botón 1: Diagnóstico Financiero Local (Offline e Instantáneo)
+        binding.btnAnaliticaIa.text = "Diagnóstico"
         binding.btnAnaliticaIa.setOnClickListener {
-            ejecutarAnaliticaIAGemini()
+            mostrarDiagnosticoLocal()
         }
 
         // Botón 2: Exportar PDF
@@ -211,103 +252,35 @@ class DetallePeriodoActivity : AppCompatActivity() {
         }
     }
 
-    private fun ejecutarAnaliticaIAGemini() {
-        val res = resumenActual ?: return
-        if (res.totalIngresos == 0.0 && res.totalGastos == 0.0) {
+    private fun mostrarDiagnosticoLocal() {
+        val diag = diagnosticoActual ?: return
+        if (resumenActual?.totalIngresos == 0.0 && resumenActual?.totalGastos == 0.0) {
             Toast.makeText(this, "No hay suficiente información para analizar en este periodo", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val jsonPayload = JSONObject().apply {
-            put("periodo", tipoPeriodo)
-            put("fecha_inicio", startDate)
-            put("fecha_fin", endDate)
-            put("total_ingresos", res.totalIngresos)
-            put("total_gastos", res.totalGastos)
-            put("balance_neto", res.balanceNeto)
-
-            val catsArray = JSONArray()
-            for (c in res.listaCategorias) {
-                val catObj = JSONObject().apply {
-                    put("categoria", c.nombreCategoria)
-                    put("monto", c.totalMonto)
-                    put("porcentaje", c.porcentaje)
-                }
-                catsArray.put(catObj)
-            }
-            put("categorias_principales", catsArray)
+        val iconoEstado = when (diag.estadoGeneral) {
+            "Excelente", "Saludable" -> "🟢"
+            "En Riesgo" -> "🟡"
+            else -> "🔴"
         }
 
-        val promptSistema = """
-            Rol: Eres un asesor financiero personal experto, integrado en la app DABAFINN. Tu objetivo es analizar el resumen financiero del usuario y ofrecer consejos rápidos, claros y accionables.
-
-            Instrucciones:
-            1. Analiza el JSON proporcionado que contiene los ingresos, gastos y categorías principales del periodo.
-            2. Redacta un análisis de máximo 3 párrafos cortos.
-            3. Destaca lo positivo (ej. buena tasa de ahorro) y alerta sobre posibles riesgos (ej. un gasto muy alto en una sola categoría).
-            4. Termina con 2 recomendaciones concretas para optimizar su presupuesto en el próximo periodo.
-            5. Usa un tono motivador, directo y amigable. No uses lenguaje técnico complejo.
-
-            JSON del periodo:
-            $jsonPayload
-        """.trimIndent()
-
-        val progressDialog = AlertDialog.Builder(this)
-            .setTitle("Analizando con Gemini IA...")
-            .setMessage("Procesando patrones y tendencias financieras del periodo $tipoPeriodo...")
-            .setCancelable(false)
-            .create()
-        progressDialog.show()
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val safetySettings = listOf(
-                SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
-                SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
-                SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
-                SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
-            )
-
-            val modelos = listOf("gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-exp", "gemini-1.5-flash-8b")
-            var respuestaTexto: String? = null
-            var ultimoError: Exception? = null
-
-            for (nombreModelo in modelos) {
-                try {
-                    val generativeModel = GenerativeModel(
-                        modelName = nombreModelo,
-                        apiKey = BuildConfig.GEMINI_API_KEY,
-                        safetySettings = safetySettings
-                    )
-                    val response = generativeModel.generateContent(content { text(promptSistema) })
-                    if (!response.text.isNullOrBlank()) {
-                        respuestaTexto = response.text
-                        break
-                    }
-                } catch (e: Exception) {
-                    ultimoError = e
-                }
+        val mensajeDetallado = buildString {
+            append("$iconoEstado Estado: ${diag.estadoGeneral.uppercase()} (Salud: ${diag.puntajeSalud}/100)\n\n")
+            append("📌 Resumen Ejecutivo:\n${diag.resumenEjecutivo}\n\n")
+            append("🔍 Puntos Clave:\n")
+            diag.puntosClave.forEach { p ->
+                append("• $p\n")
             }
-
-            withContext(Dispatchers.Main) {
-                progressDialog.dismiss()
-                if (!respuestaTexto.isNullOrBlank()) {
-                    reporteIAUltimo = respuestaTexto!!
-                    AlertDialog.Builder(this@DetallePeriodoActivity)
-                        .setTitle("🤖 Diagnóstico IA - DABAFINN")
-                        .setMessage(respuestaTexto)
-                        .setPositiveButton("Entendido", null)
-                        .setNeutralButton("Exportar PDF con IA") { _, _ -> exportarReportePDF() }
-                        .show()
-                } else {
-                    val errStr = ultimoError?.localizedMessage ?: ""
-                    val msg = when {
-                        errStr.contains("429") || errStr.contains("Quota", true) -> "Límite de consultas por minuto alcanzado. Espera unos segundos e intenta de nuevo."
-                        else -> "El servidor de Google IA se encuentra en alta demanda. Intenta de nuevo en unos segundos."
-                    }
-                    Toast.makeText(this@DetallePeriodoActivity, msg, Toast.LENGTH_LONG).show()
-                }
-            }
+            append("\n💡 Recomendación Accionable:\n${diag.recomendacionAccionable}")
         }
+
+        AlertDialog.Builder(this)
+            .setTitle("📊 Diagnóstico Financiero ($tipoPeriodo)")
+            .setMessage(mensajeDetallado)
+            .setPositiveButton("Entendido", null)
+            .setNeutralButton("Exportar PDF") { _, _ -> exportarReportePDF() }
+            .show()
     }
 
     private fun exportarReportePDF() {
@@ -360,16 +333,41 @@ class DetallePeriodoActivity : AppCompatActivity() {
             y += 18f
         }
 
-        if (reporteIAUltimo.isNotBlank()) {
+        val diag = diagnosticoActual
+        if (diag != null) {
             y += 25f
-            canvas.drawText("ANÁLISIS E INSIGHTS DE INTELIGENCIA ARTIFICIAL", 40f, y, paintTitle)
-            y += 20f
-            val lineasIA = reporteIAUltimo.split("\n")
-            for (l in lineasIA.take(15)) {
-                if (y > 800f) break
-                val lClean = if (l.length > 70) l.substring(0, 70) + "..." else l
-                canvas.drawText(lClean, 40f, y, paintSub)
+            canvas.drawText("DIAGNÓSTICO FINANCIERO (${diag.estadoGeneral.uppercase()} - ${diag.puntajeSalud}/100)", 40f, y, paintTitle)
+            y += 18f
+
+            val lineasResumen = dividirTextoParaPdf(diag.resumenEjecutivo, 75)
+            for (l in lineasResumen) {
+                if (y > 780f) break
+                canvas.drawText(l, 40f, y, paintText)
                 y += 16f
+            }
+
+            y += 6f
+            canvas.drawText("PUNTOS CLAVE Y HALLAZGOS:", 40f, y, paintSub)
+            y += 16f
+
+            for (p in diag.puntosClave) {
+                if (y > 790f) break
+                val lineasPunto = dividirTextoParaPdf("• $p", 75)
+                for (lp in lineasPunto) {
+                    if (y > 790f) break
+                    canvas.drawText(lp, 40f, y, paintSub)
+                    y += 15f
+                }
+            }
+
+            if (y <= 790f) {
+                y += 6f
+                val lineasRec = dividirTextoParaPdf("💡 Recomendación: ${diag.recomendacionAccionable}", 75)
+                for (lr in lineasRec) {
+                    if (y > 805f) break
+                    canvas.drawText(lr, 40f, y, paintText)
+                    y += 15f
+                }
             }
         }
 
@@ -428,5 +426,23 @@ class DetallePeriodoActivity : AppCompatActivity() {
             Log.e("CSVExport", "Error creando CSV: ${e.message}", e)
             Toast.makeText(this, "Error al generar archivo CSV", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun dividirTextoParaPdf(texto: String, maxChars: Int = 75): List<String> {
+        val palabras = texto.split(" ")
+        val lineas = mutableListOf<String>()
+        var lineaActual = StringBuilder()
+
+        for (p in palabras) {
+            if (lineaActual.length + p.length + 1 <= maxChars) {
+                if (lineaActual.isNotEmpty()) lineaActual.append(" ")
+                lineaActual.append(p)
+            } else {
+                if (lineaActual.isNotEmpty()) lineas.add(lineaActual.toString())
+                lineaActual = StringBuilder(p)
+            }
+        }
+        if (lineaActual.isNotEmpty()) lineas.add(lineaActual.toString())
+        return lineas
     }
 }

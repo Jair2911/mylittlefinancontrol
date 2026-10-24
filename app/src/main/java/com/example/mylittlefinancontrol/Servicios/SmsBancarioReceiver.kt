@@ -83,7 +83,7 @@ class SmsBancarioReceiver : BroadcastReceiver() {
             val db = NotasDatabaseHelper.getInstance(context)
 
             // Validación inteligente de duplicados (tolerancia ±5 minutos)
-            val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.tipo_reg, datos.fecha)
+            val duplicado = db.buscarMovimientoDuplicado(datos.valor, datos.fecha)
             if (duplicado != null) {
                 Log.d(TAG, "SMS ignorado: Ya existe un movimiento idéntico registrado previamente (ID #${duplicado.id}, $${duplicado.valor}, ${duplicado.fecha})")
                 return

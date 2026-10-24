@@ -198,53 +198,108 @@ class NotasAdaptador(
                 itemHolder.itemFecha.text = obtenerHoraFormateada(movimiento)
 
                 val descUpper = movimiento.descripcion.uppercase()
+                val catUpper = movimiento.categoria.uppercase()
                 val tipoUpper = movimiento.tipo_reg.uppercase()
 
                 when {
-                    tipoUpper.contains("GASTO FIJO") || descUpper.contains("GASTO FIJO") || descUpper.startsWith("PAGO:") -> {
+                    tipoUpper.contains("GASTO FIJO") || descUpper.contains("GASTO FIJO") || descUpper.startsWith("PAGO:") || catUpper.contains("GASTO FIJO") -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_autorenew)
                         itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
                         itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_fixed))
-                        itemHolder.itemTipoReg.text = "GASTO FIJO"
+                        itemHolder.itemTipoReg.text = "Gasto Fijo"
                         itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.secondary_container))
                         itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.on_secondary_container))
                         itemHolder.tvMetodoPagoSub.text = "Débito aut."
                     }
-                    descUpper.contains("SUPERMERCADO") || descUpper.contains("DESPENSA") || descUpper.contains("LÍDER") || descUpper.contains("ALIMENTOS") -> {
+                    catUpper.contains("SUPERMERCADO") || catUpper.contains("TIENDA") || descUpper.contains("SUPERMERCADO") || descUpper.contains("DESPENSA") || descUpper.contains("LÍDER") -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_shopping_cart)
-                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
-                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_high))
-                        itemHolder.itemTipoReg.text = "Alimentos"
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Supermercado" }
                         itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
                         itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
-                        itemHolder.tvMetodoPagoSub.text = "Tarjeta Visa"
+                        itemHolder.tvMetodoPagoSub.text = "Tarjeta Visa / Débito"
+                    }
+                    catUpper.contains("COMIDA") || catUpper.contains("RESTAURANTE") || descUpper.contains("COMIDA") || descUpper.contains("ALIMENTOS") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_restaurant)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Comida" }
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.tvMetodoPagoSub.text = "Efectivo / Débito"
+                    }
+                    catUpper.contains("TRANSPORTE") || catUpper.contains("AUTO") || descUpper.contains("COMBUSTIBLE") || descUpper.contains("UBER") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_directions_car)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Transporte" }
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.tvMetodoPagoSub.text = "Efectivo"
+                    }
+                    catUpper.contains("VIVIENDA") || catUpper.contains("CASA") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_cottage)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Vivienda" }
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
+                    }
+                    catUpper.contains("OCIO") || catUpper.contains("HOBBIES") || catUpper.contains("CINE") || catUpper.contains("STREAMING") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_subscriptions)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Ocio" }
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
+                    }
+                    catUpper.contains("AHORRO") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_savings)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.ghost_bg))
+                        itemHolder.itemTipoReg.text = "Ahorro"
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
+                    }
+                    catUpper.contains("PRÉSTAMO") || catUpper.contains("DEUDA") || tipoUpper.contains("DEUDA") -> {
+                        itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_credit_card)
+                        itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.secondary_container))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { "Deuda" }
+                        itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
                     }
                     tipoUpper.contains("INGRESO") || descUpper.contains("HONORARIOS") || descUpper.contains("SUELDO") || descUpper.contains("TRANSFERENCIA") -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_payments)
                         itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_emerald))
                         itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.primary_fixed))
-                        itemHolder.itemTipoReg.text = if (descUpper.contains("HONORARIOS")) "Honorarios" else "Ingreso"
+                        itemHolder.itemTipoReg.text = if (descUpper.contains("HONORARIOS")) "Honorarios" else movimiento.categoria.ifBlank { "Ingreso" }
                         itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
                         itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.primary_emerald))
-                        itemHolder.tvMetodoPagoSub.text = "Banco Estado"
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
                     }
-                    descUpper.contains("INTERNET") || descUpper.contains("FIBRA") || descUpper.contains("LUZ") || descUpper.contains("AGUA") || descUpper.contains("SERVICIOS") -> {
+                    catUpper.contains("SERVICIOS") || descUpper.contains("INTERNET") || descUpper.contains("FIBRA") || descUpper.contains("LUZ") || descUpper.contains("AGUA") -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_wifi)
                         itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
                         itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.secondary_container))
                         itemHolder.itemTipoReg.text = "Servicios"
                         itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
                         itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
-                        itemHolder.tvMetodoPagoSub.text = "Gasto Fijo"
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
                     }
                     else -> {
                         itemHolder.ivIconoMovimiento.setImageResource(R.drawable.ic_receipt_long)
                         itemHolder.ivIconoMovimiento.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.text_secondary))
-                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container_low))
-                        itemHolder.itemTipoReg.text = movimiento.tipo_reg.uppercase()
+                        itemHolder.flIconoContainer.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
+                        itemHolder.itemTipoReg.text = movimiento.categoria.ifBlank { movimiento.tipo_reg.uppercase() }
                         itemHolder.itemTipoReg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.surface_container))
                         itemHolder.itemTipoReg.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
-                        itemHolder.tvMetodoPagoSub.text = "Débito / Efectivo"
+                        itemHolder.tvMetodoPagoSub.text = movimiento.metodoPago
                     }
                 }
 

@@ -33,16 +33,21 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_sign_in"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:layout_marginHorizontal="32dp"
         android:layout_marginBottom="20dp"
         android:text="@string/btn_sign_in"
         android:textAllCaps="true"
+        android:textColor="?attr/colorPrimary"
+        app:backgroundTint="@color/surface_card"
         app:cornerRadius="10dp"
+        app:icon="@drawable/ic_google"
         app:iconGravity="textStart"
-        app:iconTint="?attr/colorPrimary"
+        app:iconTint="@null"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:strokeColor="?attr/colorPrimary" />
+        app:strokeColor="?attr/colorPrimary"
+        app:strokeWidth="1dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

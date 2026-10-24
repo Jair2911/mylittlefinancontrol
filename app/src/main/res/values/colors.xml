@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- DABA Design System — Technical Precision (Light Mode) Tokens Exactos -->
-    <color name="surface_bg">#F8FAF9</color>
+    <color name="surface_bg">#B9F6CA</color>
     <color name="surface_card">#F0FFF4</color>
     <color name="surface_container">#F4F7F5</color>
     <color name="surface_container_low">#F4F7F5</color>

@@ -70,10 +70,12 @@ object DemoDataHelper {
             sqliteDb.setTransactionSuccessful()
         } finally {
             sqliteDb.endTransaction()
+            db.invalidateCache()
         }
     }
 
     fun limpiarTodosLosDatos(context: Context, db: NotasDatabaseHelper) {
         db.clearAllData()
+        db.invalidateCache()
     }
 }

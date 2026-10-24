@@ -29,6 +29,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.*
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class FragmentPerfil : Fragment() {
@@ -65,6 +66,7 @@ class FragmentPerfil : Fragment() {
         configurarTema()
         setupBackupUI()
         setupDemoDataUI()
+        setupMetodosPagoUI()
 
         binding.btnVolverPerfil.setOnClickListener {
             (activity as? com.example.mylittlefinancontrol.MainActivity)?.verFragmentoInicio() ?: activity?.onBackPressedDispatcher?.onBackPressed()
@@ -395,6 +397,190 @@ class FragmentPerfil : Fragment() {
                 }
             }
         }
+    }
+
+    private fun setupMetodosPagoUI() {
+        binding.btnAgregarMetodoPago.setOnClickListener {
+            mostrarDialogoMetodoPago(null)
+        }
+        cargarMetodosPago()
+    }
+
+    private fun cargarMetodosPago() {
+        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+        val uid = firebaseAuth.uid
+
+        // 1. Descargar desde Firebase y consolidar en SQLite
+        if (uid != null) {
+            FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        for (mpSnapshot in snapshot.children) {
+                            val id = mpSnapshot.child("id").getValue(String::class.java) ?: continue
+                            val nombre = mpSnapshot.child("nombre").getValue(String::class.java) ?: ""
+                            val tipo = mpSnapshot.child("tipo").getValue(String::class.java) ?: "EFECTIVO"
+                            val ultimos4 = mpSnapshot.child("ultimos4").getValue(String::class.java) ?: ""
+                            val esPredeterminado = mpSnapshot.child("esPredeterminado").getValue(Boolean::class.java) ?: false
+
+                            val mp = com.example.mylittlefinancontrol.Modelos.MetodoPago(id, nombre, tipo, ultimos4, esPredeterminado)
+                            db.insertarOActualizarMetodoPago(mp)
+                        }
+                        renderizarMetodosPago(db.obtenerMetodosPago())
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        renderizarMetodosPago(db.obtenerMetodosPago())
+                    }
+                })
+        } else {
+            renderizarMetodosPago(db.obtenerMetodosPago())
+        }
+    }
+
+    private fun renderizarMetodosPago(lista: List<com.example.mylittlefinancontrol.Modelos.MetodoPago>) {
+        if (!isAdded) return
+        binding.llListaMetodosPago.removeAllViews()
+
+        val inflater = LayoutInflater.from(mContext)
+        for (mp in lista) {
+            val view = inflater.inflate(com.example.mylittlefinancontrol.R.layout.item_categoria_resumen, binding.llListaMetodosPago, false)
+
+            val tvNombre = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_nombre_categoria)
+            val tvSub = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_conteo_transacciones)
+            val icon = view.findViewById<android.widget.ImageView>(com.example.mylittlefinancontrol.R.id.iv_icono_categoria)
+            val iconContainer = view.findViewById<android.widget.FrameLayout>(com.example.mylittlefinancontrol.R.id.fl_icono_container)
+            val tvMonto = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_monto_categoria)
+            tvMonto?.visibility = View.GONE
+            val tvPorcentaje = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_porcentaje_categoria)
+            tvPorcentaje?.visibility = View.GONE
+            val pb = view.findViewById<android.widget.ProgressBar>(com.example.mylittlefinancontrol.R.id.pb_porcentaje_categoria)
+            pb?.visibility = View.GONE
+
+            tvNombre.text = mp.nombreFormateado()
+            tvSub.text = if (mp.esPredeterminado) "Predeterminado" else mp.tipo.replace("_", " ")
+
+            val colorAcento = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.primary_emerald)
+            val bgAcento = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.ghost_bg)
+
+            when {
+                mp.tipo == "EFECTIVO" -> {
+                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_account_balance_wallet)
+                }
+                mp.tipo.contains("TARJETA") -> {
+                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_credit_card)
+                }
+                else -> {
+                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_payments)
+                }
+            }
+
+            if (mp.esPredeterminado) {
+                icon.imageTintList = android.content.res.ColorStateList.valueOf(colorAcento)
+                iconContainer.backgroundTintList = android.content.res.ColorStateList.valueOf(bgAcento)
+                tvSub.setTextColor(colorAcento)
+            } else {
+                val colorMuted = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.text_secondary)
+                val bgMuted = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.surface_container_high)
+                icon.imageTintList = android.content.res.ColorStateList.valueOf(colorMuted)
+                iconContainer.backgroundTintList = android.content.res.ColorStateList.valueOf(bgMuted)
+                tvSub.setTextColor(colorMuted)
+            }
+
+            view.setOnClickListener { mostrarDialogoMetodoPago(mp) }
+            binding.llListaMetodosPago.addView(view)
+        }
+    }
+
+    private fun mostrarDialogoMetodoPago(mpExistente: com.example.mylittlefinancontrol.Modelos.MetodoPago?) {
+        val dialogView = LayoutInflater.from(mContext).inflate(com.example.mylittlefinancontrol.R.layout.dialog_metodo_pago, null)
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(mContext, com.example.mylittlefinancontrol.R.style.BottomSheetDialogTheme)
+        dialog.setContentView(dialogView)
+
+        val autoTipo = dialogView.findViewById<android.widget.AutoCompleteTextView>(com.example.mylittlefinancontrol.R.id.auto_tipo_metodo_pago)
+        val etNombre = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(com.example.mylittlefinancontrol.R.id.et_nombre_metodo)
+        val etUltimos4 = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(com.example.mylittlefinancontrol.R.id.et_ultimos4)
+        val tilUltimos4 = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(com.example.mylittlefinancontrol.R.id.til_ultimos4)
+        val tvAdvertencia = dialogView.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_advertencia_seguridad)
+        val swPredeterminado = dialogView.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(com.example.mylittlefinancontrol.R.id.sw_predeterminado)
+        val btnGuardar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_guardar_metodo)
+        val btnCancelar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_cancelar_metodo)
+        val btnEliminar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_eliminar_metodo)
+
+        val tipos = arrayOf("EFECTIVO", "TARJETA_DEBITO", "TARJETA_CREDITO", "CUENTA_BANCARIA", "BILLETERA_DIGITAL")
+        autoTipo.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, tipos))
+
+        if (mpExistente != null) {
+            autoTipo.setText(mpExistente.tipo, false)
+            etNombre.setText(mpExistente.nombre)
+            etUltimos4.setText(mpExistente.ultimos4)
+            swPredeterminado.isChecked = mpExistente.esPredeterminado
+
+            if (mpExistente.id != "efectivo_default") {
+                btnEliminar.visibility = View.VISIBLE
+            }
+        } else {
+            autoTipo.setText("TARJETA_DEBITO", false)
+        }
+
+        fun updateUI() {
+            val isEfectivo = autoTipo.text.toString() == "EFECTIVO"
+            tilUltimos4.visibility = if (isEfectivo) View.GONE else View.VISIBLE
+            tvAdvertencia.visibility = if (isEfectivo) View.GONE else View.VISIBLE
+            if (isEfectivo) etUltimos4.setText("")
+        }
+
+        autoTipo.setOnItemClickListener { _, _, _, _ -> updateUI() }
+        updateUI()
+
+        btnCancelar.setOnClickListener { dialog.dismiss() }
+
+        btnGuardar.setOnClickListener {
+            val nombre = etNombre.text.toString().trim()
+            val tipo = autoTipo.text.toString()
+            val ultimos4 = etUltimos4.text.toString().trim()
+            val esPred = swPredeterminado.isChecked
+
+            if (nombre.isBlank()) {
+                Toast.makeText(mContext, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val uid = firebaseAuth.uid
+            val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+
+            val mp = mpExistente ?: com.example.mylittlefinancontrol.Modelos.MetodoPago(
+                id = java.util.UUID.randomUUID().toString()
+            )
+            mp.nombre = nombre
+            mp.tipo = tipo
+            mp.ultimos4 = ultimos4
+            mp.esPredeterminado = esPred
+
+            db.insertarOActualizarMetodoPago(mp)
+
+            if (uid != null) {
+                FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
+                    .child(mp.id).setValue(mp)
+            }
+
+            cargarMetodosPago()
+            dialog.dismiss()
+        }
+
+        btnEliminar.setOnClickListener {
+            if (mpExistente != null && mpExistente.id != "efectivo_default") {
+                val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+                db.eliminarMetodoPago(mpExistente.id)
+                val uid = firebaseAuth.uid
+                if (uid != null) {
+                    FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
+                        .child(mpExistente.id).removeValue()
+                }
+                cargarMetodosPago()
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
 
     private fun configurarWorkManager(frecuencia: String) {

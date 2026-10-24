@@ -36,7 +36,6 @@ import com.example.mylittlefinancontrol.databinding.DialogAgregarGastoFijoBindin
 import com.example.mylittlefinancontrol.databinding.DialogControlAnualGastoBinding
 import com.example.mylittlefinancontrol.databinding.FragmentGastosFijosBinding
 import com.example.mylittlefinancontrol.databinding.ItemMesControlAnualBinding
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import java.text.NumberFormat
 import java.util.*
@@ -234,49 +233,25 @@ class FragmentGastosFijos : Fragment() {
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        var categoriaSeleccionada = "Telecom"
+        // Categoría Dinámica con ExposedDropdownMenu
+        val listaCategoriasGf = db.obtenerCategoriasPorModulo("GASTO_FIJO")
+        val catAdapterGf = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, listaCategoriasGf)
+        dialogBinding.autoCategoriaGastoFijo.setAdapter(catAdapterGf)
 
-        // Helper para pintar la selección de las 6 tarjetas de categorías
-        fun actualizarSeleccionCategoria(categoria: String) {
-            categoriaSeleccionada = categoria
+        val catInicialGf = gastoExistente?.categoria ?: if (listaCategoriasGf.isNotEmpty()) listaCategoriasGf.first() else "Otros"
+        dialogBinding.autoCategoriaGastoFijo.setText(catInicialGf, false)
 
-            val colorSelectedBg = ContextCompat.getColor(mContext, R.color.surface_container_low)
-            val colorUnselectedBg = ContextCompat.getColor(mContext, R.color.surface_bg)
-            val colorSelectedStroke = ContextCompat.getColor(mContext, R.color.primary_emerald)
-            val colorUnselectedStroke = ContextCompat.getColor(mContext, R.color.outline_variant)
-            val colorSelectedText = ContextCompat.getColor(mContext, R.color.primary_emerald)
-            val colorUnselectedText = ContextCompat.getColor(mContext, R.color.text_secondary)
-
-            fun configurarTarjeta(
-                card: MaterialCardView,
-                iv: ImageView,
-                tv: TextView,
-                nombre: String
-            ) {
-                val esActiva = categoria.equals(nombre, ignoreCase = true)
-                card.setCardBackgroundColor(if (esActiva) colorSelectedBg else colorUnselectedBg)
-                card.strokeColor = if (esActiva) colorSelectedStroke else colorUnselectedStroke
-                card.strokeWidth = if (esActiva) (1.5 * resources.displayMetrics.density).toInt() else (1 * resources.displayMetrics.density).toInt()
-                iv.imageTintList = ColorStateList.valueOf(if (esActiva) colorSelectedText else colorUnselectedText)
-                tv.setTextColor(if (esActiva) colorSelectedText else colorUnselectedText)
-                tv.setTypeface(null, if (esActiva) Typeface.BOLD else Typeface.NORMAL)
+        dialogBinding.autoCategoriaGastoFijo.setOnItemClickListener { _, _, position, _ ->
+            val seleccion = catAdapterGf.getItem(position) ?: ""
+            if (seleccion == "Otra...") {
+                dialogBinding.tilNuevaCategoriaGastoFijo.visibility = View.VISIBLE
+                dialogBinding.etNuevaCategoriaGastoFijo.setText("")
+                dialogBinding.etNuevaCategoriaGastoFijo.requestFocus()
+            } else {
+                dialogBinding.tilNuevaCategoriaGastoFijo.visibility = View.GONE
+                dialogBinding.tilNuevaCategoriaGastoFijo.error = null
             }
-
-            configurarTarjeta(dialogBinding.cardCatTelecom, dialogBinding.ivCatTelecom, dialogBinding.tvCatTelecom, "Telecom")
-            configurarTarjeta(dialogBinding.cardCatVivienda, dialogBinding.ivCatVivienda, dialogBinding.tvCatVivienda, "Vivienda")
-            configurarTarjeta(dialogBinding.cardCatServicios, dialogBinding.ivCatServicios, dialogBinding.tvCatServicios, "Servicios")
-            configurarTarjeta(dialogBinding.cardCatEducacion, dialogBinding.ivCatEducacion, dialogBinding.tvCatEducacion, "Educación")
-            configurarTarjeta(dialogBinding.cardCatStreaming, dialogBinding.ivCatStreaming, dialogBinding.tvCatStreaming, "Streaming")
-            configurarTarjeta(dialogBinding.cardCatOtros, dialogBinding.ivCatOtros, dialogBinding.tvCatOtros, "Otros")
         }
-
-        // Listeners de tarjetas de categoría
-        dialogBinding.cardCatTelecom.setOnClickListener { actualizarSeleccionCategoria("Telecom") }
-        dialogBinding.cardCatVivienda.setOnClickListener { actualizarSeleccionCategoria("Vivienda") }
-        dialogBinding.cardCatServicios.setOnClickListener { actualizarSeleccionCategoria("Servicios") }
-        dialogBinding.cardCatEducacion.setOnClickListener { actualizarSeleccionCategoria("Educación") }
-        dialogBinding.cardCatStreaming.setOnClickListener { actualizarSeleccionCategoria("Streaming") }
-        dialogBinding.cardCatOtros.setOnClickListener { actualizarSeleccionCategoria("Otros") }
 
         // Opciones desplegables
         val periodos = arrayOf("Mensual", "Quincenal (Q1/Q2)", "Bimestral", "Anual")
@@ -309,10 +284,9 @@ class FragmentGastosFijos : Fragment() {
             dialogBinding.autoDiaPago.setText(diaMatch, false)
 
             dialogBinding.swRecordatorio.isChecked = gastoExistente.recordatorio
-            actualizarSeleccionCategoria(gastoExistente.categoria)
+            dialogBinding.autoCategoriaGastoFijo.setText(gastoExistente.categoria, false)
         } else {
             dialogBinding.swRecordatorio.isChecked = true
-            actualizarSeleccionCategoria("Telecom")
         }
 
         dialogBinding.btnCerrar.setOnClickListener { dialog.dismiss() }
@@ -323,30 +297,64 @@ class FragmentGastosFijos : Fragment() {
             val rawMonto = dialogBinding.etMonto.text.toString()
             val monto = Constantes.limpiarYParsearMonto(rawMonto)
 
+            val catSel = dialogBinding.autoCategoriaGastoFijo.text.toString().trim()
+            var categoriaFinal = catSel
+
+            if (catSel == "Otra...") {
+                val nuevaCatInput = dialogBinding.etNuevaCategoriaGastoFijo.text.toString().trim()
+                if (nuevaCatInput.isBlank()) {
+                    dialogBinding.tilNuevaCategoriaGastoFijo.error = "Escribe el nombre de la nueva categoría"
+                    return@setOnClickListener
+                }
+                if (nuevaCatInput.equals("Otra...", ignoreCase = true)) {
+                    dialogBinding.tilNuevaCategoriaGastoFijo.error = "Nombre de categoría inválido"
+                    return@setOnClickListener
+                }
+                dialogBinding.tilNuevaCategoriaGastoFijo.error = null
+                db.insertarCategoria(nuevaCatInput, "GASTO_FIJO")
+                categoriaFinal = nuevaCatInput.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            } else if (catSel.isBlank()) {
+                categoriaFinal = "Otros"
+            }
+
             val rawDiaPago = dialogBinding.autoDiaPago.text.toString().trim()
             // Extraer el número del día (ej. "Día 05 de cada mes" -> "05")
             val diaPago = Regex("\\d+").find(rawDiaPago)?.value ?: rawDiaPago.ifEmpty { "05" }
 
             val rawPeriodo = dialogBinding.autoPeriodo.text.toString().trim()
             val periodo = if (rawPeriodo.contains("Quincenal", true)) "Quincenal" else rawPeriodo.ifEmpty { "Mensual" }
-            val categoria = categoriaSeleccionada
             val recordatorio = dialogBinding.swRecordatorio.isChecked
 
             if (concepto.isNotEmpty() && monto > 0) {
                 if (gastoExistente == null) {
-                    db.insertGastoFijo(GastoFijo("", concepto, categoria, monto, diaPago, periodo, recordatorio = recordatorio))
+                    db.insertGastoFijo(GastoFijo("", concepto, categoriaFinal, monto, diaPago, periodo, recordatorio = recordatorio))
+                    programarVerificacionGastoFijoWorker(mContext)
+                    cargarGastosFijos()
+                    
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(mContext)
+                        .setTitle("¡Guardado con éxito!")
+                        .setMessage("¿Quieres agregar otro gasto fijo?")
+                        .setPositiveButton("Sí, agregar otro") { _, _ ->
+                            dialogBinding.etConcepto.setText("")
+                            dialogBinding.etMonto.setText("")
+                            dialogBinding.etConcepto.requestFocus()
+                        }
+                        .setNegativeButton("No, terminar") { _, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
                 } else {
                     gastoExistente.concepto = concepto
                     gastoExistente.monto = monto
                     gastoExistente.diaPago = diaPago
-                    gastoExistente.categoria = categoria
+                    gastoExistente.categoria = categoriaFinal
                     gastoExistente.periodo = periodo
                     gastoExistente.recordatorio = recordatorio
                     db.updateGastoFijo(gastoExistente)
+                    programarVerificacionGastoFijoWorker(mContext)
+                    cargarGastosFijos()
+                    dialog.dismiss()
                 }
-                programarVerificacionGastoFijoWorker(mContext)
-                cargarGastosFijos()
-                dialog.dismiss()
             } else {
                 Toast.makeText(mContext, "Por favor complete el concepto y un monto válido", Toast.LENGTH_SHORT).show()
             }
@@ -446,9 +454,11 @@ class FragmentGastosFijos : Fragment() {
     }
 
     private fun mostrarDialogoControlAnual(gasto: GastoFijo) {
-        val bottomSheetDialog = BottomSheetDialog(mContext, R.style.BottomSheetDialogTheme)
+        val bottomSheetDialog = android.app.Dialog(mContext)
         val dialogBinding = DialogControlAnualGastoBinding.inflate(layoutInflater)
         bottomSheetDialog.setContentView(dialogBinding.root)
+        bottomSheetDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        bottomSheetDialog.window?.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
 
         val calActual = Calendar.getInstance()
         val anioActual = calActual.get(Calendar.YEAR)
@@ -496,20 +506,14 @@ class FragmentGastosFijos : Fragment() {
                 idCoincide && fechaEfectiva.startsWith(mesClave)
             }
 
-            var q1Pagada = movsEncontrados.any { it.quincenaPagada == 1 }
-            var q2Pagada = movsEncontrados.any { it.quincenaPagada == 2 }
+            var q1Pagada = movsEncontrados.any { it.quincenaPagada == 1 } || db.esPagoManualControlAnual(gasto.id, mesClave, 1)
+            var q2Pagada = movsEncontrados.any { it.quincenaPagada == 2 } || db.esPagoManualControlAnual(gasto.id, mesClave, 2)
 
             if (!esQuincenal) {
-                if (movsEncontrados.isNotEmpty()) {
+                if (movsEncontrados.isNotEmpty() || db.esPagoManualControlAnual(gasto.id, mesClave, 0) || db.esPagoManualControlAnual(gasto.id, mesClave, 1)) {
                     q1Pagada = true
                 } else if (gasto.ultimoPagoQ1.startsWith(mesClave)) {
-                    val tieneMovsEnOtrosMeses = todosMovimientos.any { mov ->
-                        (mov.gastoFijoId == gfIdInt && gfIdInt != -1) ||
-                                (mov.descripcion.contains(gasto.concepto, ignoreCase = true) && mov.tipo_reg.contains("GASTO", true))
-                    }
-                    if (!tieneMovsEnOtrosMeses) {
-                        q1Pagada = true
-                    }
+                    q1Pagada = true
                 }
             } else {
                 if (!q1Pagada && gasto.ultimoPagoQ1.startsWith(mesClave)) {
@@ -592,6 +596,9 @@ class FragmentGastosFijos : Fragment() {
                             .setMessage("¿Deseas desmarcar este mes y volver a colocarlo como PENDIENTE?")
                             .setPositiveButton("Desmarcar") { _, _ ->
                                 val mesClave = String.format(Locale.US, "%04d-%02d", anioActual, item.numeroMes)
+                                db.marcarPagoManualControlAnual(gasto.id, mesClave, 0, false)
+                                db.marcarPagoManualControlAnual(gasto.id, mesClave, 1, false)
+                                db.marcarPagoManualControlAnual(gasto.id, mesClave, 2, false)
                                 if (gasto.ultimoPagoQ1.startsWith(mesClave)) gasto.ultimoPagoQ1 = ""
                                 if (gasto.ultimoPagoQ2.startsWith(mesClave)) gasto.ultimoPagoQ2 = ""
                                 db.updateGastoFijo(gasto)
@@ -634,6 +641,7 @@ class FragmentGastosFijos : Fragment() {
                             val montoAAnadir = if (esQuincenal) gasto.monto else montoMensualTotal
                             val quincenaAAnadir = if (esQuincenal) (if (item.cuotasPagadas == 0) 1 else 2) else 0
 
+                            db.marcarPagoManualControlAnual(gasto.id, mesClave, quincenaAAnadir, true)
                             if (quincenaAAnadir == 1 || !esQuincenal) {
                                 gasto.ultimoPagoQ1 = mesClave
                             }
