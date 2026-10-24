@@ -85,6 +85,10 @@ class FragmentPerfil : Fragment() {
         binding.btnActualizar.setOnClickListener {
             startActivity(Intent(mContext, EditarInformacion::class.java))
         }
+
+        binding.btnBuscarActualizaciones.setOnClickListener {
+            com.example.mylittlefinancontrol.Servicios.AppUpdateHelper.verificarActualizacion(mContext, esManual = true)
+        }
     }
 
     private fun setupDemoDataUI() {

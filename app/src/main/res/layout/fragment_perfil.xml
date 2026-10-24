@@ -701,6 +701,22 @@
                 app:iconTint="@android:color/white" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_buscar_actualizaciones"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:text="Buscar actualizaciones"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/surface_container"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_download"
+                app:iconGravity="textStart"
+                app:iconTint="@color/primary_emerald" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="match_parent"

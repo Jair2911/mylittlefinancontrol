@@ -55,6 +55,9 @@ class MainActivity : AppCompatActivity() {
         // Carga inicial: Inicio
         verFragmentoInicio()
 
+        // Verificar actualizaciones de la app en segundo plano
+        com.example.mylittlefinancontrol.Servicios.AppUpdateHelper.verificarActualizacion(this, esManual = false)
+
         // Clic en el avatar circular o cabecera izquierda -> Ir a Inicio
         binding.llHeaderUsuario.setOnClickListener { verFragmentoInicio() }
         binding.flAvatarHeader.setOnClickListener { verFragmentoInicio() }
