@@ -263,12 +263,6 @@ class MainActivity : AppCompatActivity() {
     private fun solicitarPermisosSmsYNotificaciones() {
         val permisos = mutableListOf<String>()
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permisos.add(Manifest.permission.RECEIVE_SMS)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permisos.add(Manifest.permission.READ_SMS)
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 permisos.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -278,11 +272,7 @@ class MainActivity : AppCompatActivity() {
         if (permisos.isNotEmpty()) {
             val requestLauncher = registerForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
-            ) { result ->
-                if (result[Manifest.permission.RECEIVE_SMS] == true) {
-                    Toast.makeText(this, "Detección de SMS bancarios activada", Toast.LENGTH_SHORT).show()
-                }
-            }
+            ) { _ -> }
             requestLauncher.launch(permisos.toTypedArray())
         }
     }

@@ -89,6 +89,12 @@ class FragmentPerfil : Fragment() {
         binding.btnBuscarActualizaciones.setOnClickListener {
             com.example.mylittlefinancontrol.Servicios.AppUpdateHelper.verificarActualizacion(mContext, esManual = true)
         }
+        
+        binding.btnActivarNotificaciones.setOnClickListener {
+            val intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(mContext, "Por favor, autoriza a DABAFINN para leer las notificaciones.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun setupDemoDataUI() {
