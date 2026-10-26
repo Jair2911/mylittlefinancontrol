@@ -65,3 +65,5 @@ Thumbs.db
 .artifacts/
 google-services.json
 app/google-services.json
+secrets_para_github.txt
+keystore.properties

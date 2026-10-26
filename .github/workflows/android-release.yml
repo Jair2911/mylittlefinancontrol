@@ -1,0 +1,121 @@
+name: Android Release CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'app/build.gradle.kts' # Solo se ejecuta cuando hay cambios en el archivo que contiene versionCode/versionName
+  workflow_dispatch: # Permite ejecución manual desde la web
+
+jobs:
+  build-and-release:
+    name: Build, Release & Update Firebase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout del Código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necesario para leer todo el historial de commits
+
+      - name: ⚙️ Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🏷️ Extraer Version Name y Version Code
+        id: extract_version
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          VERSION_CODE=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts)
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Detectada versión v$VERSION_NAME (Código $VERSION_CODE)"
+
+      - name: 🔍 Verificar si la versión ya fue publicada
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ env.VERSION_NAME }}$"; then
+            echo "El Tag v${{ env.VERSION_NAME }} ya existe. Saltando publicación."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "El Tag v${{ env.VERSION_NAME }} NO existe. Procediendo..."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🔐 Decodificar Secretos (Keystore y Google Services)
+        if: steps.check_tag.outputs.skip == 'false'
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.jks
+          if [ -n "${{ secrets.GOOGLE_SERVICES_BASE64 }}" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 --decode > app/google-services.json
+          fi
+
+      - name: 🏗️ Compilar APK (Release)
+        if: steps.check_tag.outputs.skip == 'false'
+        env:
+          KEYSTORE_FILE: "release.jks" # Ruta relativa dentro del directorio app donde corre Gradle
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: ./gradlew assembleRelease
+
+      - name: 📦 Renombrar APK
+        if: steps.check_tag.outputs.skip == 'false'
+        run: |
+          mv app/build/outputs/apk/release/app-release.apk DABAFINN-v${{ env.VERSION_NAME }}.apk
+
+      - name: 📝 Extraer Novedades (Últimos commits)
+        if: steps.check_tag.outputs.skip == 'false'
+        id: changelog
+        run: |
+          # Obtener commits desde el último tag hasta HEAD
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            LOGS=$(git log -n 5 --pretty=format:"• %s")
+          else
+            LOGS=$(git log ${LAST_TAG}..HEAD --pretty=format:"• %s")
+          fi
+          
+          # Escapar saltos de línea para JSON y Markdown
+          LOGS_ESCAPED=$(echo "$LOGS" | awk '{printf "%s\\n", $0}' | sed 's/"/\\"/g')
+          
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$LOGS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          echo "CHANGELOG_JSON=$LOGS_ESCAPED" >> $GITHUB_ENV
+
+      - name: 🚀 Crear GitHub Release
+        if: steps.check_tag.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION_NAME }}
+          name: DABAFINN v${{ env.VERSION_NAME }}
+          body: |
+            ## Novedades de esta versión:
+            ${{ env.CHANGELOG }}
+          files: DABAFINN-v${{ env.VERSION_NAME }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ☁️ Actualizar In-App Updater en Firebase
+        if: steps.check_tag.outputs.skip == 'false'
+        env:
+          FIREBASE_URL: ${{ secrets.FIREBASE_RTDB_URL }}
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_RTDB_SECRET }}
+        run: |
+          curl -X PATCH -d '{
+            "versionCode": '${{ env.VERSION_CODE }}',
+            "versionName": "${{ env.VERSION_NAME }}",
+            "novedades": "${{ env.CHANGELOG_JSON }}",
+            "obligatoria": false,
+            "urlApk": "https://github.com/${{ github.repository }}/releases/download/v${{ env.VERSION_NAME }}/DABAFINN-v${{ env.VERSION_NAME }}.apk"
+          }' "$FIREBASE_URL/configuracion_app/actualizacion.json?auth=$FIREBASE_SECRET"

@@ -14,7 +14,13 @@ android {
     if (localPropertiesFile.exists()) {
         localProperties.load(localPropertiesFile.inputStream())
     }
-    val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+    val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: System.getenv("GEMINI_API_KEY") ?: ""
+
+    val keystoreProperties = Properties()
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(keystorePropertiesFile.inputStream())
+    }
 
     defaultConfig {
         applicationId = "com.example.mylittlefinancontrol"
@@ -27,10 +33,19 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"${geminiApiKey}\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: keystoreProperties.getProperty("storeFile") ?: "release.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword") ?: ""
+            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias") ?: ""
+            keyPassword = System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword") ?: ""
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
