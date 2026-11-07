@@ -73,7 +73,7 @@ class FragmentPerfil : Fragment() {
         }
 
         binding.btnAyudaPerfil.setOnClickListener {
-            Toast.makeText(mContext, "MyLittleFinanControl v2.4 - Centro de Ayuda", Toast.LENGTH_SHORT).show()
+            mostrarDialogoCentroAyuda()
         }
 
         binding.btnLogout.setOnClickListener {
@@ -89,12 +89,71 @@ class FragmentPerfil : Fragment() {
         binding.btnBuscarActualizaciones.setOnClickListener {
             com.example.mylittlefinancontrol.Servicios.AppUpdateHelper.verificarActualizacion(mContext, esManual = true)
         }
-        
-        binding.btnActivarNotificaciones.setOnClickListener {
-            val intent = Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            startActivity(intent)
-            Toast.makeText(mContext, "Por favor, autoriza a DABAFINN para leer las notificaciones.", Toast.LENGTH_LONG).show()
+    }
+
+    private fun mostrarDialogoCentroAyuda() {
+        val dialogView = LayoutInflater.from(mContext).inflate(
+            com.example.mylittlefinancontrol.R.layout.dialog_centro_ayuda,
+            null
+        )
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(
+            mContext,
+            com.example.mylittlefinancontrol.R.style.BottomSheetDialogTheme
+        )
+        dialog.setContentView(dialogView)
+
+        val tvVersion = dialogView.findViewById<android.widget.TextView>(
+            com.example.mylittlefinancontrol.R.id.tv_version_app_ayuda
+        )
+        val btnCerrar = dialogView.findViewById<android.view.View>(
+            com.example.mylittlefinancontrol.R.id.btn_cerrar_ayuda
+        )
+        val btnEntendido = dialogView.findViewById<android.view.View>(
+            com.example.mylittlefinancontrol.R.id.btn_entendido_ayuda
+        )
+        val btnConfigurarNotif = dialogView.findViewById<com.google.android.material.button.MaterialButton>(
+            com.example.mylittlefinancontrol.R.id.btn_configurar_notif_ayuda
+        )
+
+        // Obtener versión real desde PackageManager / BuildConfig
+        val (versionName, versionCode) = try {
+            val pInfo = mContext.packageManager.getPackageInfo(mContext.packageName, 0)
+            val vName = pInfo.versionName ?: com.example.mylittlefinancontrol.BuildConfig.VERSION_NAME
+            val vCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                pInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+            vName to vCode
+        } catch (_: Exception) {
+            com.example.mylittlefinancontrol.BuildConfig.VERSION_NAME to com.example.mylittlefinancontrol.BuildConfig.VERSION_CODE.toLong()
         }
+
+        tvVersion?.text = "DABAFINN v$versionName (Build $versionCode)"
+
+        // Mostrar estado real del permiso de lectura de notificaciones
+        val enabledListeners = android.provider.Settings.Secure.getString(
+            mContext.contentResolver,
+            "enabled_notification_listeners"
+        )
+        val permisoNotifActivo = !enabledListeners.isNullOrBlank() && enabledListeners.contains(mContext.packageName)
+
+        btnConfigurarNotif?.text = if (permisoNotifActivo) {
+            "Permiso de lectura bancaria: Activo (Configurar)"
+        } else {
+            "Conceder permiso de lectura bancaria"
+        }
+
+        btnConfigurarNotif?.setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+
+        btnCerrar?.setOnClickListener { dialog.dismiss() }
+        btnEntendido?.setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
     }
 
     private fun setupDemoDataUI() {

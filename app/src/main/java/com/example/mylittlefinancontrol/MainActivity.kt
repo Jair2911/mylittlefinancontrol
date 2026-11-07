@@ -272,8 +272,41 @@ class MainActivity : AppCompatActivity() {
         if (permisos.isNotEmpty()) {
             val requestLauncher = registerForActivityResult(
                 ActivityResultContracts.RequestMultiplePermissions()
-            ) { _ -> }
+            ) { _ ->
+                verificarPermisoLecturaNotificaciones()
+            }
             requestLauncher.launch(permisos.toTypedArray())
+        } else {
+            verificarPermisoLecturaNotificaciones()
+        }
+    }
+
+    private fun tienePermisoLecturaNotificaciones(): Boolean {
+        val enabledListeners = android.provider.Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners"
+        )
+        return !enabledListeners.isNullOrBlank() && enabledListeners.contains(packageName)
+    }
+
+    private fun verificarPermisoLecturaNotificaciones() {
+        if (!tienePermisoLecturaNotificaciones()) {
+            val sp = getSharedPreferences("PermisosPrefs", Context.MODE_PRIVATE)
+            val yaSolicitadoEnSesion = sp.getBoolean("NotifListenerPrompted", false)
+            if (!yaSolicitadoEnSesion) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Automatización de Gastos")
+                    .setMessage("Permite que DABAFINN lea automáticamente las notificaciones de tus bancos para registrar tus gastos sin que tengas que escribirlos (100% offline y privado).")
+                    .setPositiveButton("Conceder Permiso") { _, _ ->
+                        sp.edit().putBoolean("NotifListenerPrompted", true).apply()
+                        startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        Toast.makeText(this, "Autoriza a DABAFINN en la lista de aplicaciones.", Toast.LENGTH_LONG).show()
+                    }
+                    .setNegativeButton("Más tarde") { _, _ ->
+                        sp.edit().putBoolean("NotifListenerPrompted", true).apply()
+                    }
+                    .show()
+            }
         }
     }
 

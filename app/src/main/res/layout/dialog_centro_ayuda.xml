@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="12dp"
+    app:cardBackgroundColor="@color/surface_card"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:strokeColor="@color/border_subtle"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp">
+
+        <!-- Drag Handle -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="5dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/badge_round_pill"
+            android:backgroundTint="@color/outline_variant" />
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp">
+
+            <FrameLayout
+                android:id="@+id/fl_icono_ayuda"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/badge_round_pill"
+                android:backgroundTint="@color/ghost_bg">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_help"
+                    app:tint="@color/primary_emerald" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:layout_toStartOf="@+id/btn_cerrar_ayuda"
+                android:layout_toEndOf="@id/fl_icono_ayuda"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Centro de Ayuda y Legal"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_version_app_ayuda"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="DABAFINN v1.3.1 (Código 4)"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btn_cerrar_ayuda"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Cerrar"
+                android:src="@drawable/ic_close"
+                app:tint="@color/text_secondary" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/border_subtle" />
+
+        <!-- Contenido Scrollable -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="460dp"
+            android:clipToPadding="false"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="16dp"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- SECCIÓN 1: GUÍA RÁPIDA Y FUNCIONALIDADES -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="1. CÓMO USAR DABAFINN Y SUS MÓDULOS"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface_bg"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/border_subtle"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingExtra="3dp"
+                            android:text="• Inicio (Dashboard): Visualiza tu balance neto en tiempo real, resumen quincenal/mensual de ingresos y gastos, desglose por categorías y acceso al Asesor Financiero IA.\n\n• Movimientos: Registra ingresos y gastos tocando el botón (+). Puedes adjuntar o escanear facturas con la cámara, asignar categorías, método de pago y filtrar por quincena o mes.\n\n• Gastos Fijos: Administra tus pagos recurrentes (arriendo, servicios, suscripciones) con periodicidad mensual o quincenal. Registra pagos con un toque y lleva el control anual.\n\n• Metas de Ahorro: Crea objetivos financieros con monto meta y fecha límite. Realiza abonos parciales que se descuentan y registran automáticamente en tus movimientos.\n\n• Control de Deudas: Registra tarjetas de crédito o préstamos (con cálculo de interés y cuotas). Abona cuotas para actualizar el saldo pendiente en tiempo real.\n\n• Mi Perfil y Métodos de Pago: Configura tus tarjetas o cuentas (usando solo los últimos 4 dígitos por seguridad), activa el Modo Oscuro y gestiona tus copias de seguridad en Google Drive."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- SECCIÓN 2: PERMISOS REQUERIDOS Y JUSTIFICACIÓN -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="2. PERMISOS REQUERIDOS Y SU PROPÓSITO"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface_bg"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/border_subtle"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingExtra="3dp"
+                            android:text="• Acceso a Notificaciones (NotificationListenerService): Permite detectar notificaciones transaccionales de aplicaciones bancarias (compras, transferencias o retiros) para registrar tus gastos automáticamente. El procesamiento se realiza 100% en tu dispositivo (offline), sin enviar el contenido de tus notificaciones a servidores externos.\n\n• Enviar Notificaciones (POST_NOTIFICATIONS): Requerido en Android 13+ para enviarte alertas y recordatorios oportunos sobre el vencimiento de tus Gastos Fijos y confirmaciones de registro automático.\n\n• Cámara (CAMERA): Utilizado exclusivamente cuando decides tomar una foto de un recibo o factura para escanear su valor automáticamente (OCR en el dispositivo) al crear un movimiento.\n\n• Lectura de SMS (RECEIVE_SMS / READ_SMS - Opcional): Permite identificar alertas de texto bancarias para sugerir o automatizar el registro de movimientos locales.\n\n• Internet y Estado de Red (INTERNET / ACCESS_NETWORK_STATE): Necesario para autenticar tu cuenta con Firebase, sincronizar tu copia de seguridad encriptada en tu propia cuenta de Google Drive (carpeta privada AppData), consultar el Asesor IA bajo demanda y verificar actualizaciones de la app.\n\n• Instalar Paquetes (REQUEST_INSTALL_PACKAGES): Se emplea únicamente cuando el usuario autoriza descargar e instalar una nueva versión oficial desde el actualizador integrado."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_configurar_notif_ayuda"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="10dp"
+                            android:text="Revisar permiso de lectura bancaria"
+                            android:textAllCaps="false"
+                            android:textColor="@color/primary_emerald"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@color/ghost_bg"
+                            app:cornerRadius="10dp"
+                            app:icon="@drawable/ic_notification"
+                            app:iconGravity="textStart"
+                            app:iconSize="16dp"
+                            app:iconTint="@color/primary_emerald" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- SECCIÓN 3: PRIVACIDAD Y SEGURIDAD DE DATOS -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="3. POLÍTICA DE PRIVACIDAD Y TRATAMIENTO DE DATOS"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="@color/surface_bg"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/border_subtle"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingExtra="3dp"
+                            android:text="• Almacenamiento Local Primero (Offline-First): Todos tus movimientos, deudas, ahorros y gastos fijos se almacenan localmente en una base de datos SQLite privada dentro de tu teléfono.\n\n• Copias de Seguridad en Google Drive: Si activas el respaldo en la nube, el archivo de base de datos se guarda exclusivamente en el espacio privado de tu cuenta personal de Google Drive (scope drive.appdata), al cual ningún tercero tiene acceso.\n\n• Protección Financiera: DABAFINN nunca solicita claves bancarias, números completos de tarjetas ni códigos CVV. En Métodos de Pago solo se admiten los últimos 4 dígitos con fines identificativos.\n\n• Eliminación y Control: Puedes eliminar tus registros locales en cualquier momento o desvincular tu cuenta de Google Drive desde este Perfil."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- SECCIÓN 4: TÉRMINOS Y CONDICIONES -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="4. TÉRMINOS Y CONDICIONES DE USO"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    app:cardBackgroundColor="@color/surface_bg"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/border_subtle"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:lineSpacingExtra="3dp"
+                            android:text="• Propósito Informativo: DABAFINN (MyLittleFinanControl) es una herramienta de organización y control de finanzas personales. Los análisis, proyecciones y sugerencias del Asesor IA son estrictamente orientativos y no constituyen asesoría financiera, contable ni legal certificada.\n\n• Responsabilidad del Usuario: El usuario es responsable de verificar la exactitud de los registros contables ingresados manual o automáticamente y de mantener activa su copia de seguridad en Google Drive para prevenir pérdidas de información ante cambio o extravío del dispositivo.\n\n• Aceptación: El uso continuo de la aplicación implica la aceptación de estas políticas de privacidad y términos de uso."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- Botón Entendido -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_entendido_ayuda"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="Entendido"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/primary_emerald"
+            app:cornerRadius="14dp" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
