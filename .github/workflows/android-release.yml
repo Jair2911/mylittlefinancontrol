@@ -57,6 +57,10 @@ jobs:
             echo "${{ secrets.GOOGLE_SERVICES_BASE64 }}" | base64 --decode > app/google-services.json
           fi
 
+      - name: 🔑 Dar permisos de ejecución a gradlew
+        if: steps.check_tag.outputs.skip == 'false'
+        run: chmod +x gradlew
+
       - name: 🏗️ Compilar APK (Release)
         if: steps.check_tag.outputs.skip == 'false'
         env:
