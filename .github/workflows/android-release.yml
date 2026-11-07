@@ -7,12 +7,15 @@ on:
       - master
     paths:
       - 'app/build.gradle.kts' # Solo se ejecuta cuando hay cambios en el archivo que contiene versionCode/versionName
+      - '.github/workflows/android-release.yml'
   workflow_dispatch: # Permite ejecución manual desde la web
 
 jobs:
   build-and-release:
     name: Build, Release & Update Firebase
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 📥 Checkout del Código
@@ -21,7 +24,7 @@ jobs:
           fetch-depth: 0 # Necesario para leer todo el historial de commits
 
       - name: ⚙️ Configurar JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
