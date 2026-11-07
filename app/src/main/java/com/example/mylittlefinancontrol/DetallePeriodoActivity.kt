@@ -365,7 +365,7 @@ class DetallePeriodoActivity : AppCompatActivity() {
             pdfDocument.close()
             fos.close()
 
-            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
+            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "application/pdf"
                 putExtra(Intent.EXTRA_STREAM, uri)
@@ -399,7 +399,7 @@ class DetallePeriodoActivity : AppCompatActivity() {
             fos.write(csvBuilder.toString().toByteArray())
             fos.close()
 
-            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
+            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/csv"
                 putExtra(Intent.EXTRA_STREAM, uri)

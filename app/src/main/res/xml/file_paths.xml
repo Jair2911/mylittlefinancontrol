@@ -3,4 +3,5 @@
     <cache-path name="my_cache" path="." />
     <external-path name="external_files" path="." />
     <external-files-path name="apk_updates" path="Download/" />
+    <external-files-path name="reports" path="." />
 </paths>
