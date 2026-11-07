@@ -1,25 +1,66 @@
 package com.example.mylittlefinancontrol.Fragmentos
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Toast
-import android.content.SharedPreferences
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.work.*
+import com.example.mylittlefinancontrol.BuildConfig
 import com.example.mylittlefinancontrol.Constantes
 import com.example.mylittlefinancontrol.EditarInformacion
+import com.example.mylittlefinancontrol.MainActivity
+import com.example.mylittlefinancontrol.Modelos.MetodoPago
+import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.OpcionesLoginActivity
-import com.example.mylittlefinancontrol.Servicios.*
-import com.example.mylittlefinancontrol.databinding.FragmentPerfilBinding
+import com.example.mylittlefinancontrol.R
+import com.example.mylittlefinancontrol.Servicios.AppUpdateHelper
+import com.example.mylittlefinancontrol.Servicios.BackupManager
+import com.example.mylittlefinancontrol.Servicios.BackupWorker
+import com.example.mylittlefinancontrol.Servicios.DemoDataHelper
+import com.example.mylittlefinancontrol.Servicios.GoogleDriveService
+import com.example.mylittlefinancontrol.ui.theme.DabaTheme
+import com.example.mylittlefinancontrol.ui.theme.MyLittleFinanControlTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.api.services.drive.DriveScopes
 import com.google.firebase.auth.FirebaseAuth
@@ -27,499 +68,108 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class FragmentPerfil : Fragment() {
 
-    private lateinit var binding: FragmentPerfilBinding
-    private lateinit var mContext: Context
-    private lateinit var firebaseAuth: FirebaseAuth
-    private lateinit var backupPrefs: SharedPreferences
-    private var pendingAction: String? = null
-
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.Main + job)
-
-    override fun onAttach(context: Context) {
-        mContext = context
-        super.onAttach(context)
-    }
-
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentPerfilBinding.inflate(layoutInflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        firebaseAuth = FirebaseAuth.getInstance()
-        backupPrefs = mContext.getSharedPreferences("BackupPrefs", Context.MODE_PRIVATE)
-        
-        cargarInformacion()
-        configurarTema()
-        setupBackupUI()
-        setupDemoDataUI()
-        setupMetodosPagoUI()
-
-        binding.btnVolverPerfil.setOnClickListener {
-            (activity as? com.example.mylittlefinancontrol.MainActivity)?.verFragmentoInicio() ?: activity?.onBackPressedDispatcher?.onBackPressed()
-        }
-
-        binding.btnAyudaPerfil.setOnClickListener {
-            mostrarDialogoCentroAyuda()
-        }
-
-        binding.btnLogout.setOnClickListener {
-            firebaseAuth.signOut()
-            startActivity(Intent(mContext, OpcionesLoginActivity::class.java))
-            activity?.finishAffinity()
-        }
-
-        binding.btnActualizar.setOnClickListener {
-            startActivity(Intent(mContext, EditarInformacion::class.java))
-        }
-
-        binding.btnBuscarActualizaciones.setOnClickListener {
-            com.example.mylittlefinancontrol.Servicios.AppUpdateHelper.verificarActualizacion(mContext, esManual = true)
-        }
-    }
-
-    private fun mostrarDialogoCentroAyuda() {
-        val dialogView = LayoutInflater.from(mContext).inflate(
-            com.example.mylittlefinancontrol.R.layout.dialog_centro_ayuda,
-            null
-        )
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(
-            mContext,
-            com.example.mylittlefinancontrol.R.style.BottomSheetDialogTheme
-        )
-        dialog.setContentView(dialogView)
-
-        val tvVersion = dialogView.findViewById<android.widget.TextView>(
-            com.example.mylittlefinancontrol.R.id.tv_version_app_ayuda
-        )
-        val btnCerrar = dialogView.findViewById<android.view.View>(
-            com.example.mylittlefinancontrol.R.id.btn_cerrar_ayuda
-        )
-        val btnEntendido = dialogView.findViewById<android.view.View>(
-            com.example.mylittlefinancontrol.R.id.btn_entendido_ayuda
-        )
-        val btnConfigurarNotif = dialogView.findViewById<com.google.android.material.button.MaterialButton>(
-            com.example.mylittlefinancontrol.R.id.btn_configurar_notif_ayuda
-        )
-
-        // Obtener versión real desde PackageManager / BuildConfig
-        val (versionName, versionCode) = try {
-            val pInfo = mContext.packageManager.getPackageInfo(mContext.packageName, 0)
-            val vName = pInfo.versionName ?: com.example.mylittlefinancontrol.BuildConfig.VERSION_NAME
-            val vCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                pInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                pInfo.versionCode.toLong()
+    ): View {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                MyLittleFinanControlTheme {
+                    PerfilStatefulScreen(
+                        onBack = {
+                            (activity as? MainActivity)?.verFragmentoInicio()
+                                ?: activity?.onBackPressedDispatcher?.onBackPressed()
+                        }
+                    )
+                }
             }
-            vName to vCode
-        } catch (_: Exception) {
-            com.example.mylittlefinancontrol.BuildConfig.VERSION_NAME to com.example.mylittlefinancontrol.BuildConfig.VERSION_CODE.toLong()
-        }
-
-        tvVersion?.text = "DABAFINN v$versionName (Build $versionCode)"
-
-        // Mostrar estado real del permiso de lectura de notificaciones
-        val enabledListeners = android.provider.Settings.Secure.getString(
-            mContext.contentResolver,
-            "enabled_notification_listeners"
-        )
-        val permisoNotifActivo = !enabledListeners.isNullOrBlank() && enabledListeners.contains(mContext.packageName)
-
-        btnConfigurarNotif?.text = if (permisoNotifActivo) {
-            "Permiso de lectura bancaria: Activo (Configurar)"
-        } else {
-            "Conceder permiso de lectura bancaria"
-        }
-
-        btnConfigurarNotif?.setOnClickListener {
-            dialog.dismiss()
-            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
-
-        btnCerrar?.setOnClickListener { dialog.dismiss() }
-        btnEntendido?.setOnClickListener { dialog.dismiss() }
-
-        dialog.show()
-    }
-
-    private fun setupDemoDataUI() {
-        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
-
-        validarVisibilidadDatosPrueba()
-
-        binding.btnCargarDemo.setOnClickListener {
-            AlertDialog.Builder(mContext)
-                .setTitle("Cargar Datos de Demostración")
-                .setMessage("¿Deseas poblar todos los módulos con datos de prueba realistas (Movimientos, Gastos Fijos, Deudas y Metas de Ahorro)?")
-                .setPositiveButton("Cargar Datos") { _, _ ->
-                    scope.launch(Dispatchers.IO) {
-                        DemoDataHelper.cargarDatosPrueba(mContext, db)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(mContext, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
-                            validarVisibilidadDatosPrueba()
-                        }
-                    }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        }
-
-        binding.btnLimpiarDemo.setOnClickListener {
-            AlertDialog.Builder(mContext)
-                .setTitle("Limpiar Base de Datos")
-                .setMessage("¿Estás seguro de vaciar todos los registros para comenzar con una base de datos limpia?")
-                .setPositiveButton("Limpiar Todo") { _, _ ->
-                    scope.launch(Dispatchers.IO) {
-                        DemoDataHelper.limpiarTodosLosDatos(mContext, db)
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(mContext, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
-                            validarVisibilidadDatosPrueba()
-                        }
-                    }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
         }
     }
+}
 
-    /**
-     * Valida de forma asíncrona si el usuario ya cuenta con registros reales en SQLite
-     * y tiene una copia de seguridad configurada en Google Drive.
-     * Si ambas condiciones se cumplen, oculta por completo la tarjeta de "Datos de Demostración".
-     */
-    private fun validarVisibilidadDatosPrueba() {
-        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+@Composable
+fun PerfilStatefulScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val db = remember { NotasDatabaseHelper.getInstance(context) }
+    val firebaseAuth = remember { FirebaseAuth.getInstance() }
+    val backupPrefs = remember { context.getSharedPreferences("BackupPrefs", Context.MODE_PRIVATE) }
+    val temaPrefs = remember { context.getSharedPreferences("TemaPrefs", Context.MODE_PRIVATE) }
+    val scope = rememberCoroutineScope()
 
+    var nombres by remember { mutableStateOf("Usuario") }
+    var email by remember { mutableStateOf("correo@ejemplo.com") }
+    var proveedor by remember { mutableStateOf("Google") }
+    var miembroDesde by remember { mutableStateOf("Miembro activo") }
+    var iniciales by remember { mutableStateOf("JR") }
+
+    var esTemaOscuro by remember { mutableStateOf(temaPrefs.getBoolean("EsTemaOscuro", false)) }
+    var metodosPago by remember { mutableStateOf<List<MetodoPago>>(emptyList()) }
+    var googleAccount by remember { mutableStateOf<String?>(null) }
+    var lastBackupTexto by remember { mutableStateOf("Última copia: Nunca") }
+    var frecuenciaBackup by remember { mutableStateOf(backupPrefs.getString("Frecuencia", "Desactivado") ?: "Desactivado") }
+    var mostrarCardDemo by remember { mutableStateOf(true) }
+
+    var isBusyProgress by remember { mutableStateOf<String?>(null) }
+    var pendingDriveAction by remember { mutableStateOf<String?>(null) }
+
+    var showDialogAyuda by remember { mutableStateOf(false) }
+    var showDialogMetodoPago by remember { mutableStateOf(false) }
+    var metodoEnEdicion by remember { mutableStateOf<MetodoPago?>(null) }
+    var showConfirmCargarDemo by remember { mutableStateOf(false) }
+    var showConfirmLimpiarDemo by remember { mutableStateOf(false) }
+    var showConfirmRestore by remember { mutableStateOf(false) }
+
+    fun validarVisibilidadDatosPrueba() {
         scope.launch {
             val debeOcultar = withContext(Dispatchers.IO) {
                 val tieneDatosReales = db.tieneDatosReales()
-
-                val account = backupPrefs.getString("GoogleAccount", null)
+                val acc = backupPrefs.getString("GoogleAccount", null)
                 val lastBackupTime = backupPrefs.getLong("LastBackupTime", 0L)
-                val frecuencia = backupPrefs.getString("Frecuencia", "Desactivado")
-
-                val cuentaVinculada = !account.isNullOrBlank() && account != "null"
+                val frec = backupPrefs.getString("Frecuencia", "Desactivado")
+                val cuentaVinculada = !acc.isNullOrBlank() && acc != "null"
                 val tieneCopiaConfigurada = cuentaVinculada &&
-                    (lastBackupTime > 0L || (!frecuencia.isNullOrBlank() && frecuencia != "Desactivado"))
-
+                    (lastBackupTime > 0L || (!frec.isNullOrBlank() && frec != "Desactivado"))
                 tieneDatosReales && tieneCopiaConfigurada
             }
-
-            if (isAdded) {
-                binding.cardDemoData.visibility = if (debeOcultar) View.GONE else View.VISIBLE
-            }
+            mostrarCardDemo = !debeOcultar
         }
     }
 
-    private fun setupBackupUI() {
-        actualizarEstadoBackup()
-
-        // Selector de Frecuencia
-        val opciones = arrayOf("Desactivado", "Diario", "Semanal", "Mensual")
-        val adapter = ArrayAdapter(mContext, android.R.layout.simple_list_item_1, opciones)
-        binding.autoFrecuenciaBackup.setAdapter(adapter)
-        
-        val frecActual = backupPrefs.getString("Frecuencia", "Desactivado")
-        binding.autoFrecuenciaBackup.setText(frecActual, false)
-
-        binding.autoFrecuenciaBackup.setOnItemClickListener { _, _, position, _ ->
-            val seleccion = opciones[position]
-            backupPrefs.edit().putString("Frecuencia", seleccion).apply()
-            configurarWorkManager(seleccion)
-            validarVisibilidadDatosPrueba()
-        }
-
-        binding.btnGoogleAuth.setOnClickListener {
-            if (backupPrefs.getString("GoogleAccount", null) == null) {
-                iniciarVinculacionGoogle()
-            } else {
-                desvincularGoogle()
-            }
-        }
-
-        binding.btnBackupNow.setOnClickListener {
-            val account = backupPrefs.getString("GoogleAccount", null)
-            if (account != null) {
-                forzarRespaldoManual()
-            } else {
-                pendingAction = "BACKUP"
-                Toast.makeText(mContext, "Iniciando vinculación con Google Drive...", Toast.LENGTH_SHORT).show()
-                iniciarVinculacionGoogle()
-            }
-        }
-
-        binding.btnRestore.setOnClickListener {
-            val account = backupPrefs.getString("GoogleAccount", null)
-            if (account != null) {
-                confirmarRestauracion()
-            } else {
-                pendingAction = "RESTORE"
-                Toast.makeText(mContext, "Iniciando vinculación con Google Drive para restaurar...", Toast.LENGTH_SHORT).show()
-                iniciarVinculacionGoogle()
-            }
-        }
-    }
-
-    private fun actualizarEstadoBackup() {
+    fun actualizarEstadoBackup() {
         var account = backupPrefs.getString("GoogleAccount", null)
-        if (account.isNullOrBlank() || account == "null") {
-            account = null
-        }
+        if (account.isNullOrBlank() || account == "null") account = null
 
-        // Si no se ha guardado explícitamente pero hay sesión activa de Google con permisos de Drive, autodetectar
         if (account == null) {
-            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
+            val lastAccount = GoogleSignIn.getLastSignedInAccount(context)
             val driveScope = Scope(DriveScopes.DRIVE_APPDATA)
             if (lastAccount != null && GoogleSignIn.hasPermissions(lastAccount, driveScope)) {
-                val email = lastAccount.email ?: lastAccount.account?.name
-                if (!email.isNullOrBlank() && email != "null") {
-                    account = email
+                val mail = lastAccount.email ?: lastAccount.account?.name
+                if (!mail.isNullOrBlank() && mail != "null") {
+                    account = mail
                     backupPrefs.edit().putString("GoogleAccount", account).apply()
                 }
             }
         }
-
-        val lastTime = backupPrefs.getLong("LastBackupTime", 0)
-
-        if (!account.isNullOrBlank()) {
-            binding.tvGoogleAccount.text = "Vinculado como: $account"
-            binding.btnGoogleAuth.text = "Desvincular"
-        } else {
-            val userEmail = firebaseAuth.currentUser?.email
-            if (!userEmail.isNullOrBlank()) {
-                binding.tvGoogleAccount.text = "Cuenta: $userEmail (Drive no vinculado)"
-            } else {
-                binding.tvGoogleAccount.text = "Cuenta: No vinculada"
-            }
-            binding.btnGoogleAuth.text = "Vincular Drive"
-        }
-
-        // MANTENER SIEMPRE LOS BOTONES ACTIVOS PARA QUE EL USUARIO PUEDA PULSARLOS
-        binding.btnBackupNow.isEnabled = true
-        binding.btnRestore.isEnabled = true
-
-        if (lastTime > 0) {
-            binding.tvLastBackup.text = "Última copia: ${Constantes.formatoFecha(lastTime)}"
-        } else {
-            binding.tvLastBackup.text = "Última copia: Nunca"
-        }
-
+        googleAccount = account
+        val lastTime = backupPrefs.getLong("LastBackupTime", 0L)
+        lastBackupTexto = if (lastTime > 0) "Última copia: ${Constantes.formatoFecha(lastTime)}" else "Última copia: Nunca"
         validarVisibilidadDatosPrueba()
     }
 
-    private fun iniciarVinculacionGoogle() {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
-            .build()
-        
-        val client = GoogleSignIn.getClient(requireActivity(), gso)
-        client.signOut().addOnCompleteListener {
-            startActivityForResult(client.signInIntent, 1001)
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 1001) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            try {
-                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
-                val email = account?.email ?: account?.account?.name
-                if (!email.isNullOrBlank() && email != "null") {
-                    backupPrefs.edit().putString("GoogleAccount", email).apply()
-                    Toast.makeText(mContext, "Cuenta de Drive vinculada: $email", Toast.LENGTH_SHORT).show()
-                    actualizarEstadoBackup()
-
-                    val action = pendingAction
-                    pendingAction = null
-                    if (action == "RESTORE") {
-                        confirmarRestauracion()
-                    } else if (action == "BACKUP") {
-                        forzarRespaldoManual()
-                    }
-                } else {
-                    pendingAction = null
-                    Toast.makeText(mContext, "No se pudo obtener el correo de la cuenta de Google", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                pendingAction = null
-                Toast.makeText(mContext, "Error al vincular Drive: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun desvincularGoogle() {
-        backupPrefs.edit().remove("GoogleAccount").apply()
-        actualizarEstadoBackup()
-        WorkManager.getInstance(mContext).cancelUniqueWork("AutoBackup")
-        Toast.makeText(mContext, "Cuenta desvinculada", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun forzarRespaldoManual() {
-        var accountName = backupPrefs.getString("GoogleAccount", null)
-        if (accountName.isNullOrBlank() || accountName == "null") {
-            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
-            val email = lastAccount?.email ?: lastAccount?.account?.name
-            if (!email.isNullOrBlank() && email != "null") {
-                accountName = email
-                backupPrefs.edit().putString("GoogleAccount", accountName).apply()
-            }
-        }
-
-        if (accountName.isNullOrBlank() || accountName == "null") {
-            pendingAction = "BACKUP"
-            iniciarVinculacionGoogle()
-            return
-        }
-        
-        binding.btnBackupNow.isEnabled = false
-        
-        val progressDialog = android.app.ProgressDialog(mContext)
-        progressDialog.setTitle("Respaldando...")
-        progressDialog.setMessage("Subiendo datos a Google Drive, por favor espera.")
-        progressDialog.setCanceledOnTouchOutside(false)
-        progressDialog.show()
-
-        scope.launch(Dispatchers.IO) {
-            try {
-                val driveService = GoogleDriveService(mContext, accountName)
-                val backupManager = BackupManager(mContext)
-                val dbFile = backupManager.getDatabaseFile()
-
-                if (dbFile != null) {
-                    val fileId = driveService.uploadFile(dbFile, "finanzas_backup.db")
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        if (fileId != null) {
-                            backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
-                            actualizarEstadoBackup()
-                            Toast.makeText(mContext, "Respaldo exitoso en Google Drive", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(mContext, "Error al subir archivo a Drive", Toast.LENGTH_SHORT).show()
-                        }
-                        binding.btnBackupNow.isEnabled = true
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        Toast.makeText(mContext, "No hay base de datos local para respaldar", Toast.LENGTH_SHORT).show()
-                        binding.btnBackupNow.isEnabled = true
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    Toast.makeText(mContext, "Error en respaldo: ${e.message}", Toast.LENGTH_LONG).show()
-                    binding.btnBackupNow.isEnabled = true
-                }
-            }
-        }
-    }
-
-    private fun confirmarRestauracion() {
-        AlertDialog.Builder(mContext)
-            .setTitle("Restaurar Datos desde la Nube")
-            .setMessage("¿Estás seguro? Se reemplazarán todos los datos actuales de la app con la copia de seguridad guardada en tu Google Drive. La app se reiniciará.")
-            .setPositiveButton("Restaurar") { _, _ -> ejecutarRestauracion() }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun ejecutarRestauracion() {
-        var accountName = backupPrefs.getString("GoogleAccount", null)
-        if (accountName.isNullOrBlank() || accountName == "null") {
-            val lastAccount = GoogleSignIn.getLastSignedInAccount(mContext)
-            val email = lastAccount?.email ?: lastAccount?.account?.name
-            if (!email.isNullOrBlank() && email != "null") {
-                accountName = email
-                backupPrefs.edit().putString("GoogleAccount", accountName).apply()
-            }
-        }
-
-        if (accountName.isNullOrBlank() || accountName == "null") {
-            pendingAction = "RESTORE"
-            iniciarVinculacionGoogle()
-            return
-        }
-        
-        val progressDialog = android.app.ProgressDialog(mContext)
-        progressDialog.setTitle("Restaurando...")
-        progressDialog.setMessage("Descargando datos desde Google Drive, por favor espera.")
-        progressDialog.setCanceledOnTouchOutside(false)
-        progressDialog.show()
-
-        scope.launch(Dispatchers.IO) {
-            try {
-                val driveService = GoogleDriveService(mContext, accountName)
-                val backupManager = BackupManager(mContext)
-                
-                val tempFile = File(mContext.cacheDir, "temp_restore.db")
-                val success = driveService.downloadFile("finanzas_backup.db", tempFile)
-
-                if (success) {
-                    val restored = backupManager.restoreDatabase(tempFile)
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        if (restored) {
-                            if (backupPrefs.getLong("LastBackupTime", 0L) <= 0L) {
-                                backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
-                            }
-                            validarVisibilidadDatosPrueba()
-                            Toast.makeText(mContext, "¡Restauración completada con éxito! Reiniciando la app...", Toast.LENGTH_LONG).show()
-                            
-                            // Usar Process.killProcess para un reinicio duro forzado sin bloquear la UI principal
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                val intent = mContext.packageManager.getLaunchIntentForPackage(mContext.packageName)
-                                intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                mContext.startActivity(intent)
-                                android.os.Process.killProcess(android.os.Process.myPid())
-                            }, 500)
-                        } else {
-                            Toast.makeText(mContext, "Error al sobreescribir la base de datos local", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        Toast.makeText(mContext, "No se encontró ningún archivo 'finanzas_backup.db' en la cuenta de Google Drive: $accountName", Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    Toast.makeText(mContext, "Error al conectar con Drive: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private fun setupMetodosPagoUI() {
-        binding.btnAgregarMetodoPago.setOnClickListener {
-            mostrarDialogoMetodoPago(null)
-        }
-        cargarMetodosPago()
-    }
-
-    private fun cargarMetodosPago() {
-        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+    fun cargarMetodosPago() {
         val uid = firebaseAuth.uid
-
-        // 1. Descargar desde Firebase y consolidar en SQLite
         if (uid != null) {
             FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -530,172 +180,177 @@ class FragmentPerfil : Fragment() {
                             val tipo = mpSnapshot.child("tipo").getValue(String::class.java) ?: "EFECTIVO"
                             val ultimos4 = mpSnapshot.child("ultimos4").getValue(String::class.java) ?: ""
                             val esPredeterminado = mpSnapshot.child("esPredeterminado").getValue(Boolean::class.java) ?: false
-
-                            val mp = com.example.mylittlefinancontrol.Modelos.MetodoPago(id, nombre, tipo, ultimos4, esPredeterminado)
+                            val mp = MetodoPago(id, nombre, tipo, ultimos4, esPredeterminado)
                             db.insertarOActualizarMetodoPago(mp)
                         }
-                        renderizarMetodosPago(db.obtenerMetodosPago())
+                        metodosPago = db.obtenerMetodosPago()
                     }
                     override fun onCancelled(error: DatabaseError) {
-                        renderizarMetodosPago(db.obtenerMetodosPago())
+                        metodosPago = db.obtenerMetodosPago()
                     }
                 })
         } else {
-            renderizarMetodosPago(db.obtenerMetodosPago())
+            metodosPago = db.obtenerMetodosPago()
         }
     }
 
-    private fun renderizarMetodosPago(lista: List<com.example.mylittlefinancontrol.Modelos.MetodoPago>) {
-        if (!isAdded) return
-        binding.llListaMetodosPago.removeAllViews()
+    fun cargarInformacionUsuario() {
+        val user = firebaseAuth.currentUser
+        val userEmail = user?.email ?: "correo@ejemplo.com"
+        val userName = user?.displayName?.ifBlank { null } ?: userEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
+        val prov = if (user?.providerData?.any { it.providerId.contains("google", true) } == true) "Google" else "Email"
 
-        val inflater = LayoutInflater.from(mContext)
-        for (mp in lista) {
-            val view = inflater.inflate(com.example.mylittlefinancontrol.R.layout.item_categoria_resumen, binding.llListaMetodosPago, false)
+        nombres = userName
+        email = userEmail
+        proveedor = prov
+        miembroDesde = "Miembro activo"
+        val iniFallback = userName.split(" ").filter { it.isNotBlank() }.map { it.first().uppercase() }.take(2).joinToString("")
+        iniciales = iniFallback.ifEmpty { "JR" }
 
-            val tvNombre = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_nombre_categoria)
-            val tvSub = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_conteo_transacciones)
-            val icon = view.findViewById<android.widget.ImageView>(com.example.mylittlefinancontrol.R.id.iv_icono_categoria)
-            val iconContainer = view.findViewById<android.widget.FrameLayout>(com.example.mylittlefinancontrol.R.id.fl_icono_container)
-            val tvMonto = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_monto_categoria)
-            tvMonto?.visibility = View.GONE
-            val tvPorcentaje = view.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_porcentaje_categoria)
-            tvPorcentaje?.visibility = View.GONE
-            val pb = view.findViewById<android.widget.ProgressBar>(com.example.mylittlefinancontrol.R.id.pb_porcentaje_categoria)
-            pb?.visibility = View.GONE
+        val uid = firebaseAuth.uid ?: return
+        FirebaseDatabase.getInstance().getReference("usuarios").child(uid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val nom = snapshot.child("nombres").value?.toString()
+                    val em = snapshot.child("email").value?.toString()
+                    val pr = snapshot.child("proveedor").value?.toString()
+                    var tiempoR = snapshot.child("tiempoR").value?.toString() ?: "0"
+                    if (tiempoR == "null") tiempoR = "0"
+                    val tiempoLong = tiempoR.toLongOrNull() ?: 0L
+                    val fecha = if (tiempoLong > 0) Constantes.formatoFecha(tiempoLong) else "Reciente"
 
-            tvNombre.text = mp.nombreFormateado()
-            tvSub.text = if (mp.esPredeterminado) "Predeterminado" else mp.tipo.replace("_", " ")
-
-            val colorAcento = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.primary_emerald)
-            val bgAcento = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.ghost_bg)
-
-            when {
-                mp.tipo == "EFECTIVO" -> {
-                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_account_balance_wallet)
+                    val nombreFinal = if (!nom.isNullOrBlank() && nom != "null") nom else userName
+                    nombres = nombreFinal
+                    email = if (!em.isNullOrBlank() && em != "null") em else userEmail
+                    proveedor = if (!pr.isNullOrBlank() && pr != "null") pr else prov
+                    miembroDesde = "Miembro desde: $fecha"
+                    val ini = nombreFinal.split(" ").filter { it.isNotBlank() }.map { it.first().uppercase() }.take(2).joinToString("")
+                    iniciales = ini.ifEmpty { "JR" }
                 }
-                mp.tipo.contains("TARJETA") -> {
-                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_credit_card)
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    fun forzarRespaldoManual(accName: String) {
+        isBusyProgress = "Subiendo datos a Google Drive, por favor espera..."
+        scope.launch(Dispatchers.IO) {
+            try {
+                val driveService = GoogleDriveService(context, accName)
+                val backupManager = BackupManager(context)
+                val dbFile = backupManager.getDatabaseFile()
+                if (dbFile != null) {
+                    val fileId = driveService.uploadFile(dbFile, "finanzas_backup.db")
+                    withContext(Dispatchers.Main) {
+                        isBusyProgress = null
+                        if (fileId != null) {
+                            backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
+                            actualizarEstadoBackup()
+                            Toast.makeText(context, "Respaldo exitoso en Google Drive", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Error al subir archivo a Drive", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        isBusyProgress = null
+                        Toast.makeText(context, "No hay base de datos local para respaldar", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                else -> {
-                    icon.setImageResource(com.example.mylittlefinancontrol.R.drawable.ic_payments)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    isBusyProgress = null
+                    Toast.makeText(context, "Error en respaldo: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
+        }
+    }
 
-            if (mp.esPredeterminado) {
-                icon.imageTintList = android.content.res.ColorStateList.valueOf(colorAcento)
-                iconContainer.backgroundTintList = android.content.res.ColorStateList.valueOf(bgAcento)
-                tvSub.setTextColor(colorAcento)
+    fun ejecutarRestauracion(accName: String) {
+        isBusyProgress = "Descargando datos desde Google Drive, por favor espera..."
+        scope.launch(Dispatchers.IO) {
+            try {
+                val driveService = GoogleDriveService(context, accName)
+                val backupManager = BackupManager(context)
+                val tempFile = File(context.cacheDir, "temp_restore.db")
+                val success = driveService.downloadFile("finanzas_backup.db", tempFile)
+                if (success) {
+                    val restored = backupManager.restoreDatabase(tempFile)
+                    withContext(Dispatchers.Main) {
+                        isBusyProgress = null
+                        if (restored) {
+                            if (backupPrefs.getLong("LastBackupTime", 0L) <= 0L) {
+                                backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
+                            }
+                            validarVisibilidadDatosPrueba()
+                            Toast.makeText(context, "¡Restauración completada con éxito! Reiniciando la app...", Toast.LENGTH_LONG).show()
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                                intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                context.startActivity(intent)
+                                android.os.Process.killProcess(android.os.Process.myPid())
+                            }, 500)
+                        } else {
+                            Toast.makeText(context, "Error al sobreescribir la base de datos local", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        isBusyProgress = null
+                        Toast.makeText(context, "No se encontró ningún archivo 'finanzas_backup.db' en Google Drive: $accName", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    isBusyProgress = null
+                    Toast.makeText(context, "Error al conectar con Drive: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val mail = account?.email ?: account?.account?.name
+            if (!mail.isNullOrBlank() && mail != "null") {
+                backupPrefs.edit().putString("GoogleAccount", mail).apply()
+                Toast.makeText(context, "Cuenta de Drive vinculada: $mail", Toast.LENGTH_SHORT).show()
+                actualizarEstadoBackup()
+                val action = pendingDriveAction
+                pendingDriveAction = null
+                if (action == "RESTORE") {
+                    showConfirmRestore = true
+                } else if (action == "BACKUP") {
+                    forzarRespaldoManual(mail)
+                }
             } else {
-                val colorMuted = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.text_secondary)
-                val bgMuted = androidx.core.content.ContextCompat.getColor(mContext, com.example.mylittlefinancontrol.R.color.surface_container_high)
-                icon.imageTintList = android.content.res.ColorStateList.valueOf(colorMuted)
-                iconContainer.backgroundTintList = android.content.res.ColorStateList.valueOf(bgMuted)
-                tvSub.setTextColor(colorMuted)
+                pendingDriveAction = null
+                Toast.makeText(context, "No se pudo obtener el correo de la cuenta de Google", Toast.LENGTH_LONG).show()
             }
-
-            view.setOnClickListener { mostrarDialogoMetodoPago(mp) }
-            binding.llListaMetodosPago.addView(view)
+        } catch (e: Exception) {
+            pendingDriveAction = null
+            Toast.makeText(context, "Error al vincular Drive: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun mostrarDialogoMetodoPago(mpExistente: com.example.mylittlefinancontrol.Modelos.MetodoPago?) {
-        val dialogView = LayoutInflater.from(mContext).inflate(com.example.mylittlefinancontrol.R.layout.dialog_metodo_pago, null)
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(mContext, com.example.mylittlefinancontrol.R.style.BottomSheetDialogTheme)
-        dialog.setContentView(dialogView)
-
-        val autoTipo = dialogView.findViewById<android.widget.AutoCompleteTextView>(com.example.mylittlefinancontrol.R.id.auto_tipo_metodo_pago)
-        val etNombre = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(com.example.mylittlefinancontrol.R.id.et_nombre_metodo)
-        val etUltimos4 = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(com.example.mylittlefinancontrol.R.id.et_ultimos4)
-        val tilUltimos4 = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(com.example.mylittlefinancontrol.R.id.til_ultimos4)
-        val tvAdvertencia = dialogView.findViewById<android.widget.TextView>(com.example.mylittlefinancontrol.R.id.tv_advertencia_seguridad)
-        val swPredeterminado = dialogView.findViewById<com.google.android.material.materialswitch.MaterialSwitch>(com.example.mylittlefinancontrol.R.id.sw_predeterminado)
-        val btnGuardar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_guardar_metodo)
-        val btnCancelar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_cancelar_metodo)
-        val btnEliminar = dialogView.findViewById<android.view.View>(com.example.mylittlefinancontrol.R.id.btn_eliminar_metodo)
-
-        val tipos = arrayOf("EFECTIVO", "TARJETA_DEBITO", "TARJETA_CREDITO", "CUENTA_BANCARIA", "BILLETERA_DIGITAL")
-        autoTipo.setAdapter(ArrayAdapter(mContext, android.R.layout.simple_list_item_1, tipos))
-
-        if (mpExistente != null) {
-            autoTipo.setText(mpExistente.tipo, false)
-            etNombre.setText(mpExistente.nombre)
-            etUltimos4.setText(mpExistente.ultimos4)
-            swPredeterminado.isChecked = mpExistente.esPredeterminado
-
-            if (mpExistente.id != "efectivo_default") {
-                btnEliminar.visibility = View.VISIBLE
-            }
-        } else {
-            autoTipo.setText("TARJETA_DEBITO", false)
+    fun iniciarVinculacionGoogle() {
+        if (activity == null) return
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestScopes(Scope(DriveScopes.DRIVE_APPDATA))
+            .build()
+        val client = GoogleSignIn.getClient(activity, gso)
+        client.signOut().addOnCompleteListener {
+            googleSignInLauncher.launch(client.signInIntent)
         }
-
-        fun updateUI() {
-            val isEfectivo = autoTipo.text.toString() == "EFECTIVO"
-            tilUltimos4.visibility = if (isEfectivo) View.GONE else View.VISIBLE
-            tvAdvertencia.visibility = if (isEfectivo) View.GONE else View.VISIBLE
-            if (isEfectivo) etUltimos4.setText("")
-        }
-
-        autoTipo.setOnItemClickListener { _, _, _, _ -> updateUI() }
-        updateUI()
-
-        btnCancelar.setOnClickListener { dialog.dismiss() }
-
-        btnGuardar.setOnClickListener {
-            val nombre = etNombre.text.toString().trim()
-            val tipo = autoTipo.text.toString()
-            val ultimos4 = etUltimos4.text.toString().trim()
-            val esPred = swPredeterminado.isChecked
-
-            if (nombre.isBlank()) {
-                Toast.makeText(mContext, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val uid = firebaseAuth.uid
-            val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
-
-            val mp = mpExistente ?: com.example.mylittlefinancontrol.Modelos.MetodoPago(
-                id = java.util.UUID.randomUUID().toString()
-            )
-            mp.nombre = nombre
-            mp.tipo = tipo
-            mp.ultimos4 = ultimos4
-            mp.esPredeterminado = esPred
-
-            db.insertarOActualizarMetodoPago(mp)
-
-            if (uid != null) {
-                FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
-                    .child(mp.id).setValue(mp)
-            }
-
-            cargarMetodosPago()
-            dialog.dismiss()
-        }
-
-        btnEliminar.setOnClickListener {
-            if (mpExistente != null && mpExistente.id != "efectivo_default") {
-                val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
-                db.eliminarMetodoPago(mpExistente.id)
-                val uid = firebaseAuth.uid
-                if (uid != null) {
-                    FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
-                        .child(mpExistente.id).removeValue()
-                }
-                cargarMetodosPago()
-                dialog.dismiss()
-            }
-        }
-
-        dialog.show()
     }
 
-    private fun configurarWorkManager(frecuencia: String) {
-        val workManager = WorkManager.getInstance(mContext)
+    fun configurarWorkManager(frecuencia: String) {
+        val workManager = WorkManager.getInstance(context)
         workManager.cancelUniqueWork("AutoBackup")
-
         if (frecuencia == "Desactivado") return
 
         val interval = when (frecuencia) {
@@ -709,7 +364,6 @@ class FragmentPerfil : Fragment() {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        // 1. Programar tarea periódica
         val periodicRequest = PeriodicWorkRequestBuilder<BackupWorker>(interval.first, interval.second)
             .setConstraints(constraints)
             .build()
@@ -720,101 +374,1169 @@ class FragmentPerfil : Fragment() {
             periodicRequest
         )
 
-        // 2. Ejecutar un respaldo inmediato si hay cuenta vinculada
         val currentAcc = backupPrefs.getString("GoogleAccount", null)
         if (!currentAcc.isNullOrBlank() && currentAcc != "null") {
             val immediateRequest = OneTimeWorkRequestBuilder<BackupWorker>()
                 .setConstraints(constraints)
                 .addTag("ImmediateBackup")
                 .build()
-            
             workManager.enqueue(immediateRequest)
-            Toast.makeText(mContext, "Sincronización inicial en curso...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Sincronización inicial en curso...", Toast.LENGTH_SHORT).show()
         }
-        
-        Toast.makeText(mContext, "Respaldo automático: $frecuencia", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Respaldo automático: $frecuencia", Toast.LENGTH_SHORT).show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                cargarInformacionUsuario()
+                actualizarEstadoBackup()
+                cargarMetodosPago()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    private fun configurarTema() {
-        val sp = mContext.getSharedPreferences("TemaPrefs", Context.MODE_PRIVATE)
-        val esOscuro = sp.getBoolean("EsTemaOscuro", false)
+    LaunchedEffect(Unit) {
+        cargarInformacionUsuario()
+        actualizarEstadoBackup()
+        cargarMetodosPago()
+    }
 
-        binding.swTema.isChecked = esOscuro
-
-        binding.swTema.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                sp.edit().putBoolean("EsTemaOscuro", true).apply()
+    PerfilScreen(
+        nombres = nombres,
+        email = email,
+        proveedor = proveedor,
+        miembroDesde = miembroDesde,
+        iniciales = iniciales,
+        esTemaOscuro = esTemaOscuro,
+        metodosPago = metodosPago,
+        googleAccount = googleAccount,
+        lastBackupTexto = lastBackupTexto,
+        frecuenciaBackup = frecuenciaBackup,
+        mostrarCardDemo = mostrarCardDemo,
+        onBack = onBack,
+        onOpenAyuda = { showDialogAyuda = true },
+        onToggleTemaOscuro = { isDark ->
+            esTemaOscuro = isDark
+            temaPrefs.edit().putBoolean("EsTemaOscuro", isDark).apply()
+            AppCompatDelegate.setDefaultNightMode(
+                if (isDark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            )
+        },
+        onAgregarMetodoPago = {
+            metodoEnEdicion = null
+            showDialogMetodoPago = true
+        },
+        onEditarMetodoPago = { mp ->
+            metodoEnEdicion = mp
+            showDialogMetodoPago = true
+        },
+        onBackupNow = {
+            val acc = googleAccount
+            if (!acc.isNullOrBlank()) {
+                forzarRespaldoManual(acc)
             } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                sp.edit().putBoolean("EsTemaOscuro", false).apply()
+                pendingDriveAction = "BACKUP"
+                Toast.makeText(context, "Iniciando vinculación con Google Drive...", Toast.LENGTH_SHORT).show()
+                iniciarVinculacionGoogle()
+            }
+        },
+        onRestore = {
+            val acc = googleAccount
+            if (!acc.isNullOrBlank()) {
+                showConfirmRestore = true
+            } else {
+                pendingDriveAction = "RESTORE"
+                Toast.makeText(context, "Iniciando vinculación con Google Drive para restaurar...", Toast.LENGTH_SHORT).show()
+                iniciarVinculacionGoogle()
+            }
+        },
+        onChangeFrecuenciaBackup = { seleccion ->
+            frecuenciaBackup = seleccion
+            backupPrefs.edit().putString("Frecuencia", seleccion).apply()
+            configurarWorkManager(seleccion)
+            validarVisibilidadDatosPrueba()
+        },
+        onCargarDemo = { showConfirmCargarDemo = true },
+        onLimpiarDemo = { showConfirmLimpiarDemo = true },
+        onEditarDatos = {
+            context.startActivity(Intent(context, EditarInformacion::class.java))
+        },
+        onBuscarActualizaciones = {
+            AppUpdateHelper.verificarActualizacion(context, esManual = true)
+        },
+        onLogout = {
+            firebaseAuth.signOut()
+            context.startActivity(Intent(context, OpcionesLoginActivity::class.java))
+            activity?.finishAffinity()
+        }
+    )
+
+    isBusyProgress?.let { msg ->
+        Dialog(onDismissRequest = {}) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = DabaTheme.colors.surfaceCard
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        color = DabaTheme.colors.primaryEmerald,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(text = msg, color = DabaTheme.colors.textPrimary, fontSize = 13.sp)
+                }
             }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        cargarInformacion()
-        actualizarEstadoBackup()
+    if (showConfirmRestore) {
+        AlertDialog(
+            onDismissRequest = { showConfirmRestore = false },
+            title = { Text("Restaurar Datos desde la Nube", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Estás seguro? Se reemplazarán todos los datos actuales de la app con la copia de seguridad guardada en tu Google Drive. La app se reiniciará.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmRestore = false
+                        val acc = googleAccount
+                        if (!acc.isNullOrBlank()) {
+                            ejecutarRestauracion(acc)
+                        }
+                    }
+                ) {
+                    Text("Restaurar", color = DabaTheme.colors.primaryEmerald, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmRestore = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
-    private fun cargarInformacion() {
-        val user = firebaseAuth.currentUser
-        val userEmail = user?.email ?: "correo@ejemplo.com"
-        val userName = user?.displayName?.ifBlank { null } ?: userEmail.substringBefore("@").replaceFirstChar { it.uppercase() }
-        val provider = if (user?.providerData?.any { it.providerId.contains("google", true) } == true) "Google" else "Email"
+    if (showConfirmCargarDemo) {
+        AlertDialog(
+            onDismissRequest = { showConfirmCargarDemo = false },
+            title = { Text("Cargar Datos de Demostración", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Deseas poblar todos los módulos con datos de prueba realistas (Movimientos, Gastos Fijos, Deudas y Metas de Ahorro)?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmCargarDemo = false
+                        scope.launch(Dispatchers.IO) {
+                            DemoDataHelper.cargarDatosPrueba(context, db)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
+                                validarVisibilidadDatosPrueba()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Cargar Datos", color = DabaTheme.colors.primaryEmerald, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmCargarDemo = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
-        binding.tvNombres.text = userName
-        binding.tvEmail.text = userEmail
-        binding.tvProveedor.text = provider
-        binding.tvMienbroDesde.text = "Miembro activo"
+    if (showConfirmLimpiarDemo) {
+        AlertDialog(
+            onDismissRequest = { showConfirmLimpiarDemo = false },
+            title = { Text("Limpiar Base de Datos", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Estás seguro de vaciar todos los registros para comenzar con una base de datos limpia?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmLimpiarDemo = false
+                        scope.launch(Dispatchers.IO) {
+                            DemoDataHelper.limpiarTodosLosDatos(context, db)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
+                                validarVisibilidadDatosPrueba()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Limpiar Todo", color = DabaTheme.colors.expenseRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmLimpiarDemo = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
-        val inicialesFallback = userName
-            .split(" ")
-            .filter { it.isNotBlank() }
-            .map { it.first().uppercase() }
-            .take(2)
-            .joinToString("")
-        binding.tvAvatarIniciales.text = if (inicialesFallback.isNotEmpty()) inicialesFallback else "JR"
+    if (showDialogMetodoPago) {
+        DialogMetodoPagoCompose(
+            mpExistente = metodoEnEdicion,
+            onDismiss = { showDialogMetodoPago = false },
+            onSave = { mp ->
+                db.insertarOActualizarMetodoPago(mp)
+                val uid = firebaseAuth.uid
+                if (uid != null) {
+                    FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
+                        .child(mp.id).setValue(mp)
+                }
+                cargarMetodosPago()
+                showDialogMetodoPago = false
+            },
+            onDelete = { mp ->
+                if (mp.id != "efectivo_default") {
+                    db.eliminarMetodoPago(mp.id)
+                    val uid = firebaseAuth.uid
+                    if (uid != null) {
+                        FirebaseDatabase.getInstance().getReference("usuarios").child(uid).child("metodos_pago")
+                            .child(mp.id).removeValue()
+                    }
+                    cargarMetodosPago()
+                    showDialogMetodoPago = false
+                }
+            }
+        )
+    }
 
-        val uid = firebaseAuth.uid ?: return
-        val ref = FirebaseDatabase.getInstance().getReference("usuarios")
-        ref.child(uid)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val nombres = snapshot.child("nombres").value?.toString()
-                    val email = snapshot.child("email").value?.toString()
-                    val prov = snapshot.child("proveedor").value?.toString()
-                    var tiempoR = snapshot.child("tiempoR").value?.toString() ?: "0"
+    if (showDialogAyuda) {
+        DialogCentroAyudaCompose(onDismiss = { showDialogAyuda = false })
+    }
+}
 
-                    if (tiempoR == "null") tiempoR = "0"
-                    val tiempoLong = tiempoR.toLongOrNull() ?: 0L
-                    val fecha = if (tiempoLong > 0) Constantes.formatoFecha(tiempoLong) else "Reciente"
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PerfilScreen(
+    nombres: String,
+    email: String,
+    proveedor: String,
+    miembroDesde: String,
+    iniciales: String,
+    esTemaOscuro: Boolean,
+    metodosPago: List<MetodoPago>,
+    googleAccount: String?,
+    lastBackupTexto: String,
+    frecuenciaBackup: String,
+    mostrarCardDemo: Boolean,
+    onBack: () -> Unit,
+    onOpenAyuda: () -> Unit,
+    onToggleTemaOscuro: (Boolean) -> Unit,
+    onAgregarMetodoPago: () -> Unit,
+    onEditarMetodoPago: (MetodoPago) -> Unit,
+    onBackupNow: () -> Unit,
+    onRestore: () -> Unit,
+    onChangeFrecuenciaBackup: (String) -> Unit,
+    onCargarDemo: () -> Unit,
+    onLimpiarDemo: () -> Unit,
+    onEditarDatos: () -> Unit,
+    onBuscarActualizaciones: () -> Unit,
+    onLogout: () -> Unit
+) {
+    val colors = DabaTheme.colors
+    var expandedFrecuencia by remember { mutableStateOf(false) }
+    val opcionesFrecuencia = remember { listOf("Desactivado", "Diario", "Semanal", "Mensual") }
 
-                    val nombreFinal = if (!nombres.isNullOrBlank() && nombres != "null") nombres else userName
-                    val emailFinal = if (!email.isNullOrBlank() && email != "null") email else userEmail
-                    val provFinal = if (!prov.isNullOrBlank() && prov != "null") prov else provider
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.surfaceBg)
+    ) {
+        // Header: Volver + Mi Perfil + Ayuda
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    onClick = onBack,
+                    shape = CircleShape,
+                    color = colors.surfaceCard,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Volver",
+                            tint = colors.textPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Mi Perfil",
+                    color = colors.textPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
-                    binding.tvNombres.text = nombreFinal
-                    binding.tvEmail.text = emailFinal
-                    binding.tvProveedor.text = provFinal
-                    binding.tvMienbroDesde.text = "Miembro desde: $fecha"
+            Surface(
+                onClick = onOpenAyuda,
+                shape = CircleShape,
+                color = colors.surfaceCard,
+                shadowElevation = 1.dp,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_help),
+                        contentDescription = "Ayuda",
+                        tint = colors.textSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
 
-                    val iniciales = nombreFinal
-                        .split(" ")
-                        .filter { it.isNotBlank() }
-                        .map { it.first().uppercase() }
-                        .take(2)
-                        .joinToString("")
-                    binding.tvAvatarIniciales.text = if (iniciales.isNotEmpty()) iniciales else "JR"
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .padding(bottom = 84.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // 1. Tarjeta de Identidad + Modo Oscuro
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = colors.surfaceCard,
+                border = BorderStroke(1.dp, colors.borderSubtle),
+                shadowElevation = 2.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(56.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(colors.primaryEmerald),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = iniciales,
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .align(Alignment.BottomEnd)
+                                    .clip(CircleShape)
+                                    .background(colors.primaryEmerald)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = nombres,
+                                    color = colors.textPrimary,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = colors.surfaceContainerHigh
+                                ) {
+                                    Text(
+                                        text = proveedor,
+                                        color = colors.textSecondary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = email,
+                                color = colors.textSecondary,
+                                fontSize = 12.sp,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = miembroDesde,
+                                color = colors.textMuted,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = colors.surfaceContainer
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.surfaceContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_nightlight),
+                                    contentDescription = null,
+                                    tint = colors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Modo Oscuro",
+                                    color = colors.textPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Apariencia visual de la app",
+                                    color = colors.textSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = esTemaOscuro,
+                            onCheckedChange = onToggleTemaOscuro,
+                            colors = SwitchDefaults.colors(checkedThumbColor = colors.primaryEmerald)
+                        )
+                    }
+                }
+            }
+
+            // 1B. Mis Métodos de Pago
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = colors.surfaceCard,
+                border = BorderStroke(1.dp, colors.borderSubtle),
+                shadowElevation = 2.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "MIS MÉTODOS DE PAGO",
+                        color = colors.textMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    metodosPago.forEach { mp ->
+                        val iconRes = when {
+                            mp.tipo == "EFECTIVO" -> R.drawable.ic_account_balance_wallet
+                            mp.tipo.contains("TARJETA") -> R.drawable.ic_credit_card
+                            else -> R.drawable.ic_payments
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onEditarMetodoPago(mp) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (mp.esPredeterminado) colors.ghostBg else colors.surfaceContainerHigh),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = iconRes),
+                                    contentDescription = null,
+                                    tint = if (mp.esPredeterminado) colors.primaryEmerald else colors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = mp.nombreFormateado(),
+                                    color = colors.textPrimary,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (mp.esPredeterminado) "Predeterminado" else mp.tipo.replace("_", " "),
+                                    color = if (mp.esPredeterminado) colors.primaryEmerald else colors.textSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = onAgregarMetodoPago,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.ghostBg),
+                        border = BorderStroke(1.dp, colors.ghostBorder)
+                    ) {
+                        Text(
+                            text = "+ Agregar método de pago",
+                            color = colors.primaryEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // 2. Copia de Seguridad Google Drive
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = colors.surfaceCard,
+                border = BorderStroke(1.dp, colors.borderSubtle),
+                shadowElevation = 2.dp
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.surfaceContainerLow),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_cloud),
+                                    contentDescription = null,
+                                    tint = colors.primaryEmerald,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Copia de Seguridad",
+                                    color = colors.textPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (!googleAccount.isNullOrBlank()) {
+                                        "Vinculado como: $googleAccount"
+                                    } else {
+                                        "Cuenta: $email (Drive no vinculado)"
+                                    },
+                                    color = colors.primaryEmerald,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = colors.surfaceBg,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = lastBackupTexto,
+                            color = colors.textPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = onBackupNow,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_upload),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Respaldar ahora", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = onRestore,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, colors.borderSubtle)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_download),
+                                contentDescription = null,
+                                tint = colors.textSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Restaurar datos", color = colors.textPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Frecuencia de respaldo automático",
+                        color = colors.textPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    ExposedDropdownMenuBox(
+                        expanded = expandedFrecuencia,
+                        onExpandedChange = { expandedFrecuencia = !expandedFrecuencia }
+                    ) {
+                        OutlinedTextField(
+                            value = frecuenciaBackup,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedFrecuencia) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedFrecuencia,
+                            onDismissRequest = { expandedFrecuencia = false }
+                        ) {
+                            opcionesFrecuencia.forEach { op ->
+                                DropdownMenuItem(
+                                    text = { Text(op) },
+                                    onClick = {
+                                        onChangeFrecuenciaBackup(op)
+                                        expandedFrecuencia = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Datos de Demostración
+            if (mostrarCardDemo) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = colors.surfaceCard,
+                    border = BorderStroke(1.dp, colors.borderSubtle),
+                    shadowElevation = 2.dp
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(colors.surfaceContainerLow),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_autorenew),
+                                    contentDescription = null,
+                                    tint = colors.primaryEmerald,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Datos de Demostración",
+                                    color = colors.textPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Carga ejemplos en todos los módulos o limpia la BD",
+                                    color = colors.textSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Button(
+                                onClick = onCargarDemo,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+                            ) {
+                                Text("Cargar Datos", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            OutlinedButton(
+                                onClick = onLimpiarDemo,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(1.dp, colors.borderSubtle)
+                            ) {
+                                Text("Limpiar BD", color = colors.textSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Botones de Acción Global
+            Button(
+                onClick = onEditarDatos,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_check),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Actualizar Datos", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+
+            Button(
+                onClick = onBuscarActualizaciones,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceContainer)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_download),
+                    contentDescription = null,
+                    tint = colors.primaryEmerald,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Buscar actualizaciones", color = colors.textPrimary, fontWeight = FontWeight.Bold)
+            }
+
+            TextButton(
+                onClick = onLogout,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sign_out),
+                    contentDescription = null,
+                    tint = colors.expenseRed,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cerrar Sesión", color = colors.expenseRed, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DialogMetodoPagoCompose(
+    mpExistente: MetodoPago?,
+    onDismiss: () -> Unit,
+    onSave: (MetodoPago) -> Unit,
+    onDelete: (MetodoPago) -> Unit
+) {
+    val context = LocalContext.current
+    val colors = DabaTheme.colors
+    val tipos = remember { listOf("EFECTIVO", "TARJETA_DEBITO", "TARJETA_CREDITO", "CUENTA_BANCARIA", "BILLETERA_DIGITAL") }
+
+    var tipoSel by remember { mutableStateOf(mpExistente?.tipo ?: "TARJETA_DEBITO") }
+    var expandedTipo by remember { mutableStateOf(false) }
+    var nombre by remember { mutableStateOf(mpExistente?.nombre ?: "") }
+    var ultimos4 by remember { mutableStateOf(mpExistente?.ultimos4 ?: "") }
+    var esPredeterminado by remember { mutableStateOf(mpExistente?.esPredeterminado ?: false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = colors.surfaceCard,
+            border = BorderStroke(1.dp, colors.borderSubtle),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = if (mpExistente != null) "Editar Método de Pago" else "Agregar Método de Pago",
+                    color = colors.textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedTipo,
+                    onExpandedChange = { expandedTipo = !expandedTipo }
+                ) {
+                    OutlinedTextField(
+                        value = tipoSel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de Método") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedTipo,
+                        onDismissRequest = { expandedTipo = false }
+                    ) {
+                        tipos.forEach { t ->
+                            DropdownMenuItem(
+                                text = { Text(t) },
+                                onClick = {
+                                    tipoSel = t
+                                    if (t == "EFECTIVO") ultimos4 = ""
+                                    expandedTipo = false
+                                }
+                            )
+                        }
+                    }
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Entidad (Ej. Bancolombia, Nu, Nequi)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                if (tipoSel != "EFECTIVO") {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = ultimos4,
+                        onValueChange = { if (it.length <= 4) ultimos4 = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Últimos 4 dígitos (Opcional)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Por seguridad y para evitar filtraciones de datos, ingresa SOLO los últimos 4 dígitos.",
+                        color = colors.textMuted,
+                        fontSize = 11.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Usar como método por defecto",
+                        color = colors.textPrimary,
+                        fontSize = 13.sp
+                    )
+                    Switch(
+                        checked = esPredeterminado,
+                        onCheckedChange = { esPredeterminado = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = colors.primaryEmerald)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Cancelar", color = colors.textPrimary)
+                    }
+                    Button(
+                        onClick = {
+                            if (nombre.isBlank()) {
+                                Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            val mp = mpExistente ?: MetodoPago(id = UUID.randomUUID().toString())
+                            mp.nombre = nombre.trim()
+                            mp.tipo = tipoSel
+                            mp.ultimos4 = ultimos4.trim()
+                            mp.esPredeterminado = esPredeterminado
+                            onSave(mp)
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+                    ) {
+                        Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (mpExistente != null && mpExistente.id != "efectivo_default") {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { onDelete(mpExistente) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.expenseRedBg),
+                        border = BorderStroke(1.dp, colors.expenseRed)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_delete),
+                            contentDescription = null,
+                            tint = colors.expenseRed,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Eliminar Método", color = colors.expenseRed, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogCentroAyudaCompose(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val colors = DabaTheme.colors
+
+    val (versionName, versionCode) = remember {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val vName = pInfo.versionName ?: BuildConfig.VERSION_NAME
+            val vCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pInfo.longVersionCode else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+            vName to vCode
+        } catch (_: Exception) {
+            BuildConfig.VERSION_NAME to BuildConfig.VERSION_CODE.toLong()
+        }
+    }
+
+    val enabledListeners = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+    val permisoNotifActivo = !enabledListeners.isNullOrBlank() && enabledListeners.contains(context.packageName)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = colors.surfaceCard,
+            border = BorderStroke(1.dp, colors.borderSubtle),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 620.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Centro de Ayuda y Legal",
+                            color = colors.textPrimary,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "DABAFINN v$versionName (Build $versionCode)",
+                            color = colors.primaryEmerald,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = "Cerrar",
+                            tint = colors.textSecondary
+                        )
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = colors.borderSubtle)
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text("1. CÓMO USAR DABAFINN Y SUS MÓDULOS", color = colors.primaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Surface(shape = RoundedCornerShape(14.dp), color = colors.surfaceBg, border = BorderStroke(1.dp, colors.borderSubtle)) {
+                        Text(
+                            text = "• Inicio (Dashboard): Visualiza tu balance neto en tiempo real, resumen quincenal/mensual de ingresos y gastos, desglose por categorías y acceso al Asesor Financiero IA.\n\n" +
+                                "• Movimientos: Registra ingresos y gastos tocando el botón (+). Puedes adjuntar o escanear facturas con la cámara, asignar categorías, método de pago y filtrar por quincena o mes.\n\n" +
+                                "• Gastos Fijos: Administra tus pagos recurrentes (arriendo, servicios, suscripciones) con periodicidad mensual o quincenal.\n\n" +
+                                "• Metas de Ahorro y Control de Deudas: Registra objetivos financieros, tarjetas o préstamos y realiza abonos en tiempo real.",
+                            color = colors.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+
+                    Text("2. PERMISOS REQUERIDOS Y SU PROPÓSITO", color = colors.primaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Surface(shape = RoundedCornerShape(14.dp), color = colors.surfaceBg, border = BorderStroke(1.dp, colors.borderSubtle)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "• Acceso a Notificaciones: Detecta notificaciones bancarias 100% en tu dispositivo (offline).\n\n" +
+                                    "• Cámara: Escanea facturas mediante OCR local.\n\n" +
+                                    "• Internet: Sincroniza copias de seguridad en tu Google Drive privado y consulta el Asesor IA.",
+                                color = colors.textSecondary,
+                                fontSize = 12.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = {
+                                    onDismiss()
+                                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = colors.ghostBg)
+                            ) {
+                                Text(
+                                    text = if (permisoNotifActivo) "Permiso de lectura bancaria: Activo (Configurar)" else "Conceder permiso de lectura bancaria",
+                                    color = colors.primaryEmerald,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Text("3. PRIVACIDAD Y SEGURIDAD DE DATOS", color = colors.primaryEmerald, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Surface(shape = RoundedCornerShape(14.dp), color = colors.surfaceBg, border = BorderStroke(1.dp, colors.borderSubtle)) {
+                        Text(
+                            text = "• Almacenamiento Local Primero (Offline-First): Todos tus registros se guardan en SQLite dentro de tu teléfono.\n\n" +
+                                "• Protección Financiera: DABAFINN nunca solicita claves bancarias ni números completos de tarjetas.",
+                            color = colors.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+                ) {
+                    Text("Entendido", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PerfilScreenPreview() {
+    MyLittleFinanControlTheme(darkTheme = false) {
+        PerfilScreen(
+            nombres = "Jair",
+            email = "jair@ejemplo.com",
+            proveedor = "Google",
+            miembroDesde = "Miembro desde: 2026",
+            iniciales = "JR",
+            esTemaOscuro = false,
+            metodosPago = listOf(MetodoPago("1", "Efectivo", "EFECTIVO", "", true)),
+            googleAccount = "jair@ejemplo.com",
+            lastBackupTexto = "Última copia: Hoy",
+            frecuenciaBackup = "Diario",
+            mostrarCardDemo = true,
+            onBack = {},
+            onOpenAyuda = {},
+            onToggleTemaOscuro = {},
+            onAgregarMetodoPago = {},
+            onEditarMetodoPago = {},
+            onBackupNow = {},
+            onRestore = {},
+            onChangeFrecuenciaBackup = {},
+            onCargarDemo = {},
+            onLimpiarDemo = {},
+            onEditarDatos = {},
+            onBuscarActualizaciones = {},
+            onLogout = {}
+        )
     }
 }

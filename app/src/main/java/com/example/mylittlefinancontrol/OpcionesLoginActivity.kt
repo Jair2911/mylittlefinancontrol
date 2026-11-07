@@ -1,15 +1,46 @@
 package com.example.mylittlefinancontrol
 
-import android.app.Activity
-import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import com.example.mylittlefinancontrol.databinding.ActivityOpcionesLoginBinding
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.mylittlefinancontrol.ui.theme.DabaTheme
+import com.example.mylittlefinancontrol.ui.theme.MyLittleFinanControlTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -19,22 +50,13 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
 
 class OpcionesLoginActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityOpcionesLoginBinding
     private lateinit var firebaseAuth: FirebaseAuth
-    private lateinit var progressDialog: ProgressDialog
     private lateinit var mGoogleSignInClient: GoogleSignInClient
+    private var isSaving by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Aplicar tema antes de inflar la vista
         aplicarTemaGuardado()
-        
         super.onCreate(savedInstanceState)
-        binding = ActivityOpcionesLoginBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        progressDialog = ProgressDialog(this)
-        progressDialog.setTitle("Espere..")
-        progressDialog.setCanceledOnTouchOutside(false)
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -42,16 +64,21 @@ class OpcionesLoginActivity : AppCompatActivity() {
             .build()
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-
         firebaseAuth = FirebaseAuth.getInstance()
         comprobarSesion()
 
-        binding.btnSignUp.setOnClickListener {
-            startActivity(Intent(applicationContext, LoginEmailActivity::class.java))
-        }
-
-        binding.btnSignIn.setOnClickListener {
-            iniciarConGoogle()
+        setContent {
+            MyLittleFinanControlTheme {
+                OpcionesLoginScreen(
+                    isLoading = isSaving,
+                    onEmailLoginClick = {
+                        startActivity(Intent(applicationContext, LoginEmailActivity::class.java))
+                    },
+                    onGoogleLoginClick = {
+                        iniciarConGoogle()
+                    }
+                )
+            }
         }
     }
 
@@ -114,35 +141,138 @@ class OpcionesLoginActivity : AppCompatActivity() {
     }
 
     private fun actualizarInfoUsuarios() {
-        progressDialog.setMessage("guardando informacion")
-        progressDialog.show()
+        isSaving = true
 
         val uidu = firebaseAuth.uid
         val nombresU = firebaseAuth.currentUser!!.displayName
         val emailsU = firebaseAuth.currentUser!!.email
         val tiempoR = Constantes.obtenerTiempoD()
 
-        val datos_usuario = HashMap<String, Any>()
-        datos_usuario["uid"] = "$uidu"
-        datos_usuario["nombres"] = "$nombresU"
-        datos_usuario["email"] = "$emailsU"
-        datos_usuario["tiempoR"] = "$tiempoR"
-        datos_usuario["proveedor"] = "Google"
-        datos_usuario["estado"] = "Online"
-        datos_usuario["image"] = ""
-        datos_usuario["tutorial"] = false
+        val datosUsuario = HashMap<String, Any>()
+        datosUsuario["uid"] = "$uidu"
+        datosUsuario["nombres"] = "$nombresU"
+        datosUsuario["email"] = "$emailsU"
+        datosUsuario["tiempoR"] = "$tiempoR"
+        datosUsuario["proveedor"] = "Google"
+        datosUsuario["estado"] = "Online"
+        datosUsuario["image"] = ""
+        datosUsuario["tutorial"] = false
 
         val reference = FirebaseDatabase.getInstance().getReference("usuarios")
         reference.child(uidu!!)
-            .setValue(datos_usuario)
+            .setValue(datosUsuario)
             .addOnSuccessListener {
-                progressDialog.dismiss()
+                isSaving = false
                 startActivity(Intent(applicationContext, MainActivity::class.java))
                 finishAffinity()
             }
             .addOnFailureListener { e ->
-                progressDialog.dismiss()
+                isSaving = false
                 Toast.makeText(this, "error al crear cuenta ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+}
+
+@Composable
+fun OpcionesLoginScreen(
+    isLoading: Boolean,
+    onEmailLoginClick: () -> Unit,
+    onGoogleLoginClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = DabaTheme.colors
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.bg_1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.fondo_home),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(top = 36.dp)
+                    .size(width = 414.dp, height = 398.dp)
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = colors.primaryEmerald,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+
+                Button(
+                    onClick = onEmailLoginClick,
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.primaryEmerald,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "INGRESAR CON EMAIL",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = onGoogleLoginClick,
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, colors.primaryEmerald),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = colors.surfaceCard,
+                        contentColor = colors.primaryEmerald
+                    )
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_google),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(id = R.string.btn_sign_in).uppercase(),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun OpcionesLoginScreenPreview() {
+    MyLittleFinanControlTheme(darkTheme = false) {
+        OpcionesLoginScreen(
+            isLoading = false,
+            onEmailLoginClick = {},
+            onGoogleLoginClick = {}
+        )
     }
 }

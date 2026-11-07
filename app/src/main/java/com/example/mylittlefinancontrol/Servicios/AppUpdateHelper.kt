@@ -1,6 +1,5 @@
 package com.example.mylittlefinancontrol.Servicios
 
-import android.app.Dialog
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,13 +9,32 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
-import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.ComponentDialog
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.mylittlefinancontrol.BuildConfig
 import com.example.mylittlefinancontrol.R
-import com.google.android.material.button.MaterialButton
+import com.example.mylittlefinancontrol.ui.theme.DabaTheme
+import com.example.mylittlefinancontrol.ui.theme.MyLittleFinanControlTheme
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -41,7 +59,6 @@ object AppUpdateHelper {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
-                    // Si el nodo no existe en Firebase, crearlo automáticamente
                     val configDefecto = ActualizacionConfig(
                         versionCode = BuildConfig.VERSION_CODE,
                         versionName = BuildConfig.VERSION_NAME,
@@ -92,55 +109,51 @@ object AppUpdateHelper {
         urlApk: String,
         obligatoria: Boolean
     ) {
-        val dialog = Dialog(context)
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_actualizacion_app, null)
-        dialog.setContentView(dialogView)
-
+        val dialog = ComponentDialog(context)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.window?.setLayout(
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        )
         dialog.setCancelable(!obligatoria)
 
-        val tvTitulo = dialogView.findViewById<android.widget.TextView>(R.id.tv_titulo_actualizacion)
-        val tvNovedades = dialogView.findViewById<android.widget.TextView>(R.id.tv_novedades_actualizacion)
-        val btnActualizar = dialogView.findViewById<MaterialButton>(R.id.btn_actualizar_ahora)
-        val btnCancelar = dialogView.findViewById<MaterialButton>(R.id.btn_mas_tarde)
+        val composeView = ComposeView(context).apply {
+            setContent {
+                MyLittleFinanControlTheme {
+                    ModalActualizacionCompose(
+                        versionName = versionName,
+                        novedades = novedades,
+                        obligatoria = obligatoria,
+                        onActualizarAhora = {
+                            if (urlApk.isBlank()) {
+                                Toast.makeText(context, "La URL de descarga de la APK no está disponible aún en Firebase.", Toast.LENGTH_LONG).show()
+                                return@ModalActualizacionCompose
+                            }
 
-        tvTitulo.text = "¡Nueva versión v$versionName disponible!"
-        tvNovedades.text = novedades
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                                Toast.makeText(context, "Por favor autoriza la instalación de aplicaciones desconocidas para actualizar DABAFINN", Toast.LENGTH_LONG).show()
+                                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                                return@ModalActualizacionCompose
+                            }
 
-        if (obligatoria) {
-            btnCancelar.visibility = android.view.View.GONE
-        } else {
-            btnCancelar.setOnClickListener {
-                dialog.dismiss()
-            }
-        }
-
-        btnActualizar.setOnClickListener {
-            if (urlApk.isBlank()) {
-                Toast.makeText(context, "La URL de descarga de la APK no está disponible aún en Firebase.", Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
-                Toast.makeText(context, "Por favor autoriza la instalación de aplicaciones desconocidas para actualizar DABAFINN", Toast.LENGTH_LONG).show()
-                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            descargarEInstalarApk(context, urlApk, versionName)
+                            if (!obligatoria) {
+                                dialog.dismiss()
+                            }
+                        },
+                        onMasTarde = { dialog.dismiss() }
+                    )
                 }
-                context.startActivity(intent)
-                return@setOnClickListener
-            }
-
-            descargarEInstalarApk(context, urlApk, versionName)
-            if (!obligatoria) {
-                dialog.dismiss()
             }
         }
 
+        dialog.setContentView(
+            composeView,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
         dialog.show()
     }
 
@@ -210,6 +223,91 @@ object AppUpdateHelper {
 
         } catch (e: Exception) {
             Toast.makeText(context, "Error al abrir el instalador de APK: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+}
+
+@Composable
+fun ModalActualizacionCompose(
+    versionName: String,
+    novedades: String,
+    obligatoria: Boolean,
+    onActualizarAhora: () -> Unit,
+    onMasTarde: () -> Unit
+) {
+    val colors = DabaTheme.colors
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = colors.surfaceCard,
+        border = BorderStroke(1.dp, colors.borderSubtle),
+        shadowElevation = 8.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(colors.ghostBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_download),
+                    contentDescription = null,
+                    tint = colors.primaryEmerald,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "¡Nueva versión v$versionName disponible!",
+                color = colors.textPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = novedades,
+                color = colors.textSecondary,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = onActualizarAhora,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.primaryEmerald)
+            ) {
+                Text("Actualizar ahora", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+
+            if (!obligatoria) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onMasTarde,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Más tarde", color = colors.textSecondary, fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     }
 }
