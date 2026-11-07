@@ -178,6 +178,8 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             MyLittleFinanControlTheme {
+                var showGeminiAdvisor by remember { mutableStateOf(false) }
+
                 MainHostScreen(
                     currentSection = currentSectionState,
                     userName = userNameState,
@@ -189,7 +191,7 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this, "No tienes notificaciones pendientes", Toast.LENGTH_SHORT).show()
                     },
                     onOpenGeminiAdvisor = {
-                        GeminiAdvisorDialogFragment().show(supportFragmentManager, "GeminiAdvisor")
+                        showGeminiAdvisor = true
                     },
                     onOpenDetallePeriodo = { tipoPeriodo ->
                         val intent = Intent(this, DetallePeriodoActivity::class.java).apply {
@@ -198,6 +200,12 @@ class MainActivity : AppCompatActivity() {
                         startActivity(intent)
                     }
                 )
+
+                if (showGeminiAdvisor) {
+                    GeminiAdvisorBottomSheet(
+                        onDismiss = { showGeminiAdvisor = false }
+                    )
+                }
 
                 if (showNotifPermissionDialog) {
                     val sp = remember { getSharedPreferences("PermisosPrefs", Context.MODE_PRIVATE) }

@@ -4,11 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
 import android.provider.Settings
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,9 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,7 +32,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -46,7 +39,6 @@ import androidx.work.*
 import com.example.mylittlefinancontrol.BuildConfig
 import com.example.mylittlefinancontrol.Constantes
 import com.example.mylittlefinancontrol.EditarInformacion
-import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.Modelos.MetodoPago
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.OpcionesLoginActivity
@@ -74,29 +66,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-
-class FragmentPerfil : Fragment() {
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                MyLittleFinanControlTheme {
-                    PerfilStatefulScreen(
-                        onBack = {
-                            (activity as? MainActivity)?.verFragmentoInicio()
-                                ?: activity?.onBackPressedDispatcher?.onBackPressed()
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun PerfilStatefulScreen(onBack: () -> Unit) {

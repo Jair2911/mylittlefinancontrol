@@ -1,11 +1,5 @@
 package com.example.mylittlefinancontrol.Fragmentos
 
-import android.content.Context
-import android.content.Intent
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,21 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.mylittlefinancontrol.DashboardCache
-import com.example.mylittlefinancontrol.DetallePeriodoActivity
-import com.example.mylittlefinancontrol.GeminiAdvisorDialogFragment
-import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.NotasDatabaseHelper
 import com.example.mylittlefinancontrol.R
 import com.example.mylittlefinancontrol.Modelos.ResumenFinanciero
@@ -47,47 +35,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
 
-class FragmentInicio : Fragment() {
-
-    private lateinit var mContext: Context
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        mContext = context
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                MyLittleFinanControlTheme {
-                    val mainActivity = activity as? MainActivity
-                    InicioStatefulScreen(
-                        onNavigateMovimientos = { mainActivity?.verFragmentoMovimientos() },
-                        onNavigateGastosFijos = { mainActivity?.verFragmentoGastosFijos() },
-                        onNavigateDeudas = { mainActivity?.verFragmentoDeudas() },
-                        onNavigateAhorros = { mainActivity?.verFragmentoAhorros() },
-                        onOpenGeminiAdvisor = {
-                            GeminiAdvisorDialogFragment().show(parentFragmentManager, "GeminiAdvisor")
-                        },
-                        onOpenDetallePeriodo = { tipoPeriodo ->
-                            val intent = Intent(mContext, DetallePeriodoActivity::class.java).apply {
-                                putExtra("TIPO_PERIODO", tipoPeriodo)
-                            }
-                            startActivity(intent)
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    companion object {
-        fun calcularFechasPeriodo(tipo: String): Pair<Pair<String, String>, Pair<String, String>> {
+object FragmentInicio {
+    fun calcularFechasPeriodo(tipo: String): Pair<Pair<String, String>, Pair<String, String>> {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             val cal = Calendar.getInstance()
             val hoy = sdf.format(cal.time)
@@ -143,7 +92,6 @@ class FragmentInicio : Fragment() {
                 }
             }
         }
-    }
 }
 
 @Composable

@@ -6,11 +6,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,9 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,12 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.mylittlefinancontrol.Constantes
-import com.example.mylittlefinancontrol.MainActivity
 import com.example.mylittlefinancontrol.Modelos.Ahorro
 import com.example.mylittlefinancontrol.Modelos.Deuda
 import com.example.mylittlefinancontrol.Modelos.GastoFijo
@@ -77,27 +69,6 @@ import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
-
-class FragmentMovimiento : Fragment() {
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                MyLittleFinanControlTheme {
-                    val mainActivity = activity as? MainActivity
-                    MovimientoStatefulScreen(
-                        onNavigateAhorros = { mainActivity?.verFragmentoAhorros() }
-                    )
-                }
-            }
-        }
-    }
-}
 
 private fun extraerAnioYMes(fechaStr: String): Pair<Int, Int>? {
     if (fechaStr.isBlank()) return null
