@@ -100,6 +100,8 @@ class FragmentPerfil : Fragment() {
     private fun setupDemoDataUI() {
         val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
 
+        validarVisibilidadDatosPrueba()
+
         binding.btnCargarDemo.setOnClickListener {
             AlertDialog.Builder(mContext)
                 .setTitle("Cargar Datos de Demostración")
@@ -109,6 +111,7 @@ class FragmentPerfil : Fragment() {
                         DemoDataHelper.cargarDatosPrueba(mContext, db)
                         withContext(Dispatchers.Main) {
                             Toast.makeText(mContext, "¡Datos de prueba cargados en todos los módulos!", Toast.LENGTH_LONG).show()
+                            validarVisibilidadDatosPrueba()
                         }
                     }
                 }
@@ -125,11 +128,41 @@ class FragmentPerfil : Fragment() {
                         DemoDataHelper.limpiarTodosLosDatos(mContext, db)
                         withContext(Dispatchers.Main) {
                             Toast.makeText(mContext, "Base de datos limpiada correctamente", Toast.LENGTH_SHORT).show()
+                            validarVisibilidadDatosPrueba()
                         }
                     }
                 }
                 .setNegativeButton("Cancelar", null)
                 .show()
+        }
+    }
+
+    /**
+     * Valida de forma asíncrona si el usuario ya cuenta con registros reales en SQLite
+     * y tiene una copia de seguridad configurada en Google Drive.
+     * Si ambas condiciones se cumplen, oculta por completo la tarjeta de "Datos de Demostración".
+     */
+    private fun validarVisibilidadDatosPrueba() {
+        val db = com.example.mylittlefinancontrol.NotasDatabaseHelper.getInstance(mContext)
+
+        scope.launch {
+            val debeOcultar = withContext(Dispatchers.IO) {
+                val tieneDatosReales = db.tieneDatosReales()
+
+                val account = backupPrefs.getString("GoogleAccount", null)
+                val lastBackupTime = backupPrefs.getLong("LastBackupTime", 0L)
+                val frecuencia = backupPrefs.getString("Frecuencia", "Desactivado")
+
+                val cuentaVinculada = !account.isNullOrBlank() && account != "null"
+                val tieneCopiaConfigurada = cuentaVinculada &&
+                    (lastBackupTime > 0L || (!frecuencia.isNullOrBlank() && frecuencia != "Desactivado"))
+
+                tieneDatosReales && tieneCopiaConfigurada
+            }
+
+            if (isAdded) {
+                binding.cardDemoData.visibility = if (debeOcultar) View.GONE else View.VISIBLE
+            }
         }
     }
 
@@ -148,6 +181,7 @@ class FragmentPerfil : Fragment() {
             val seleccion = opciones[position]
             backupPrefs.edit().putString("Frecuencia", seleccion).apply()
             configurarWorkManager(seleccion)
+            validarVisibilidadDatosPrueba()
         }
 
         binding.btnGoogleAuth.setOnClickListener {
@@ -224,6 +258,8 @@ class FragmentPerfil : Fragment() {
         } else {
             binding.tvLastBackup.text = "Última copia: Nunca"
         }
+
+        validarVisibilidadDatosPrueba()
     }
 
     private fun iniciarVinculacionGoogle() {
@@ -381,6 +417,10 @@ class FragmentPerfil : Fragment() {
                     withContext(Dispatchers.Main) {
                         progressDialog.dismiss()
                         if (restored) {
+                            if (backupPrefs.getLong("LastBackupTime", 0L) <= 0L) {
+                                backupPrefs.edit().putLong("LastBackupTime", System.currentTimeMillis()).apply()
+                            }
+                            validarVisibilidadDatosPrueba()
                             Toast.makeText(mContext, "¡Restauración completada con éxito! Reiniciando la app...", Toast.LENGTH_LONG).show()
                             
                             // Usar Process.killProcess para un reinicio duro forzado sin bloquear la UI principal

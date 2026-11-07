@@ -1050,6 +1050,68 @@ class NotasDatabaseHelper private constructor(context: Context) : SQLiteOpenHelp
         }
     }
 
+    /**
+     * Verifica si existen registros reales del usuario en Movimientos, Gastos Fijos, Deudas o Ahorros,
+     * excluyendo los registros precargados por DemoDataHelper.
+     */
+    fun tieneDatosReales(): Boolean {
+        val db = readableDatabase
+
+        val demoMovimientos = listOf(
+            "PAGO NÓMINA QUINCENA",
+            "SUPERMERCADO ÉXITO",
+            "CAFÉ Y MERIENDA JUAN VALDEZ",
+            "PAGO: ARRIENDO APARTAMENTO",
+            "SUPERMERCADO CARULLA EXPRESS",
+            "PAGO: INTERNET FIBRA ÓPTICA",
+            "HONORARIOS PROYECTO FREELANCE",
+            "COMIDA RESTAURANTE ITALIANO",
+            "PAGO DEUDA: TARJETA VISA",
+            "GASOLINA Y TRANSPORTE ESTACIÓN",
+            "PAGO: SERVICIO ENERGÍA Y AGUA",
+            "COMPRA FARMACIA Y SALUD",
+            "PAGO DEUDA: CRÉDITO VEHICULAR",
+            "VENTA ARTÍCULOS Y RETORNO",
+            "PAGO: SUSCRIPCIÓN NETFLIX & SPOTIFY",
+            "SUPERMERCADO D1 DESPENSA"
+        )
+        val demoGastosFijos = listOf(
+            "Arriendo Apartamento",
+            "Internet Fibra Óptica 500MB",
+            "Servicio de Energía y Agua",
+            "Plan Móvil Ilimitado",
+            "Suscripción Netflix & Spotify",
+            "Cuota Especialización"
+        )
+        val demoDeudas = listOf(
+            "Tarjeta Visa Platinum",
+            "Crédito Vehicular Bancolombia",
+            "Préstamo Personal Familiar"
+        )
+        val demoAhorros = listOf(
+            "Fondo de Emergencia",
+            "Viaje Vacaciones Playa",
+            "Renovación Computador"
+        )
+
+        fun placeholders(size: Int) = List(size) { "?" }.joinToString(",")
+
+        val query = """
+            SELECT CASE WHEN
+                EXISTS (SELECT 1 FROM $TABLE_MOVIMIENTO WHERE $COLUMN_MOV_DESC NOT IN (${placeholders(demoMovimientos.size)}) LIMIT 1)
+                OR EXISTS (SELECT 1 FROM $TABLE_GASTOS_FIJOS WHERE $COLUMN_GF_CONCEPTO NOT IN (${placeholders(demoGastosFijos.size)}) LIMIT 1)
+                OR EXISTS (SELECT 1 FROM $TABLE_DEUDAS WHERE $COLUMN_D_CONCEPTO NOT IN (${placeholders(demoDeudas.size)}) LIMIT 1)
+                OR EXISTS (SELECT 1 FROM $TABLE_AHORROS WHERE $COLUMN_A_TITULO NOT IN (${placeholders(demoAhorros.size)}) LIMIT 1)
+            THEN 1 ELSE 0 END
+        """.trimIndent()
+
+        val args = (demoMovimientos + demoGastosFijos + demoDeudas + demoAhorros).toTypedArray()
+
+        return db.rawQuery(query, args).use { cursor ->
+            cursor.moveToFirst() && cursor.getInt(0) == 1
+        }
+    }
+
     // --- TRANSACCIONES ACID ---
 
     fun insertarAbonoDeudaTransaccional(mov: Movimiento, deudaId: String) {
