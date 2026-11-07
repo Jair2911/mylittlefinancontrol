@@ -27,8 +27,8 @@ android {
         applicationId = "com.example.mylittlefinancontrol"
         minSdk = 24
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3.2"
+        versionCode = 6
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "GEMINI_API_KEY", "\"${geminiApiKey}\"")
