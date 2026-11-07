@@ -63,7 +63,7 @@ android {
         }
     }
     buildFeatures {
-        viewBinding = true
+        viewBinding = false
         compose = true
         buildConfig = true
     }
@@ -121,10 +121,7 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     implementation("com.google.android.gms:play-services-auth:21.0.0")
-    implementation("de.hdodenhof:circleimageview:3.1.0")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.google.firebase:firebase-storage")
-    implementation("uk.co.samuelwall:material-tap-target-prompt:3.3.2")
 
     // Google Drive & Backup
     implementation(libs.androidx.work.runtime.ktx)

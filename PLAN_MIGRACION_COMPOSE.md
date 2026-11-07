@@ -76,4 +76,4 @@ Convertir la vista de cada sección principal a pantallas `@Composable`:
 - [x] **Paso 7.1:** Migrar `MainActivity.kt` (`activity_main.xml`) a `setContent` con `Scaffold` (`MainTopHeaderBar` con avatar e iniciales + `MainBottomNavigationBar` de 5 secciones).
 - [x] **Paso 7.2:** Reemplazar transacciones de `FragmentManager` por navegación declarativa en Compose (`MainHostScreen` + `MainSection`).
 - [x] **Paso 7.3:** Migrar el tour guiado de bienvenida a Compose (`OnboardingTourDialog`).
-- [ ] **Paso 7.4 (Opcional tras validación final):** Eliminar archivos XML heredados de `app/src/main/res/layout/`, adaptadores antiguos y desactivar `viewBinding = false`.
+- [x] **Paso 7.4:** Eliminar todos los archivos XML de `app/src/main/res/layout/`, adaptadores antiguos (`Adaptadores/*`, `ChatAdapter.kt`), `TutorialHelper.kt`, desactivar `viewBinding = false` y limpiar dependencias obsoletas en Gradle.

@@ -64,6 +64,8 @@ import java.text.NumberFormat
 import java.util.Calendar
 import java.util.Locale
 
+data class MensajeChat(val texto: String, val esUsuario: Boolean)
+
 class GeminiAdvisorDialogFragment : BottomSheetDialogFragment() {
 
     private val mensajes = mutableStateListOf<MensajeChat>()
