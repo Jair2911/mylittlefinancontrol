@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
@@ -32,7 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -71,9 +70,6 @@ class OpcionesLoginActivity : AppCompatActivity() {
             MyLittleFinanControlTheme {
                 OpcionesLoginScreen(
                     isLoading = isSaving,
-                    onEmailLoginClick = {
-                        startActivity(Intent(applicationContext, LoginEmailActivity::class.java))
-                    },
                     onGoogleLoginClick = {
                         iniciarConGoogle()
                     }
@@ -176,7 +172,6 @@ class OpcionesLoginActivity : AppCompatActivity() {
 @Composable
 fun OpcionesLoginScreen(
     isLoading: Boolean,
-    onEmailLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -184,7 +179,7 @@ fun OpcionesLoginScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = R.drawable.bg_1),
+            painter = painterResource(id = R.drawable.bg_3),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
@@ -193,7 +188,9 @@ fun OpcionesLoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 20.dp),
+                .navigationBarsPadding()
+                .padding(horizontal = 32.dp)
+                .padding(top = 20.dp, bottom = 96.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -215,26 +212,6 @@ fun OpcionesLoginScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
-
-                Button(
-                    onClick = onEmailLoginClick,
-                    enabled = !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colors.primaryEmerald,
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "INGRESAR CON EMAIL",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
                     onClick = onGoogleLoginClick,
@@ -271,7 +248,6 @@ private fun OpcionesLoginScreenPreview() {
     MyLittleFinanControlTheme(darkTheme = false) {
         OpcionesLoginScreen(
             isLoading = false,
-            onEmailLoginClick = {},
             onGoogleLoginClick = {}
         )
     }
