@@ -32,7 +32,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
+import com.example.mylittlefinancontrol.ui.components.ModalMenuDabafinn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -198,6 +201,9 @@ class MainActivity : AppCompatActivity() {
                             putExtra("TIPO_PERIODO", tipoPeriodo)
                         }
                         startActivity(intent)
+                    },
+                    onCerrarSesion = {
+                        cerrarSesion()
                     }
                 )
 
@@ -326,6 +332,11 @@ class MainActivity : AppCompatActivity() {
     private fun irOpcionesLogin() {
         startActivity(Intent(applicationContext, OpcionesLoginActivity::class.java))
         finishAffinity()
+    }
+
+    fun cerrarSesion() {
+        firebaseAuth.signOut()
+        irOpcionesLogin()
     }
 
     private fun verificarConfiguracionBackup() {
@@ -482,9 +493,11 @@ fun MainHostScreen(
     onNotificacionesClick: () -> Unit,
     onOpenGeminiAdvisor: () -> Unit,
     onOpenDetallePeriodo: (String) -> Unit,
+    onCerrarSesion: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = DabaTheme.colors
+    var mostrarMenuModal by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -493,16 +506,10 @@ fun MainHostScreen(
             MainTopHeaderBar(
                 userName = userName,
                 userInitials = userInitials,
-                isPerfilActive = currentSection == MainSection.PERFIL,
+                isPerfilActive = mostrarMenuModal || currentSection == MainSection.PERFIL,
                 onHeaderHomeClick = { onSectionSelect(MainSection.INICIO) },
                 onNotificacionesClick = onNotificacionesClick,
-                onPerfilClick = { onSectionSelect(MainSection.PERFIL) }
-            )
-        },
-        bottomBar = {
-            MainBottomNavigationBar(
-                currentSection = currentSection,
-                onSectionSelect = onSectionSelect
+                onMenuClick = { mostrarMenuModal = true }
             )
         }
     ) { innerPadding ->
@@ -532,6 +539,22 @@ fun MainHostScreen(
             }
         }
     }
+
+    if (mostrarMenuModal) {
+        ModalMenuDabafinn(
+            alNavegar = { ruta ->
+                when (ruta) {
+                    "movimientos" -> onSectionSelect(MainSection.MOVIMIENTOS)
+                    "gastos_fijos" -> onSectionSelect(MainSection.GASTOS_FIJOS)
+                    "deudas" -> onSectionSelect(MainSection.DEUDAS)
+                    "ahorros" -> onSectionSelect(MainSection.AHORROS)
+                    "perfil" -> onSectionSelect(MainSection.PERFIL)
+                    "cerrar_sesion" -> onCerrarSesion()
+                }
+            },
+            alCerrar = { mostrarMenuModal = false }
+        )
+    }
 }
 
 @Composable
@@ -541,7 +564,7 @@ fun MainTopHeaderBar(
     isPerfilActive: Boolean,
     onHeaderHomeClick: () -> Unit,
     onNotificacionesClick: () -> Unit,
-    onPerfilClick: () -> Unit,
+    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = DabaTheme.colors
@@ -628,7 +651,7 @@ fun MainTopHeaderBar(
                 }
             }
 
-            // Bloque Derecho: Notificaciones + Perfil
+            // Bloque Derecho: Notificaciones + Menú Hamburguesa
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -652,20 +675,20 @@ fun MainTopHeaderBar(
 
                 Surface(
                     modifier = Modifier.size(36.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = CircleShape,
                     color = if (isPerfilActive) colors.ghostBg else colors.surfaceCard,
                     border = BorderStroke(
                         1.dp,
                         if (isPerfilActive) colors.primaryEmerald else colors.borderSubtle
                     ),
-                    onClick = onPerfilClick
+                    onClick = onMenuClick
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_person),
-                            contentDescription = "Perfil y Configuración",
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Menú",
                             tint = if (isPerfilActive) colors.primaryEmerald else colors.textVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -821,13 +844,7 @@ private fun MainBarsPreview() {
                     isPerfilActive = false,
                     onHeaderHomeClick = {},
                     onNotificacionesClick = {},
-                    onPerfilClick = {}
-                )
-            },
-            bottomBar = {
-                MainBottomNavigationBar(
-                    currentSection = MainSection.INICIO,
-                    onSectionSelect = {}
+                    onMenuClick = {}
                 )
             }
         ) { padding ->
