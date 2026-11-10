@@ -1,5 +1,6 @@
 package com.example.mylittlefinancontrol.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,11 +8,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Savings
@@ -54,7 +58,7 @@ data class OpcionMenuDabafinn(
     val icono: ImageVector,
     val colorFondo: Color,
     val colorIcono: Color,
-    val colorBorde: Color
+    val colorBorde: Color,
 )
 
 /**
@@ -63,12 +67,14 @@ data class OpcionMenuDabafinn(
  */
 @Composable
 fun ModalMenuDabafinn(
+    rutaActual: String = "inicio",
     alNavegar: (String) -> Unit,
     alCerrar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Dialog(onDismissRequest = alCerrar) {
         ModalMenuContent(
+            rutaActual = rutaActual,
             alNavegar = alNavegar,
             alCerrar = alCerrar,
             modifier = modifier
@@ -77,10 +83,11 @@ fun ModalMenuDabafinn(
 }
 
 /**
- * Contenedor visual del menú modal (Surface con esquinas 24.dp y grid de 3 columnas).
+ * Contenedor visual del menú modal (Surface con esquinas 24.dp, chip de Inicio y grid de 3 columnas).
  */
 @Composable
 fun ModalMenuContent(
+    rutaActual: String = "inicio",
     alNavegar: (String) -> Unit,
     alCerrar: () -> Unit,
     modifier: Modifier = Modifier
@@ -141,48 +148,95 @@ fun ModalMenuContent(
         )
     }
 
+    val esInicioActivo = rutaActual == "inicio"
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(24.dp),
         color = colors.surfaceCard,
-        border = androidx.compose.foundation.BorderStroke(1.dp, colors.borderSubtle),
+        border = BorderStroke(1.dp, colors.borderSubtle),
         tonalElevation = 6.dp,
         shadowElevation = 12.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 22.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título del modal
-            Text(
-                text = "Menú Principal",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    letterSpacing = 0.3.sp
-                ),
-                color = colors.textPrimary,
-                modifier = Modifier.padding(bottom = 18.dp)
-            )
+            // Cabecera del modal con título y botón rápido para ir a Inicio
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Menú Principal",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        letterSpacing = 0.3.sp
+                    ),
+                    color = colors.textPrimary
+                )
+
+                Surface(
+                    onClick = {
+                        alCerrar()
+                        alNavegar("inicio")
+                    },
+                    shape = RoundedCornerShape(50),
+                    color = if (esInicioActivo) colors.ghostBg else colors.surfaceContainer,
+                    border = BorderStroke(
+                        1.dp,
+                        if (esInicioActivo) colors.primaryEmerald else colors.borderSubtle
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Home,
+                            contentDescription = "Ir a Inicio",
+                            tint = if (esInicioActivo) colors.primaryEmerald else colors.textSecondary,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (esInicioActivo) "En Inicio" else "Ir a Inicio",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            ),
+                            color = if (esInicioActivo) colors.primaryEmerald else colors.textSecondary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Cuadrícula de 6 opciones (3 columnas x 2 filas)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp),
+                    .height(235.dp),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 userScrollEnabled = false
             ) {
                 items(opciones) { opcion ->
+                    val esActiva = opcion.ruta == rutaActual
                     BotonOpcionMenuDabafinn(
                         opcion = opcion,
+                        esActiva = esActiva,
                         onClick = {
                             alCerrar()
                             alNavegar(opcion.ruta)
@@ -195,11 +249,12 @@ fun ModalMenuContent(
 }
 
 /**
- * Botón circular individual con fondo y borde suaves de la paleta DABA, e icono centrado.
+ * Botón circular individual con indicador visual cuando la sección está activa.
  */
 @Composable
 fun BotonOpcionMenuDabafinn(
     opcion: OpcionMenuDabafinn,
+    esActiva: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -208,37 +263,59 @@ fun BotonOpcionMenuDabafinn(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (esActiva) colors.ghostBg.copy(alpha = 0.65f) else Color.Transparent)
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp, horizontal = 2.dp)
+            .padding(vertical = 6.dp, horizontal = 2.dp)
     ) {
-        // Contenedor circular de 60.dp con color de la paleta DABA establecida
+        // Contenedor circular de 60.dp con anillo resaltado y dot cuando está activo
         Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(opcion.colorFondo)
-                .border(1.dp, opcion.colorBorde, CircleShape),
+            modifier = Modifier.size(60.dp),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = opcion.icono,
-                contentDescription = opcion.titulo,
-                tint = opcion.colorIcono,
-                modifier = Modifier.size(28.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(opcion.colorFondo)
+                    .border(
+                        width = if (esActiva) 2.dp else 1.dp,
+                        color = if (esActiva) opcion.colorIcono else opcion.colorBorde,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = opcion.icono,
+                    contentDescription = opcion.titulo,
+                    tint = opcion.colorIcono,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            // Punto indicador de vista activa
+            if (esActiva) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .align(Alignment.TopEnd)
+                        .clip(CircleShape)
+                        .background(colors.activeStateDot)
+                        .border(2.dp, colors.surfaceCard, CircleShape)
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         // Texto de la opción debajo del círculo
         Text(
             text = opcion.titulo,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Medium,
+                fontWeight = if (esActiva) FontWeight.Bold else FontWeight.Medium,
                 fontSize = 11.sp
             ),
-            color = colors.textPrimary,
+            color = if (esActiva) colors.primaryEmerald else colors.textPrimary,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -257,6 +334,7 @@ private fun ModalMenuDabafinnPreview() {
             contentAlignment = Alignment.Center
         ) {
             ModalMenuContent(
+                rutaActual = "gastos_fijos",
                 alNavegar = {},
                 alCerrar = {}
             )

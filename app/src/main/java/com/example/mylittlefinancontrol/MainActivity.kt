@@ -33,7 +33,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import com.example.mylittlefinancontrol.ui.components.ModalMenuDabafinn
@@ -505,7 +507,7 @@ fun MainHostScreen(
             painter = painterResource(id = R.drawable.bg_3),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            alpha = 0.7f,
+            alpha = 0.3f,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -514,9 +516,10 @@ fun MainHostScreen(
             containerColor = Color.Transparent,
             topBar = {
                 MainTopHeaderBar(
+                    currentSection = currentSection,
                     userName = userName,
                     userInitials = userInitials,
-                    isPerfilActive = mostrarMenuModal || currentSection == MainSection.PERFIL,
+                    isPerfilActive = mostrarMenuModal || currentSection != MainSection.INICIO,
                     onHeaderHomeClick = { onSectionSelect(MainSection.INICIO) },
                     onNotificacionesClick = onNotificacionesClick,
                     onMenuClick = { mostrarMenuModal = true }
@@ -552,9 +555,20 @@ fun MainHostScreen(
     }
 
     if (mostrarMenuModal) {
+        val rutaActual = when (currentSection) {
+            MainSection.INICIO -> "inicio"
+            MainSection.MOVIMIENTOS -> "movimientos"
+            MainSection.GASTOS_FIJOS -> "gastos_fijos"
+            MainSection.DEUDAS -> "deudas"
+            MainSection.AHORROS -> "ahorros"
+            MainSection.PERFIL -> "perfil"
+        }
+
         ModalMenuDabafinn(
+            rutaActual = rutaActual,
             alNavegar = { ruta ->
                 when (ruta) {
+                    "inicio" -> onSectionSelect(MainSection.INICIO)
                     "movimientos" -> onSectionSelect(MainSection.MOVIMIENTOS)
                     "gastos_fijos" -> onSectionSelect(MainSection.GASTOS_FIJOS)
                     "deudas" -> onSectionSelect(MainSection.DEUDAS)
@@ -570,6 +584,7 @@ fun MainHostScreen(
 
 @Composable
 fun MainTopHeaderBar(
+    currentSection: MainSection = MainSection.INICIO,
     userName: String,
     userInitials: String,
     isPerfilActive: Boolean,
@@ -594,71 +609,159 @@ fun MainTopHeaderBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Bloque Izquierdo: Avatar Monograma + Bienvenida + Nombre
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onHeaderHomeClick)
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(
+            // Bloque Izquierdo Dinámico: Bienvenida en INICIO vs Navegación Contextual en Otras Vistas
+            AnimatedContent(
+                targetState = currentSection,
+                modifier = Modifier.weight(1f),
+                label = "HeaderSectionTransition"
+            ) { section ->
+                if (section == MainSection.INICIO) {
+                    Row(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(colors.surfaceCard)
-                            .border(1.dp, colors.borderSubtle, RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onHeaderHomeClick)
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = userInitials,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                letterSpacing = 0.6.sp
-                            ),
-                            color = colors.primaryEmerald
-                        )
+                        Box(
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(colors.surfaceCard)
+                                    .border(1.dp, colors.borderSubtle, RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = userInitials,
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        letterSpacing = 0.6.sp
+                                    ),
+                                    color = colors.primaryEmerald
+                                )
+                            }
+                            // Dot indicador de estado activo
+                            Box(
+                                modifier = Modifier
+                                    .size(9.dp)
+                                    .align(Alignment.BottomEnd)
+                                    .clip(CircleShape)
+                                    .background(colors.activeStateDot)
+                                    .border(1.5.dp, colors.surfaceBg, CircleShape)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "BIENVENIDO DE NUEVO",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.4.sp
+                                ),
+                                color = colors.primaryEmerald
+                            )
+                            Text(
+                                text = userName,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = colors.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
-                    // Dot indicador de estado activo
-                    Box(
+                } else {
+                    val accentColor = when (section) {
+                        MainSection.DEUDAS -> colors.expenseRed
+                        MainSection.PERFIL -> colors.debtAmber
+                        MainSection.MOVIMIENTOS -> colors.textSecondary
+                        else -> colors.primaryEmerald
+                    }
+
+                    Row(
                         modifier = Modifier
-                            .size(9.dp)
-                            .align(Alignment.BottomEnd)
-                            .clip(CircleShape)
-                            .background(colors.activeStateDot)
-                            .border(1.5.dp, colors.surfaceBg, CircleShape)
-                    )
-                }
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onHeaderHomeClick)
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Botón circular para volver al Inicio
+                        Surface(
+                            modifier = Modifier.size(38.dp),
+                            shape = CircleShape,
+                            color = colors.surfaceCard,
+                            border = BorderStroke(1.dp, colors.borderSubtle),
+                            onClick = onHeaderHomeClick
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Volver a Inicio",
+                                    tint = colors.textPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                Column(
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "BIENVENIDO DE NUEVO",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.4.sp
-                        ),
-                        color = colors.primaryEmerald
-                    )
-                    Text(
-                        text = userName,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = colors.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                        Column(
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(accentColor)
+                                )
+                                Text(
+                                    text = "SECCIÓN ACTUAL • IR A INICIO",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.1.sp
+                                    ),
+                                    color = accentColor
+                                )
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = section.iconRes),
+                                    contentDescription = null,
+                                    tint = accentColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = section.label,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = colors.textPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

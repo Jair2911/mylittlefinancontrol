@@ -370,75 +370,6 @@ fun GastosFijosScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Gastos Fijos",
-                            color = colors.textPrimary,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${listaTodos.size} compromisos recurrentes",
-                            color = colors.textSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IconButton(
-                            onClick = onTogglePrivacidad,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(colors.surfaceCard)
-                        ) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (esOculto) R.drawable.ic_visibility_off else R.drawable.ic_visibility
-                                ),
-                                contentDescription = "Privacidad",
-                                tint = colors.textSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = onOpenCalendarResumen,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(colors.surfaceCard)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_calendar_month),
-                                contentDescription = "Calendario",
-                                tint = colors.textSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = onOpenFilter,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(colors.surfaceCard)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_tune),
-                                contentDescription = "Filtrar",
-                                tint = colors.textSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
             // Hero Card Presupuesto Fijo
             item {
                 Surface(
@@ -481,12 +412,64 @@ fun GastosFijosScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        Text(
-                            text = if (esOculto) "$ ••••••••" else format.format(total),
-                            color = colors.textPrimary,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (esOculto) "$ ••••••••" else format.format(total),
+                                color = colors.textPrimary,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                IconButton(
+                                    onClick = onTogglePrivacidad,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.surfaceContainerLow)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (esOculto) R.drawable.ic_visibility_off else R.drawable.ic_visibility
+                                        ),
+                                        contentDescription = "Privacidad",
+                                        tint = colors.textSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = onOpenCalendarResumen,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.surfaceContainerLow)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_calendar_month),
+                                        contentDescription = "Calendario",
+                                        tint = colors.textSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = onOpenFilter,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.surfaceContainerLow)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_tune),
+                                        contentDescription = "Filtrar",
+                                        tint = colors.textSecondary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
 

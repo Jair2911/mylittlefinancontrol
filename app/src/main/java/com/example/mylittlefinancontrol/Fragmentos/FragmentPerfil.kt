@@ -619,64 +619,11 @@ fun PerfilScreen(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Header: Volver + Mi Perfil + Ayuda
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    onClick = onBack,
-                    shape = CircleShape,
-                    color = colors.surfaceCard,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_back),
-                            contentDescription = "Volver",
-                            tint = colors.textPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Mi Perfil",
-                    color = colors.textPrimary,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Surface(
-                onClick = onOpenAyuda,
-                shape = CircleShape,
-                color = colors.surfaceCard,
-                shadowElevation = 1.dp,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_help),
-                        contentDescription = "Ayuda",
-                        tint = colors.textSecondary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .padding(bottom = 84.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -750,6 +697,24 @@ fun PerfilScreen(
                                 color = colors.textMuted,
                                 fontSize = 11.sp
                             )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Surface(
+                            onClick = onOpenAyuda,
+                            shape = CircleShape,
+                            color = colors.surfaceContainerLow,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_help),
+                                    contentDescription = "Ayuda",
+                                    tint = colors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
 
