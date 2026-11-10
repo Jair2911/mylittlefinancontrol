@@ -97,6 +97,11 @@ class OpcionesLoginActivity : AppCompatActivity() {
             val cuenta = task.getResult(ApiException::class.java)
             autenticaCuentaGoogle(cuenta.idToken)
         } catch (e: ApiException) {
+            isSaving = false
+            // 12501 = SIGN_IN_CANCELLED, 12502 = SIGN_IN_CURRENTLY_IN_PROGRESS
+            if (e.statusCode == 12501 || e.statusCode == 12502) {
+                return@registerForActivityResult
+            }
             val mensaje = when (e.statusCode) {
                 10 -> "Error 10: Revisa el SHA-1 en Firebase."
                 12500 -> "Error 12500: Fallo de configuración."
@@ -104,6 +109,7 @@ class OpcionesLoginActivity : AppCompatActivity() {
             }
             Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
+            isSaving = false
             Toast.makeText(this, "Fallo: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
@@ -116,6 +122,8 @@ class OpcionesLoginActivity : AppCompatActivity() {
     }
 
     private fun iniciarConGoogle() {
+        if (isSaving) return
+        isSaving = true
         val googleSignInIntent = mGoogleSignInClient.signInIntent
         googleSignInARL.launch(googleSignInIntent)
     }
@@ -124,14 +132,16 @@ class OpcionesLoginActivity : AppCompatActivity() {
         val credencial = GoogleAuthProvider.getCredential(idToken, null)
         firebaseAuth.signInWithCredential(credencial)
             .addOnSuccessListener { authResultado ->
-                if (authResultado.additionalUserInfo!!.isNewUser) {
+                if (authResultado.additionalUserInfo?.isNewUser == true) {
                     actualizarInfoUsuarios()
                 } else {
+                    isSaving = false
                     startActivity(Intent(this, MainActivity::class.java))
                     finishAffinity()
                 }
             }
             .addOnFailureListener { e ->
+                isSaving = false
                 Toast.makeText(this, "fallo ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }

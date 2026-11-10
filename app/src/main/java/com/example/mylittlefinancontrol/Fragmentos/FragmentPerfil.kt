@@ -618,7 +618,6 @@ fun PerfilScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surfaceBg)
     ) {
         // Header: Volver + Mi Perfil + Ayuda
         Row(

@@ -504,7 +504,6 @@ fun MovimientoScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surfaceBg)
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

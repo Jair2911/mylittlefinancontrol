@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -465,13 +467,22 @@ fun DetallePeriodoScreen(
         }
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = colors.surfaceBg,
-        topBar = {
-            Surface(
-                color = colors.surfaceCard,
-                shadowElevation = 1.dp,
+    Box(modifier = modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.bg_3),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alpha = 0.7f,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                Surface(
+                    color = Color.Transparent,
+                    shadowElevation = 0.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -731,6 +742,7 @@ fun DetallePeriodoScreen(
                     onClick = { onCategoriaClick(item) }
                 )
             }
+        }
         }
     }
 }

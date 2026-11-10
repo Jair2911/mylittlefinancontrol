@@ -192,7 +192,6 @@ fun InicioScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.surfaceBg)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp)
             .padding(bottom = 84.dp)

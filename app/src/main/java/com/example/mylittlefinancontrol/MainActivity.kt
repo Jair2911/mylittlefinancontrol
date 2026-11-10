@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -496,46 +498,55 @@ fun MainHostScreen(
     onCerrarSesion: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val colors = DabaTheme.colors
     var mostrarMenuModal by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = colors.surfaceBg,
-        topBar = {
-            MainTopHeaderBar(
-                userName = userName,
-                userInitials = userInitials,
-                isPerfilActive = mostrarMenuModal || currentSection == MainSection.PERFIL,
-                onHeaderHomeClick = { onSectionSelect(MainSection.INICIO) },
-                onNotificacionesClick = onNotificacionesClick,
-                onMenuClick = { mostrarMenuModal = true }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when (currentSection) {
-                MainSection.INICIO -> InicioStatefulScreen(
-                    onNavigateMovimientos = { onSectionSelect(MainSection.MOVIMIENTOS) },
-                    onNavigateGastosFijos = { onSectionSelect(MainSection.GASTOS_FIJOS) },
-                    onNavigateDeudas = { onSectionSelect(MainSection.DEUDAS) },
-                    onNavigateAhorros = { onSectionSelect(MainSection.AHORROS) },
-                    onOpenGeminiAdvisor = onOpenGeminiAdvisor,
-                    onOpenDetallePeriodo = onOpenDetallePeriodo
+    Box(modifier = modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.bg_3),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alpha = 0.7f,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            topBar = {
+                MainTopHeaderBar(
+                    userName = userName,
+                    userInitials = userInitials,
+                    isPerfilActive = mostrarMenuModal || currentSection == MainSection.PERFIL,
+                    onHeaderHomeClick = { onSectionSelect(MainSection.INICIO) },
+                    onNotificacionesClick = onNotificacionesClick,
+                    onMenuClick = { mostrarMenuModal = true }
                 )
-                MainSection.MOVIMIENTOS -> MovimientoStatefulScreen(
-                    onNavigateAhorros = { onSectionSelect(MainSection.AHORROS) }
-                )
-                MainSection.GASTOS_FIJOS -> GastosFijosStatefulScreen()
-                MainSection.AHORROS -> AhorrosStatefulScreen()
-                MainSection.DEUDAS -> DeudasStatefulScreen()
-                MainSection.PERFIL -> PerfilStatefulScreen(
-                    onBack = { onSectionSelect(MainSection.INICIO) }
-                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                when (currentSection) {
+                    MainSection.INICIO -> InicioStatefulScreen(
+                        onNavigateMovimientos = { onSectionSelect(MainSection.MOVIMIENTOS) },
+                        onNavigateGastosFijos = { onSectionSelect(MainSection.GASTOS_FIJOS) },
+                        onNavigateDeudas = { onSectionSelect(MainSection.DEUDAS) },
+                        onNavigateAhorros = { onSectionSelect(MainSection.AHORROS) },
+                        onOpenGeminiAdvisor = onOpenGeminiAdvisor,
+                        onOpenDetallePeriodo = onOpenDetallePeriodo
+                    )
+                    MainSection.MOVIMIENTOS -> MovimientoStatefulScreen(
+                        onNavigateAhorros = { onSectionSelect(MainSection.AHORROS) }
+                    )
+                    MainSection.GASTOS_FIJOS -> GastosFijosStatefulScreen()
+                    MainSection.AHORROS -> AhorrosStatefulScreen()
+                    MainSection.DEUDAS -> DeudasStatefulScreen()
+                    MainSection.PERFIL -> PerfilStatefulScreen(
+                        onBack = { onSectionSelect(MainSection.INICIO) }
+                    )
+                }
             }
         }
     }
@@ -572,7 +583,7 @@ fun MainTopHeaderBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(colors.surfaceBg)
+            .background(Color.Transparent)
             .statusBarsPadding()
     ) {
         Row(
